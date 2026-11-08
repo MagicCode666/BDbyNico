@@ -1,0 +1,30 @@
+# Dépendances
+node_modules/
+
+# Build
+dist/
+dev-dist/
+*.tsbuildinfo
+
+# Secrets et environnement
+.env
+.env.*
+!.env.example
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Éditeurs et système
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Outils locaux
+.claude/
