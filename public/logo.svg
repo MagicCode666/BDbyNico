@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#4f46e5" />
+  <path
+    d="M96 120h320a24 24 0 0 1 24 24v184a24 24 0 0 1-24 24H260l-84 72v-72H96a24 24 0 0 1-24-24V144a24 24 0 0 1 24-24z"
+    fill="#ffffff"
+  />
+  <text
+    x="256"
+    y="268"
+    font-family="Arial Black, Arial, sans-serif"
+    font-size="130"
+    font-weight="900"
+    text-anchor="middle"
+    fill="#4f46e5"
+  >
+    BD
+  </text>
+</svg>
