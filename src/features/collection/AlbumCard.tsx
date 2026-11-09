@@ -2,8 +2,14 @@ import { Link } from 'react-router-dom'
 
 import type { Entry } from './types'
 
-export function Cover({ entry, className }: { entry: Entry; className?: string }) {
-  const { coverUrl, title } = entry.edition
+interface CoverImageProps {
+  coverUrl: string | null
+  title: string
+  className?: string
+}
+
+/** Couverture d'un album, ou une vignette avec son titre quand on n'en a pas. */
+export function CoverImage({ coverUrl, title, className }: CoverImageProps) {
   return coverUrl ? (
     <img
       src={coverUrl}
@@ -23,18 +29,29 @@ export function Cover({ entry, className }: { entry: Entry; className?: string }
   )
 }
 
-export default function AlbumCard({ entry }: { entry: Entry }) {
+export function Cover({ entry, className }: { entry: Entry; className?: string }) {
+  return (
+    <CoverImage
+      coverUrl={entry.edition.coverUrl}
+      title={entry.edition.title}
+      className={className}
+    />
+  )
+}
+
+/** Petite vignette cliquable d'un album : couverture et numéro de tome. */
+export function AlbumThumb({ entry }: { entry: Entry }) {
   const { edition } = entry
   return (
     <Link
       to={`/collection/${edition.isbn}`}
-      className="flex flex-col gap-1 rounded border border-slate-200 p-2 hover:border-indigo-600"
+      title={`${edition.title}${entry.read ? ' (lu)' : ''}`}
+      className="flex w-16 shrink-0 flex-col gap-1 hover:opacity-80"
     >
-      <Cover entry={entry} className="aspect-[2/3] w-full rounded" />
-      <span className="line-clamp-2 text-sm font-medium">{edition.title}</span>
-      <span className="text-xs text-slate-600">
-        {edition.volume !== null && `T${edition.volume}`}
-        {entry.read && (edition.volume !== null ? ' · lu' : 'lu')}
+      <Cover entry={entry} className="aspect-[2/3] w-16 rounded" />
+      <span className="text-center text-[10px] text-slate-500">
+        {edition.volume !== null ? `T${edition.volume}` : '·'}
+        {entry.read && ' · lu'}
       </span>
     </Link>
   )
