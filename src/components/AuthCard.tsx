@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
+import VersionBadge from './VersionBadge'
+
 interface AuthCardProps {
   title: string
   children: ReactNode
@@ -16,6 +18,7 @@ export default function AuthCard({ title, children, footer }: AuthCardProps) {
       <h1 className="text-center text-xl font-semibold">{title}</h1>
       {children}
       {footer && <p className="text-center text-sm text-slate-600">{footer}</p>}
+      <VersionBadge className="text-center" />
     </main>
   )
 }
