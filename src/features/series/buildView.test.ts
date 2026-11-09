@@ -1,0 +1,128 @@
+import { describe, expect, it } from 'vitest'
+
+import { buildSeriesView, missingVolumes, type CatalogueEdition, type UserItem } from './buildView'
+
+const edition = (
+  volume: number | null,
+  extra: Partial<CatalogueEdition> = {},
+): CatalogueEdition => ({
+  isbn: `isbn-${volume ?? 'x'}-${extra.title ?? ''}`,
+  title: `Tome ${volume ?? 'sans numéro'}`,
+  volume,
+  coverUrl: null,
+  authors: [],
+  ...extra,
+})
+
+const item = (ed: CatalogueEdition, status: 'owned' | 'wanted' = 'owned'): UserItem => ({
+  id: `item-${ed.isbn}`,
+  isbn: ed.isbn,
+  status,
+  read: false,
+})
+
+describe('missingVolumes', () => {
+  it('liste les tomes de 1 au total absents des possédés et des ignorés', () => {
+    expect(missingVolumes(6, [1, 2, 4], [5])).toEqual([3, 6])
+  })
+  it('renvoie une liste vide sans total ou quand tout est là', () => {
+    expect(missingVolumes(null, [1], [])).toEqual([])
+    expect(missingVolumes(3, [1, 2, 3], [])).toEqual([])
+  })
+})
+
+describe('buildSeriesView', () => {
+  const e1 = edition(1)
+  const e2 = edition(2)
+  const e3 = edition(3)
+  const e4 = edition(4)
+  const base = {
+    editions: [e1, e2, e3, e4],
+    items: [item(e1), item(e2, 'wanted')],
+    ignored: [],
+    override: null,
+  }
+
+  it('classe chaque tome : possédé, envie, manquant', () => {
+    const view = buildSeriesView({ ...base, total: 4 })
+    expect(view.slots.map((s) => s.kind)).toEqual(['owned', 'wanted', 'missing', 'missing'])
+    expect(view.ownedCount).toBe(1)
+    expect(view.targetCount).toBe(4)
+    expect(view.missing).toEqual([2, 3, 4])
+    expect(view.complete).toBe(false)
+  })
+
+  it('marque « inconnu » un tome absent du catalogue', () => {
+    const view = buildSeriesView({ ...base, editions: [e1], items: [item(e1)], total: 3 })
+    expect(view.slots.map((s) => s.kind)).toEqual(['owned', 'unknown', 'unknown'])
+  })
+
+  it('met de côté les tomes ignorés et les retire de la cible', () => {
+    const view = buildSeriesView({ ...base, total: 4, ignored: [3, 4] })
+    expect(view.slots.map((s) => s.kind)).toEqual(['owned', 'wanted', 'ignored', 'ignored'])
+    expect(view.targetCount).toBe(2)
+    expect(view.missing).toEqual([2])
+  })
+
+  it("un tome possédé reste visible même s'il est ignoré", () => {
+    const view = buildSeriesView({ ...base, total: 4, ignored: [1] })
+    expect(view.slots[0].kind).toBe('owned')
+    expect(view.targetCount).toBe(4)
+  })
+
+  it('déclare la série complète quand tous les tomes cibles sont possédés', () => {
+    const view = buildSeriesView({
+      ...base,
+      items: [item(e1), item(e2), item(e3)],
+      total: 4,
+      ignored: [4],
+    })
+    expect(view.complete).toBe(true)
+    expect(view.missing).toEqual([])
+  })
+
+  it("le total personnel l'emporte sur le total partagé", () => {
+    const view = buildSeriesView({ ...base, total: 4, override: 2 })
+    expect(view.total).toBe(4) // les tomes 3 et 4 existent dans le catalogue : la grille ne les cache pas
+    const small = buildSeriesView({ ...base, editions: [e1, e2], total: 4, override: 2 })
+    expect(small.total).toBe(2)
+    expect(small.totalIsEstimate).toBe(false)
+  })
+
+  it('étend la grille au plus grand tome connu et signale un total estimé', () => {
+    const view = buildSeriesView({ ...base, total: null })
+    expect(view.total).toBe(4)
+    expect(view.totalIsEstimate).toBe(true)
+  })
+
+  it('préfère « possédé » à « envie » pour un même tome', () => {
+    const other = edition(1, { title: 'autre édition' })
+    const view = buildSeriesView({
+      ...base,
+      editions: [e1, other],
+      items: [item(e1, 'wanted'), item(other, 'owned')],
+      total: 1,
+    })
+    expect(view.slots[0].kind).toBe('owned')
+  })
+
+  it('range à part les albums sans numéro', () => {
+    const special = edition(null)
+    const view = buildSeriesView({
+      ...base,
+      editions: [e1, special],
+      items: [item(special)],
+      total: 1,
+    })
+    expect(view.unnumbered).toHaveLength(1)
+    expect(view.unnumbered[0].item?.status).toBe('owned')
+  })
+
+  it("préfère, pour un tome manquant, l'édition qui a une couverture", () => {
+    const bare = edition(2)
+    const withCover = edition(2, { title: 'avec couverture', coverUrl: 'https://x/y.jpg' })
+    const view = buildSeriesView({ ...base, editions: [bare, withCover], items: [], total: 2 })
+    const slot = view.slots[1]
+    expect(slot.kind === 'missing' && slot.edition.coverUrl).toBe('https://x/y.jpg')
+  })
+})

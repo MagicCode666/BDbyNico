@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom'
 
 import FormMessage from '../../components/FormMessage'
 import PageLayout from '../../components/PageLayout'
-import AlbumCard from './AlbumCard'
+import { listSeriesSettings } from '../series/api'
+import { missingVolumes } from '../series/buildView'
+import { AlbumThumb } from './AlbumCard'
 import { listCollection } from './api'
 import { STATUS_LABELS, type ReadFilter, type Status } from './types'
 import { useAsync } from './useAsync'
@@ -25,13 +27,18 @@ export default function CollectionPage() {
     }),
     [entries],
   )
+  // Réglages personnels par série (tomes ignorés, total personnel) ; sans eux, on s'en passe
+  const { data: seriesSettings } = useAsync(listSeriesSettings)
   // Progression par série : tous les albums possédés, indépendamment des filtres
   const ownedBySeries = useMemo(() => {
-    const map = new Map<string, number>()
+    const map = new Map<string, { count: number; volumes: number[] }>()
     for (const e of entries) {
       if (e.status !== 'owned') continue
       const key = e.edition.series?.id ?? '_'
-      map.set(key, (map.get(key) ?? 0) + 1)
+      const current = map.get(key) ?? { count: 0, volumes: [] }
+      current.count++
+      if (e.edition.volume !== null) current.volumes.push(e.edition.volume)
+      map.set(key, current)
     }
     return map
   }, [entries])
@@ -92,23 +99,65 @@ export default function CollectionPage() {
         </p>
       )}
 
-      {groups.map((group) => (
-        <section key={group.key} className="mb-6">
-          <h2 className="mb-2 flex items-baseline gap-2 text-lg font-semibold">
-            {group.name ?? 'Albums hors série'}
-            {group.name && status === 'owned' && (
-              <span className="text-sm font-normal text-slate-600">
-                {progressLabel(group, ownedBySeries.get(group.key) ?? 0)}
-              </span>
-            )}
-          </h2>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
-            {group.entries.map((entry) => (
-              <AlbumCard key={entry.id} entry={entry} />
-            ))}
-          </div>
-        </section>
-      ))}
+      <div className="flex flex-col gap-3">
+        {groups.map((group) => {
+          const settings = seriesSettings?.get(group.key)
+          const total = settings?.totalOverride ?? group.totalVolumes
+          const owned = ownedBySeries.get(group.key) ?? { count: 0, volumes: [] }
+          const showProgress = group.name !== null && status === 'owned'
+          const complete =
+            showProgress &&
+            !!total &&
+            missingVolumes(total, owned.volumes, settings?.ignored ?? []).length === 0
+          return (
+            <section key={group.key} className="rounded border border-slate-200 p-3">
+              <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3">
+                <h2 className="text-lg font-semibold">
+                  {group.name ? (
+                    <Link
+                      to={`/series/${group.key}`}
+                      className="hover:text-indigo-600 hover:underline"
+                    >
+                      {group.name}
+                    </Link>
+                  ) : (
+                    'Albums hors série'
+                  )}
+                </h2>
+                {showProgress && (
+                  <span className="flex items-center gap-2 text-sm text-slate-600">
+                    {progressLabel({ ...group, totalVolumes: total }, owned.count)}
+                    {complete && (
+                      <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                        Complète
+                      </span>
+                    )}
+                  </span>
+                )}
+              </div>
+              {showProgress && total ? (
+                <div
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={total}
+                  aria-valuenow={Math.min(owned.count, total)}
+                  className="mb-3 h-1.5 overflow-hidden rounded bg-slate-100"
+                >
+                  <div
+                    className="h-full bg-indigo-600"
+                    style={{ width: `${Math.min(100, (owned.count / total) * 100)}%` }}
+                  />
+                </div>
+              ) : null}
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {group.entries.map((entry) => (
+                  <AlbumThumb key={entry.id} entry={entry} />
+                ))}
+              </div>
+            </section>
+          )
+        })}
+      </div>
     </PageLayout>
   )
 }

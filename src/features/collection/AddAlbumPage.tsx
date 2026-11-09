@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { useAuth } from '../../auth/useAuth'
 import FormMessage from '../../components/FormMessage'
@@ -31,10 +31,16 @@ const SOURCE_LABELS: Record<LookupSource, string> = {
 export default function AddAlbumPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  // Arrivée depuis la page d'une série (tome manquant) : série et tome sont préremplis
+  const [searchParams] = useSearchParams()
+  const prefillSeries = searchParams.get('serie') ?? ''
+  const prefillVolume = /^\d+$/.test(searchParams.get('tome') ?? '')
+    ? (searchParams.get('tome') ?? '')
+    : ''
   const [isbn, setIsbn] = useState('')
   const [title, setTitle] = useState('')
-  const [seriesName, setSeriesName] = useState('')
-  const [volume, setVolume] = useState('')
+  const [seriesName, setSeriesName] = useState(prefillSeries)
+  const [volume, setVolume] = useState(prefillVolume)
   const [authors, setAuthors] = useState('')
   const [publisher, setPublisher] = useState('')
   const [publishedOn, setPublishedOn] = useState('')
@@ -63,8 +69,8 @@ export default function AddAlbumPage() {
       }
       const { info } = result
       setTitle(info.title ?? '')
-      setSeriesName(info.seriesName ?? '')
-      setVolume(info.volume?.toString() ?? '')
+      setSeriesName(info.seriesName ?? prefillSeries)
+      setVolume(info.volume?.toString() ?? prefillVolume)
       setAuthors(info.authors.join(', '))
       setPublisher(info.publisher ?? '')
       setPublishedOn(info.publishedOn ?? '')
