@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.5.0...bdbynico-v0.5.1) (2026-11-09)
+
+
+### Corrections
+
+* scan du code-barres plus rapide ([#19](https://github.com/MagicCode666/BDbyNico/issues/19)) ([80eb621](https://github.com/MagicCode666/BDbyNico/commit/80eb6219ff89c16fcd6e372971d1ac1730cfa10a))
+
 ## [0.5.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.4.0...bdbynico-v0.5.0) (2026-11-09)
 
 
