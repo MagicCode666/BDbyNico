@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.3.0...bdbynico-v0.4.0) (2026-11-09)
+
+
+### Nouveautés
+
+* collection (liste, fiche, ajout manuel) ([#14](https://github.com/MagicCode666/BDbyNico/issues/14)) ([695a0ab](https://github.com/MagicCode666/BDbyNico/commit/695a0ab470c49aaa783f2f72b8e0f72bb5009ec3))
+* recherche automatique des informations par ISBN ([#16](https://github.com/MagicCode666/BDbyNico/issues/16)) ([dfe7961](https://github.com/MagicCode666/BDbyNico/commit/dfe7961c8a4d18c8a6b375f5c13a0e93926128b3))
+
 ## [0.3.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.2.0...bdbynico-v0.3.0) (2026-11-09)
 
 
