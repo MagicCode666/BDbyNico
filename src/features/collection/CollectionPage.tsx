@@ -5,6 +5,7 @@ import FormMessage from '../../components/FormMessage'
 import PageLayout from '../../components/PageLayout'
 import { listSeriesSettings } from '../series/api'
 import { missingVolumes } from '../series/buildView'
+import { useMissingCovers } from '../series/useMissingCovers'
 import { AlbumThumb } from './AlbumCard'
 import { listCollection } from './api'
 import { STATUS_LABELS, type ReadFilter, type Status } from './types'
@@ -18,8 +19,23 @@ export default function CollectionPage() {
   const [status, setStatus] = useState<Status>('owned')
   const [query, setQuery] = useState('')
   const [read, setRead] = useState<ReadFilter>('all')
+  const [dedicatedOnly, setDedicatedOnly] = useState(false)
 
   const entries = useMemo(() => data ?? [], [data])
+  // Couvertures manquantes (après un import, par exemple) : cherchées au fil de l'eau, puis
+  // enregistrées pour tous les utilisateurs
+  const { covers, remaining } = useMissingCovers(
+    entries.map((e) => ({ isbn: e.edition.isbn, coverUrl: e.edition.coverUrl })),
+  )
+  const entriesWithCovers = useMemo(
+    () =>
+      entries.map((e) =>
+        !e.edition.coverUrl && covers[e.edition.isbn]
+          ? { ...e, edition: { ...e.edition, coverUrl: covers[e.edition.isbn] } }
+          : e,
+      ),
+    [entries, covers],
+  )
   const counts = useMemo(
     () => ({
       owned: entries.filter((e) => e.status === 'owned').length,
@@ -43,8 +59,8 @@ export default function CollectionPage() {
     return map
   }, [entries])
   const groups = useMemo(
-    () => groupBySeries(filterEntries(entries, { status, query, read })),
-    [entries, status, query, read],
+    () => groupBySeries(filterEntries(entriesWithCovers, { status, query, read, dedicatedOnly })),
+    [entriesWithCovers, status, query, read, dedicatedOnly],
   )
 
   return (
@@ -81,13 +97,32 @@ export default function CollectionPage() {
           <option value="read">Lus</option>
           <option value="unread">Non lus</option>
         </select>
+        <label className="flex items-center gap-1 text-sm">
+          <input
+            type="checkbox"
+            checked={dedicatedOnly}
+            onChange={(e) => setDedicatedOnly(e.target.checked)}
+          />
+          Dédicacés
+        </label>
         <Link
           to="/collection/ajouter"
           className="rounded bg-indigo-600 px-3 py-1 text-sm font-medium text-white hover:bg-indigo-700"
         >
           Ajouter un album
         </Link>
+        <Link
+          to="/collection/importer"
+          className="rounded border border-indigo-600 px-3 py-1 text-sm font-medium text-indigo-600"
+        >
+          Importer
+        </Link>
       </div>
+      {remaining > 0 && (
+        <p role="status" className="mb-3 text-sm text-slate-500">
+          Récupération des couvertures… ({remaining} restante{remaining > 1 ? 's' : ''})
+        </p>
+      )}
 
       {loading && <p className="text-slate-600">Chargement…</p>}
       {error && <FormMessage kind="error">Impossible de charger la collection.</FormMessage>}

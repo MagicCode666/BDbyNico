@@ -15,6 +15,10 @@ function entry(
     condition: null,
     notes: null,
     acquiredOn: null,
+    addedAt: null,
+    dedication: null,
+    dedicationBy: null,
+    firstEdition: false,
     edition: {
       isbn: '9782070612758',
       title,
@@ -58,6 +62,21 @@ describe('filterEntries', () => {
     expect(filterEntries(entries, { ...base, query: 'GOSCINNY' })).toHaveLength(2)
     expect(filterEntries(entries, { ...base, query: 'deja' })).toHaveLength(1)
     expect(filterEntries(entries, { ...base, query: 'zzz' })).toHaveLength(0)
+  })
+  it('ne garde que les albums dédicacés et cherche aussi par nom de dédicaceur', () => {
+    const signed = entry({
+      title: 'Signé',
+      dedication: 'drawing',
+      dedicationBy: 'Zep',
+    })
+    const all = [...entries, signed]
+    expect(
+      filterEntries(all, { ...base, dedicatedOnly: true }).map((e) => e.edition.title),
+    ).toEqual(['Signé'])
+    expect(filterEntries(all, { ...base, query: 'zep' }).map((e) => e.edition.title)).toEqual([
+      'Signé',
+    ])
+    expect(filterEntries(all, { ...base, dedicatedOnly: false })).toHaveLength(3)
   })
 })
 

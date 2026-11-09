@@ -5,6 +5,14 @@ export const STATUS_LABELS: Record<Status, string> = {
   wanted: 'Envie',
 }
 
+/** Dédicace d'un exemplaire : simple autographe, ou vrai dessin personnalisé. */
+export type Dedication = 'signature' | 'drawing'
+
+export const DEDICATION_LABELS: Record<Dedication, string> = {
+  signature: 'Signature',
+  drawing: 'Dessin',
+}
+
 export interface SeriesInfo {
   id: string
   name: string
@@ -31,6 +39,12 @@ export interface Entry {
   condition: string | null
   notes: string | null
   acquiredOn: string | null
+  /** Date d'ajout à la collection (ISO). */
+  addedAt: string | null
+  dedication: Dedication | null
+  /** Auteur ou artiste de la dédicace. */
+  dedicationBy: string | null
+  firstEdition: boolean
   edition: Edition
 }
 

@@ -1,14 +1,20 @@
-import { findAmazonCover, imageExists } from '../collection/lookup/amazon'
+import { amazonCoverUrl, imageExists } from '../collection/lookup/amazon'
 
 /**
  * Cherche la couverture d'un ISBN-13 : Open Library d'abord, Amazon en repli.
  * Les adresses renvoyées sont exactement celles que la base accepte (voir `set_edition_cover`).
+ * Pour économiser la bande passante (jusqu'à plusieurs centaines d'albums après un import),
+ * l'existence est vérifiée sur une petite version de l'image (quelques Ko).
  */
 export async function findCover(isbn: string): Promise<string | undefined> {
-  const openLibrary = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`
   // « default=false » : Open Library répond 404 (et non une image vide) quand il n'a rien
-  if (await imageExists(`${openLibrary}?default=false`)) return openLibrary
-  return findAmazonCover(isbn)
+  const smallOpenLibrary = `https://covers.openlibrary.org/b/isbn/${isbn}-S.jpg?default=false`
+  if (await imageExists(smallOpenLibrary)) {
+    return `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`
+  }
+  const amazon = amazonCoverUrl(isbn)
+  if (amazon && (await imageExists(amazon.replace('LZZZZZZZ', 'MZZZZZZZ')))) return amazon
+  return undefined
 }
 
 // Un album sans couverture introuvable n'est pas recherché à chaque visite : on réessaie plus tard.

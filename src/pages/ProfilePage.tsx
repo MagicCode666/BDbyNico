@@ -7,6 +7,8 @@ import AuthCard from '../components/AuthCard'
 import FormMessage from '../components/FormMessage'
 import SubmitButton from '../components/SubmitButton'
 import TextField from '../components/TextField'
+import ClearCollectionDialog from '../features/collection/ClearCollectionDialog'
+import { exportCollection } from '../features/export/exportCollection'
 import { supabase } from '../lib/supabase'
 
 export default function ProfilePage() {
@@ -18,6 +20,9 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [exportMessage, setExportMessage] = useState<string | null>(null)
+  const [clearing, setClearing] = useState(false)
 
   useEffect(() => {
     if (!userId) return
@@ -58,6 +63,18 @@ export default function ProfilePage() {
     else setSaved(true)
   }
 
+  async function onExport() {
+    setExporting(true)
+    setExportMessage(null)
+    try {
+      const count = await exportCollection()
+      setExportMessage(`${count} album${count > 1 ? 's' : ''} exporté${count > 1 ? 's' : ''}.`)
+    } catch {
+      setError("Impossible d'exporter la collection.")
+    }
+    setExporting(false)
+  }
+
   async function onSignOut() {
     await signOut()
     navigate('/connexion', { replace: true })
@@ -93,6 +110,44 @@ export default function ProfilePage() {
       >
         Se déconnecter
       </button>
+
+      <section className="flex flex-col gap-2 border-t border-slate-200 pt-4">
+        <h2 className="font-semibold">Mes données</h2>
+        <p className="text-sm text-slate-600">
+          Téléchargez votre collection (CSV). Ce fichier peut être réimporté dans BDbyNico.
+        </p>
+        <button
+          type="button"
+          onClick={onExport}
+          disabled={exporting}
+          className="rounded border border-slate-300 px-4 py-2 font-medium hover:bg-slate-50 disabled:opacity-50"
+        >
+          {exporting ? 'Export en cours…' : 'Exporter ma collection'}
+        </button>
+        {exportMessage && <FormMessage kind="success">{exportMessage}</FormMessage>}
+      </section>
+
+      <section className="flex flex-col gap-2 rounded border border-red-200 p-3">
+        <h2 className="font-semibold text-red-700">Zone dangereuse</h2>
+        <p className="text-sm text-slate-600">
+          Retirer tous les albums de votre collection. Votre compte n'est pas supprimé.
+        </p>
+        <button
+          type="button"
+          onClick={() => setClearing(true)}
+          className="rounded border border-red-300 px-4 py-2 font-medium text-red-700 hover:bg-red-50"
+        >
+          Vider ma collection…
+        </button>
+      </section>
+
+      {clearing && userId && (
+        <ClearCollectionDialog
+          userId={userId}
+          onCancel={() => setClearing(false)}
+          onDone={() => navigate('/collection', { replace: true })}
+        />
+      )}
     </AuthCard>
   )
 }

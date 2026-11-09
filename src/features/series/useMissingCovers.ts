@@ -1,16 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { setEditionCover } from './api'
-import type { CatalogueEdition } from './buildView'
 import { findCover, markTried, wasRecentlyTried } from './covers'
 
 const CONCURRENCY = 4
+
+/** Ce dont la recherche a besoin : l'ISBN et la couverture connue, s'il y en a une. */
+interface WithCover {
+  isbn: string
+  coverUrl: string | null
+}
 
 /**
  * Va chercher les couvertures des albums du catalogue qui n'en ont pas et les enregistre pour
  * tous les utilisateurs. Renvoie les couvertures trouvées au fil de l'eau et le nombre restant.
  */
-export function useMissingCovers(editions: CatalogueEdition[]) {
+export function useMissingCovers(editions: WithCover[]) {
   const [covers, setCovers] = useState<Record<string, string>>({})
   const [done, setDone] = useState(0)
 
