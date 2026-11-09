@@ -84,6 +84,19 @@ export async function getEntry(isbn: string): Promise<Entry | null> {
   return data ? toEntry(data as unknown as RawItem) : null
 }
 
+/** Cherche une édition déjà présente dans le catalogue partagé. */
+export async function getCatalogueEdition(isbn: string): Promise<Edition | null> {
+  const { data, error } = await supabase
+    .from('editions')
+    .select(
+      'isbn, title, volume, authors, publisher, published_on, cover_url, series ( id, name, total_volumes )',
+    )
+    .eq('isbn', isbn)
+    .maybeSingle()
+  if (error) throw error
+  return data ? toEdition(data as unknown as RawEdition) : null
+}
+
 export interface NewAlbum {
   isbn: string
   title: string
@@ -94,6 +107,8 @@ export interface NewAlbum {
   publishedOn?: string
   coverUrl?: string
   status: Status
+  /** Origine des informations (« manual » par défaut). */
+  source?: string
 }
 
 export class AlreadyInCollectionError extends Error {
@@ -113,7 +128,7 @@ export async function addAlbum(userId: string, album: NewAlbum): Promise<void> {
     p_publisher: album.publisher,
     p_published_on: album.publishedOn,
     p_cover_url: album.coverUrl,
-    p_source: 'manual',
+    p_source: album.source ?? 'manual',
   })
   if (editionError) throw editionError
 

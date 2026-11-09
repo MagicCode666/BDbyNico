@@ -27,6 +27,15 @@ export function normalizeIsbn(input: string): string | null {
   return null
 }
 
+/** ISBN-10 équivalent d'un ISBN-13 commençant par 978 (null sinon). */
+export function isbn13To10(isbn13: string): string | null {
+  if (!isValidIsbn13(isbn13) || !isbn13.startsWith('978')) return null
+  const body = isbn13.slice(3, 12)
+  const sum = [...body].reduce((s, d, i) => s + Number(d) * (10 - i), 0)
+  const check = (11 - (sum % 11)) % 11
+  return `${body}${check === 10 ? 'X' : check}`
+}
+
 /** Affichage lisible : 978-2-07-061275-8 n'est pas calculable sans table de groupes, on espace simplement. */
 export function formatIsbn(isbn: string): string {
   return isbn.length === 13 ? `${isbn.slice(0, 3)} ${isbn.slice(3)}` : isbn
