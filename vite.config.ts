@@ -1,11 +1,12 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { defineConfig } from 'vitest/config'
 
 // Le site est publié sur https://magiccode666.github.io/BDbyNico/
 export default defineConfig({
   base: '/BDbyNico/',
+  test: { environment: 'jsdom' },
   plugins: [
     react(),
     tailwindcss(),
