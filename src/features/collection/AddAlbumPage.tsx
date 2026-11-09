@@ -9,6 +9,7 @@ import TextField from '../../components/TextField'
 import { normalizeIsbn } from '../../lib/isbn'
 import { addAlbum, AlreadyInCollectionError } from './api'
 import { findAlbumInfo, type LookupSource } from './lookup'
+import BarcodeScanner from './scan/BarcodeScanner'
 import { STATUS_LABELS, type Status } from './types'
 
 const optional = (value: string) => value.trim() || undefined
@@ -44,6 +45,7 @@ export default function AddAlbumPage() {
   const [coverBroken, setCoverBroken] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [scanning, setScanning] = useState(false)
   // Dernier ISBN recherché : permet d'ignorer les réponses arrivées en retard
   const lastLookup = useRef<string | null>(null)
 
@@ -85,6 +87,13 @@ export default function AddAlbumPage() {
     // Recherche automatique dès qu'un ISBN-13 complet et valide est saisi
     // (un ISBN-10 passe par le bouton ou la sortie du champ, pour ne pas confondre avec un début d'ISBN-13)
     if (normalized && cleaned.length === 13) void runLookup(normalized)
+  }
+
+  function onScanned(scannedIsbn: string) {
+    setScanning(false)
+    setIsbn(scannedIsbn)
+    setError(null)
+    void runLookup(scannedIsbn)
   }
 
   function onSearchClick() {
@@ -163,7 +172,16 @@ export default function AddAlbumPage() {
           >
             Rechercher
           </button>
+          <button
+            type="button"
+            onClick={() => setScanning((on) => !on)}
+            aria-pressed={scanning}
+            className="rounded border border-indigo-600 px-3 py-2 font-medium text-indigo-600"
+          >
+            Scanner
+          </button>
         </div>
+        {scanning && <BarcodeScanner onDetect={onScanned} onClose={() => setScanning(false)} />}
         {lookup.kind === 'searching' && <p className="text-sm text-slate-600">Recherche…</p>}
         {lookup.kind === 'found' && (
           <FormMessage kind="success">
