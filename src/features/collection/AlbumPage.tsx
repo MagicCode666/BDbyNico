@@ -8,7 +8,7 @@ import TextField from '../../components/TextField'
 import { formatIsbn } from '../../lib/isbn'
 import { Cover } from './AlbumCard'
 import { deleteEntry, getEntry, updateEntry } from './api'
-import { STATUS_LABELS, type Entry, type Status } from './types'
+import { DEDICATION_LABELS, STATUS_LABELS, type Dedication, type Entry, type Status } from './types'
 import { useAsync } from './useAsync'
 
 export default function AlbumPage() {
@@ -42,6 +42,9 @@ function AlbumDetails({ entry }: { entry: Entry }) {
   const [condition, setCondition] = useState(entry.condition ?? '')
   const [notes, setNotes] = useState(entry.notes ?? '')
   const [acquiredOn, setAcquiredOn] = useState(entry.acquiredOn ?? '')
+  const [dedication, setDedication] = useState<Dedication | ''>(entry.dedication ?? '')
+  const [dedicationBy, setDedicationBy] = useState(entry.dedicationBy ?? '')
+  const [firstEdition, setFirstEdition] = useState(entry.firstEdition)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -63,6 +66,9 @@ function AlbumDetails({ entry }: { entry: Entry }) {
         condition: condition.trim() || null,
         notes: notes.trim() || null,
         acquiredOn: acquiredOn || null,
+        dedication: dedication || null,
+        dedicationBy: dedicationBy.trim() || null,
+        firstEdition,
       })
       setSaved(true)
     } catch {
@@ -130,6 +136,44 @@ function AlbumDetails({ entry }: { entry: Entry }) {
             <input type="checkbox" checked={read} onChange={(e) => setRead(e.target.checked)} />
             Lu
           </label>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={firstEdition}
+              onChange={(e) => setFirstEdition(e.target.checked)}
+            />
+            Édition originale
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="dedication" className="text-sm font-medium">
+                Dédicace
+              </label>
+              <select
+                id="dedication"
+                value={dedication}
+                onChange={(e) => setDedication(e.target.value as Dedication | '')}
+                className="rounded border border-slate-300 px-3 py-2"
+              >
+                <option value="">Aucune</option>
+                {(Object.keys(DEDICATION_LABELS) as Dedication[]).map((value) => (
+                  <option key={value} value={value}>
+                    {DEDICATION_LABELS[value]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {dedication && (
+              <TextField
+                label="Dédicacé par"
+                name="dedicationBy"
+                placeholder="Auteur ou artiste"
+                maxLength={100}
+                value={dedicationBy}
+                onChange={(e) => setDedicationBy(e.target.value)}
+              />
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <TextField
               label="Prix (€)"

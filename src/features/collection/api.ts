@@ -1,8 +1,9 @@
 import { supabase } from '../../lib/supabase'
-import type { Edition, Entry, SeriesInfo, Status } from './types'
+import type { Dedication, Edition, Entry, SeriesInfo, Status } from './types'
 
 const SELECT = `
-  id, status, read, price, condition, notes, acquired_on,
+  id, status, read, price, condition, notes, acquired_on, created_at, dedication, dedication_by,
+  first_edition,
   editions (
     isbn, title, volume, authors, publisher, published_on, cover_url,
     series ( id, name, total_volumes )
@@ -34,7 +35,15 @@ interface RawItem {
   condition: string | null
   notes: string | null
   acquired_on: string | null
+  created_at: string | null
+  dedication: string | null
+  dedication_by: string | null
+  first_edition: boolean
   editions: RawEdition | null
+}
+
+function toDedication(value: string | null): Dedication | null {
+  return value === 'signature' || value === 'drawing' ? value : null
 }
 
 function toSeries(raw: RawSeries | null): SeriesInfo | null {
@@ -64,6 +73,10 @@ function toEntry(raw: RawItem): Entry | null {
     condition: raw.condition,
     notes: raw.notes,
     acquiredOn: raw.acquired_on,
+    addedAt: raw.created_at,
+    dedication: toDedication(raw.dedication),
+    dedicationBy: raw.dedication_by,
+    firstEdition: raw.first_edition,
     edition: toEdition(raw.editions),
   }
 }
@@ -148,6 +161,9 @@ export interface EntryChanges {
   condition: string | null
   notes: string | null
   acquiredOn: string | null
+  dedication: Dedication | null
+  dedicationBy: string | null
+  firstEdition: boolean
 }
 
 export async function updateEntry(id: string, changes: EntryChanges): Promise<void> {
@@ -160,9 +176,39 @@ export async function updateEntry(id: string, changes: EntryChanges): Promise<vo
       condition: changes.condition,
       notes: changes.notes,
       acquired_on: changes.acquiredOn,
+      dedication: changes.dedication,
+      // Le nom de l'auteur n'a de sens que s'il y a une dédicace
+      dedication_by: changes.dedication ? changes.dedicationBy : null,
+      first_edition: changes.firstEdition,
     })
     .eq('id', id)
   if (error) throw error
+}
+
+/** Nombre d'albums dans la collection de l'utilisateur (possédés et envies). */
+export async function countEntries(): Promise<number> {
+  const { count, error } = await supabase
+    .from('collection_items')
+    .select('id', { count: 'exact', head: true })
+  if (error) throw error
+  return count ?? 0
+}
+
+/**
+ * Retire tous les albums de la collection de l'utilisateur. Le compte et le catalogue partagé ne
+ * sont pas touchés ; ses réglages de séries (tomes ignorés, totaux personnels) ne sont effacés
+ * que sur demande.
+ */
+export async function clearCollection(userId: string, resetSeriesSettings: boolean): Promise<void> {
+  const { error } = await supabase.from('collection_items').delete().eq('user_id', userId)
+  if (error) throw error
+  if (resetSeriesSettings) {
+    const { error: settingsError } = await supabase
+      .from('user_series_settings')
+      .delete()
+      .eq('user_id', userId)
+    if (settingsError) throw settingsError
+  }
 }
 
 export async function deleteEntry(id: string): Promise<void> {

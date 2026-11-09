@@ -2,6 +2,7 @@ import Papa from 'papaparse'
 
 import { normalizeIsbn } from '../../lib/isbn'
 import { normalizeText } from '../collection/utils'
+import type { Dedication } from '../collection/types'
 import type { ImportIssue, ImportPlan, ImportRow } from './types'
 
 /** Le fichier n'est pas un export Bubble lisible. */
@@ -25,7 +26,14 @@ function parseText(text: string, delimiter: string) {
 const hasColumns = (fields: string[] | undefined) =>
   !!fields && REQUIRED_COLUMNS.every((column) => fields.includes(column))
 
-const cell = (record: Record_, column: string) => (record[column] ?? '').trim()
+/**
+ * Valeur d'une case, sans espaces autour. Nos exports préfixent d'une apostrophe les textes qui
+ * commencent par =, +, @ (protection contre les formules des tableurs) : on la retire ici.
+ */
+const cell = (record: Record_, column: string) => {
+  const value = (record[column] ?? '').trim()
+  return /^'[=+@\t\r]/.test(value) ? value.slice(1) : value
+}
 /** Les cases à cocher de Bubble contiennent « ✓ » quand elles sont cochées. */
 const flag = (record: Record_, column: string) => cell(record, column) !== ''
 
@@ -123,6 +131,15 @@ export function parseBubbleCsv(text: string): ImportPlan {
       isbn
     if (titleMissing) warnings.push({ line, message: 'Titre absent : à compléter' })
 
+    // Type précis dans nos exports ; Bubble ne donne qu'une case « Dédicacé » : « signature »
+    const dedicationType = cell(record, 'Type de dédicace').toLowerCase()
+    const dedication: Dedication | null =
+      dedicationType === 'dessin' || dedicationType === 'drawing'
+        ? 'drawing'
+        : dedicationType === 'signature' || flag(record, 'Dédicacé')
+          ? 'signature'
+          : null
+
     rows.push({
       isbn,
       title,
@@ -136,9 +153,12 @@ export function parseBubbleCsv(text: string): ImportPlan {
       read: flag(record, 'Lu'),
       price: parsePrice(cell(record, 'Prix')),
       addedAt: parseTimestamp(cell(record, "Date d'ajout")),
-      // Bubble ne distingue pas autographe et dessin : on part sur « signature »
-      dedication: flag(record, 'Dédicacé') ? 'signature' : null,
+      dedication,
       firstEdition: flag(record, 'Edition originale'),
+      dedicationBy: dedication ? cell(record, 'Dédicace par').slice(0, 100) || null : null,
+      acquiredOn: parseDate(cell(record, "Date d'achat")),
+      condition: (cell(record, 'État') || cell(record, 'Etat')).slice(0, 50) || null,
+      notes: cell(record, 'Notes').slice(0, 2000) || null,
     })
   })
 
@@ -157,18 +177,5 @@ export function parseBubbleCsv(text: string): ImportPlan {
       dedicated: rows.filter((r) => r.dedication).length,
       firstEditions: rows.filter((r) => r.firstEdition).length,
     },
-  }
-}
-
-/** Ligne envoyée à la fonction serveur `import_editions` (catalogue partagé). */
-export function toEditionPayload(row: ImportRow) {
-  return {
-    isbn: row.isbn,
-    title: row.title,
-    series: row.seriesName,
-    volume: row.volume,
-    authors: row.authors,
-    publisher: row.publisher,
-    published_on: row.publishedOn,
   }
 }
