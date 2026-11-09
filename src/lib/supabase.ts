@@ -10,4 +10,7 @@ if (!url || !anonKey) {
   )
 }
 
-export const supabase = createClient<Database>(url, anonKey)
+export const supabase = createClient<Database>(url, anonKey, {
+  // PKCE : les liens des emails renvoient un `?code=` (et non un fragment `#`, réservé à HashRouter)
+  auth: { flowType: 'pkce' },
+})
