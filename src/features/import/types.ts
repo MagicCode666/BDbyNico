@@ -1,4 +1,4 @@
-import type { Status } from '../collection/types'
+import type { Dedication, Status } from '../collection/types'
 
 /** Un album à importer, nettoyé et prêt à être envoyé. */
 export interface ImportRow {
@@ -19,8 +19,14 @@ export interface ImportRow {
   price: number | null
   /** Date d'ajout dans l'application d'origine (ISO), conservée comme date d'ajout. */
   addedAt: string | null
-  dedication: 'signature' | null
+  /** Bubble ne distingue pas autographe et dessin : « signature » par défaut. */
+  dedication: Dedication | null
   firstEdition: boolean
+  // Colonnes facultatives, présentes dans nos propres exports (réimport sans perte)
+  dedicationBy: string | null
+  acquiredOn: string | null
+  condition: string | null
+  notes: string | null
 }
 
 /** Un point d'attention rencontré dans le fichier (ligne du fichier, en comptant l'en-tête). */

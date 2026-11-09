@@ -32,6 +32,10 @@ const row = (isbn: string, overrides: Partial<ImportRow> = {}): ImportRow => ({
   addedAt: null,
   dedication: null,
   firstEdition: false,
+  dedicationBy: null,
+  acquiredOn: null,
+  condition: null,
+  notes: null,
   ...overrides,
 })
 
@@ -42,7 +46,11 @@ const item = (isbn: string, overrides: Partial<ExistingItem> = {}): ExistingItem
   read: false,
   price: null,
   dedication: null,
+  dedicationBy: null,
   firstEdition: false,
+  acquiredOn: null,
+  condition: null,
+  notes: null,
   ...overrides,
 })
 
@@ -105,6 +113,38 @@ describe('mergeIntoExisting', () => {
     expect(
       mergeIntoExisting(item('a'), row('a', { dedication: 'signature' })).update.dedication,
     ).toBe('signature')
+  })
+  it("remplit date d'achat, état et notes seulement s'ils étaient vides, jamais écrasés", () => {
+    const filled = mergeIntoExisting(
+      item('a', { acquiredOn: '2020-01-01', condition: 'Bon', notes: 'Ma note' }),
+      row('a', { acquiredOn: '2024-05-05', condition: 'Neuf', notes: 'Autre' }),
+    )
+    expect(filled.update).toMatchObject({
+      acquiredOn: '2020-01-01',
+      condition: 'Bon',
+      notes: 'Ma note',
+    })
+    const empty = mergeIntoExisting(
+      item('a'),
+      row('a', { acquiredOn: '2024-05-05', condition: 'Neuf', notes: 'Autre' }),
+    )
+    expect(empty.update).toMatchObject({
+      acquiredOn: '2024-05-05',
+      condition: 'Neuf',
+      notes: 'Autre',
+    })
+  })
+  it("garde l'auteur d'une dédicace existante et l'ajoute quand la dédicace vient du fichier", () => {
+    expect(
+      mergeIntoExisting(
+        item('a', { dedication: 'drawing', dedicationBy: 'Zep' }),
+        row('a', { dedication: 'signature', dedicationBy: 'Autre' }),
+      ).update,
+    ).toMatchObject({ dedication: 'drawing', dedicationBy: 'Zep' })
+    expect(
+      mergeIntoExisting(item('a'), row('a', { dedication: 'signature', dedicationBy: 'Hergé' }))
+        .update,
+    ).toMatchObject({ dedication: 'signature', dedicationBy: 'Hergé' })
   })
   it('signale quand rien ne change', () => {
     expect(mergeIntoExisting(item('a', { read: true }), row('a', { read: true })).changed).toBe(

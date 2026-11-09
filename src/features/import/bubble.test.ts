@@ -116,6 +116,50 @@ describe('parseBubbleCsv', () => {
       addedAt: '2023-04-06T16:41:47.742Z',
       dedication: null,
       firstEdition: true,
+      dedicationBy: null,
+      acquiredOn: null,
+      condition: null,
+      notes: null,
+    })
+  })
+
+  it('lit le type de dédicace de nos exports, et « signature » pour la simple case Bubble', () => {
+    const header = HEADER.concat(['Type de dédicace', 'Dédicace par']).map(q).join(';')
+    const make = (type: string, by: string, flag: string) =>
+      [
+        'S',
+        '',
+        '',
+        'BD',
+        'A',
+        '9782203001176',
+        'id',
+        '1',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '✓',
+        '',
+        flag,
+        '',
+        type,
+        by,
+      ]
+        .map(q)
+        .join(';')
+    expect(parseBubbleCsv([header, make('dessin', 'Zep', '✓')].join('\r\n')).rows[0]).toMatchObject(
+      { dedication: 'drawing', dedicationBy: 'Zep' },
+    )
+    expect(parseBubbleCsv([header, make('', '', '✓')].join('\r\n')).rows[0]).toMatchObject({
+      dedication: 'signature',
+      dedicationBy: null,
+    })
+    // Pas de dédicace : l'auteur éventuel est ignoré
+    expect(parseBubbleCsv([header, make('', 'Zep', '')].join('\r\n')).rows[0]).toMatchObject({
+      dedication: null,
+      dedicationBy: null,
     })
   })
 

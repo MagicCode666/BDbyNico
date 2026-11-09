@@ -39,7 +39,9 @@ export async function findExistingItems(isbns: string[]): Promise<Map<string, Ex
   for (const batch of chunk(isbns, 100)) {
     const { data, error } = await supabase
       .from('collection_items')
-      .select('id, isbn, status, read, price, dedication, first_edition')
+      .select(
+        'id, isbn, status, read, price, dedication, dedication_by, first_edition, acquired_on, condition, notes',
+      )
       .in('isbn', batch)
     if (error) throw error
     for (const row of data) {
@@ -51,7 +53,11 @@ export async function findExistingItems(isbns: string[]): Promise<Map<string, Ex
         price: row.price,
         dedication:
           row.dedication === 'signature' || row.dedication === 'drawing' ? row.dedication : null,
+        dedicationBy: row.dedication_by,
         firstEdition: row.first_edition,
+        acquiredOn: row.acquired_on,
+        condition: row.condition,
+        notes: row.notes,
       })
     }
   }
@@ -136,7 +142,11 @@ export async function addItems(
           read: row.read,
           price: row.price,
           dedication: row.dedication,
+          dedication_by: row.dedicationBy,
           first_edition: row.firstEdition,
+          acquired_on: row.acquiredOn,
+          condition: row.condition,
+          notes: row.notes,
           // Date d'ajout d'origine conservée (sinon : maintenant)
           ...(row.addedAt ? { created_at: row.addedAt } : {}),
         })),
@@ -167,7 +177,11 @@ export async function updateItems(
           read: update.read,
           price: update.price,
           dedication: update.dedication,
+          dedication_by: update.dedicationBy,
           first_edition: update.firstEdition,
+          acquired_on: update.acquiredOn,
+          condition: update.condition,
+          notes: update.notes,
         })
         .eq('id', id)
       if (error) throw error

@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AuthContext, type AuthContextValue } from '../../auth/AuthContext'
 import ImportPage from './ImportPage'
@@ -42,6 +42,8 @@ const chooseFile = (content: string, name = 'export.csv') => {
 const HEADER = '"Titre de la série";"Titre de l\'album";"EAN";"Tome"'
 
 describe('ImportPage', () => {
+  afterEach(cleanup)
+
   it('propose de choisir un fichier au départ', () => {
     renderPage()
     expect(screen.getByText('Importer une collection')).toBeTruthy()

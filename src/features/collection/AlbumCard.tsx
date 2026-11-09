@@ -39,16 +39,30 @@ export function Cover({ entry, className }: { entry: Entry; className?: string }
   )
 }
 
-/** Petite vignette cliquable d'un album : couverture et numéro de tome. */
+/** Petite vignette cliquable d'un album : couverture, repère de dédicace et numéro de tome. */
 export function AlbumThumb({ entry }: { entry: Entry }) {
   const { edition } = entry
+  const dedication = entry.dedication
+    ? `dédicacé${entry.dedication === 'drawing' ? ' (dessin)' : ' (signature)'}`
+    : null
   return (
     <Link
       to={`/collection/${edition.isbn}`}
-      title={`${edition.title}${entry.read ? ' (lu)' : ''}`}
+      title={`${edition.title}${entry.read ? ' (lu)' : ''}${dedication ? `, ${dedication}` : ''}`}
       className="flex w-16 shrink-0 flex-col gap-1 hover:opacity-80"
     >
-      <Cover entry={entry} className="aspect-[2/3] w-16 rounded" />
+      <div className="relative">
+        <Cover entry={entry} className="aspect-[2/3] w-16 rounded" />
+        {dedication && (
+          <span
+            role="img"
+            aria-label={dedication}
+            className={`absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[10px] text-white shadow ${entry.dedication === 'drawing' ? 'bg-amber-500' : 'bg-slate-700'}`}
+          >
+            ✎
+          </span>
+        )}
+      </div>
       <span className="text-center text-[10px] text-slate-500">
         {edition.volume !== null ? `T${edition.volume}` : '·'}
         {entry.read && ' · lu'}

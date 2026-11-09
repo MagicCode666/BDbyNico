@@ -9,18 +9,30 @@ export interface Filters {
   status: Status
   query: string
   read: ReadFilter
+  /** Ne garder que les albums dédicacés (signature ou dessin). */
+  dedicatedOnly?: boolean
 }
 
-export function filterEntries(entries: Entry[], { status, query, read }: Filters): Entry[] {
+export function filterEntries(
+  entries: Entry[],
+  { status, query, read, dedicatedOnly }: Filters,
+): Entry[] {
   const needle = normalizeText(query.trim())
   return entries.filter((entry) => {
     if (entry.status !== status) return false
     if (read === 'read' && !entry.read) return false
     if (read === 'unread' && entry.read) return false
+    if (dedicatedOnly && !entry.dedication) return false
     if (!needle) return true
     const { edition } = entry
     const haystack = normalizeText(
-      [edition.title, edition.series?.name ?? '', ...edition.authors, edition.isbn].join(' '),
+      [
+        edition.title,
+        edition.series?.name ?? '',
+        ...edition.authors,
+        edition.isbn,
+        entry.dedicationBy ?? '',
+      ].join(' '),
     )
     return haystack.includes(needle)
   })

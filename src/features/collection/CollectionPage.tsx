@@ -19,6 +19,7 @@ export default function CollectionPage() {
   const [status, setStatus] = useState<Status>('owned')
   const [query, setQuery] = useState('')
   const [read, setRead] = useState<ReadFilter>('all')
+  const [dedicatedOnly, setDedicatedOnly] = useState(false)
 
   const entries = useMemo(() => data ?? [], [data])
   // Couvertures manquantes (après un import, par exemple) : cherchées au fil de l'eau, puis
@@ -58,8 +59,8 @@ export default function CollectionPage() {
     return map
   }, [entries])
   const groups = useMemo(
-    () => groupBySeries(filterEntries(entriesWithCovers, { status, query, read })),
-    [entriesWithCovers, status, query, read],
+    () => groupBySeries(filterEntries(entriesWithCovers, { status, query, read, dedicatedOnly })),
+    [entriesWithCovers, status, query, read, dedicatedOnly],
   )
 
   return (
@@ -96,6 +97,14 @@ export default function CollectionPage() {
           <option value="read">Lus</option>
           <option value="unread">Non lus</option>
         </select>
+        <label className="flex items-center gap-1 text-sm">
+          <input
+            type="checkbox"
+            checked={dedicatedOnly}
+            onChange={(e) => setDedicatedOnly(e.target.checked)}
+          />
+          Dédicacés
+        </label>
         <Link
           to="/collection/ajouter"
           className="rounded bg-indigo-600 px-3 py-1 text-sm font-medium text-white hover:bg-indigo-700"
