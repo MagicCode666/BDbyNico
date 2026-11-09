@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.8.0...bdbynico-v0.9.0) (2026-11-09)
+
+
+### Nouveautés
+
+* lecture des exports Bubble et fonction d'import en masse ([#27](https://github.com/MagicCode666/BDbyNico/issues/27)) ([94640e0](https://github.com/MagicCode666/BDbyNico/commit/94640e0542d4fdc1d6f396420046d33f30f06a07))
+
 ## [0.8.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.7.0...bdbynico-v0.8.0) (2026-11-09)
 
 
