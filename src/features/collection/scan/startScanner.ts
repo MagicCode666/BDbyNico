@@ -1,3 +1,5 @@
+import type { DecodeHintType as ZxingHintType } from '@zxing/library'
+
 export type ScannerErrorKind = 'unavailable' | 'denied' | 'nocamera' | 'unknown'
 
 export class ScannerError extends Error {
@@ -6,10 +8,20 @@ export class ScannerError extends Error {
   }
 }
 
+// Résolution plus haute et mise au point continue : un code-barres net se lit bien plus vite.
+// Ce sont des préférences (« ideal »/« advanced ») : un appareil qui ne les gère pas les ignore.
 const CONSTRAINTS: MediaStreamConstraints = {
-  video: { facingMode: { ideal: 'environment' } },
+  video: {
+    facingMode: { ideal: 'environment' },
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    advanced: [{ focusMode: 'continuous' } as unknown as MediaTrackConstraintSet],
+  },
   audio: false,
 }
+
+/** Délai entre deux analyses de l'image (ZXing attend 500 ms par défaut, trop lent). */
+const SCAN_INTERVAL_MS = 100
 
 interface BarcodeDetectorLike {
   detect(source: CanvasImageSource): Promise<{ rawValue: string }[]>
@@ -47,7 +59,7 @@ async function startNative(
     } finally {
       busy = false
     }
-  }, 250)
+  }, SCAN_INTERVAL_MS)
 
   return () => {
     clearInterval(timer)
@@ -65,8 +77,14 @@ async function startZxing(
     import('@zxing/browser'),
     import('@zxing/library'),
   ])
-  const hints = new Map([[DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.EAN_13]]])
-  const reader = new BrowserMultiFormatReader(hints)
+  const hints = new Map<ZxingHintType, unknown>([
+    [DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.EAN_13]],
+    [DecodeHintType.TRY_HARDER, true],
+  ])
+  const reader = new BrowserMultiFormatReader(hints, {
+    delayBetweenScanAttempts: SCAN_INTERVAL_MS,
+    delayBetweenScanSuccess: SCAN_INTERVAL_MS,
+  })
   const controls = await reader.decodeFromConstraints(CONSTRAINTS, video, (result) => {
     if (result) onCode(result.getText())
   })
