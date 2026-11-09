@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 
+import VersionBadge from './VersionBadge'
+
 const navClass = ({ isActive }: { isActive: boolean }) =>
   `rounded px-3 py-1 text-sm font-medium ${isActive ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`
 
@@ -28,6 +30,7 @@ export default function PageLayout({ title, children }: PageLayoutProps) {
       </header>
       <h1 className="mb-4 text-2xl font-semibold">{title}</h1>
       {children}
+      <VersionBadge className="mt-10 text-center" />
     </div>
   )
 }
