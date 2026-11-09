@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.4.0...bdbynico-v0.5.0) (2026-11-09)
+
+
+### Nouveautés
+
+* scan du code-barres avec la caméra ([#17](https://github.com/MagicCode666/BDbyNico/issues/17)) ([08c8bd7](https://github.com/MagicCode666/BDbyNico/commit/08c8bd759c65061f1f7ed7d0660878f2bc615419))
+
 ## [0.4.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.3.0...bdbynico-v0.4.0) (2026-11-09)
 
 
