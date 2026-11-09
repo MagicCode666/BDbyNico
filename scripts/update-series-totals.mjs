@@ -4,7 +4,7 @@
 // Usage :
 //   node scripts/update-series-totals.mjs                 mise à jour réelle (clé service_role requise)
 //   node scripts/update-series-totals.mjs --dry-run       lit la base, n'écrit rien
-//   node scripts/update-series-totals.mjs --limit 20      nombre de séries traitées (40 par défaut)
+//   node scripts/update-series-totals.mjs --limit 20      nombre de séries traitées (100 par défaut)
 //   node scripts/update-series-totals.mjs --name "Lucky Luke"   interroge seulement la BnF et affiche
 //                                                         le résultat (aucune clé, aucune écriture)
 import { createClient } from '@supabase/supabase-js'
@@ -17,7 +17,7 @@ const option = (flag) => {
   return index === -1 ? undefined : args[index + 1]
 }
 const dryRun = args.includes('--dry-run')
-const limit = Number(option('--limit') ?? 40)
+const limit = Number(option('--limit') ?? 100)
 const singleName = option('--name')
 
 async function inspectOne(name) {
