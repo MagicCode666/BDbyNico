@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.1.0...bdbynico-v0.2.0) (2026-11-09)
+
+
+### Nouveautés
+
+* client Supabase et types TypeScript ([#10](https://github.com/MagicCode666/BDbyNico/issues/10)) ([4947a5e](https://github.com/MagicCode666/BDbyNico/commit/4947a5e37adab57be3b6990b66f7276d67296d52))
+* schéma initial Supabase (catalogue, collection, RLS) ([#8](https://github.com/MagicCode666/BDbyNico/issues/8)) ([49eec85](https://github.com/MagicCode666/BDbyNico/commit/49eec859c27db9af5ff02a32b8b76f08b4dc2218))
+
 ## 0.1.0 (2026-11-08)
 
 
