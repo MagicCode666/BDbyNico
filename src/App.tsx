@@ -3,6 +3,9 @@ import { Route, Routes, useNavigate } from 'react-router-dom'
 
 import RequireAuth from './auth/RequireAuth'
 import { useAuth } from './auth/useAuth'
+import AddAlbumPage from './features/collection/AddAlbumPage'
+import AlbumPage from './features/collection/AlbumPage'
+import CollectionPage from './features/collection/CollectionPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -28,6 +31,9 @@ export default function App() {
       <Route path="/nouveau-mot-de-passe" element={<ResetPasswordPage />} />
       <Route element={<RequireAuth />}>
         <Route path="/profil" element={<ProfilePage />} />
+        <Route path="/collection" element={<CollectionPage />} />
+        <Route path="/collection/ajouter" element={<AddAlbumPage />} />
+        <Route path="/collection/:isbn" element={<AlbumPage />} />
       </Route>
     </Routes>
   )
