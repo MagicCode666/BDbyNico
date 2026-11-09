@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.5.1...bdbynico-v0.6.0) (2026-11-09)
+
+
+### Nouveautés
+
+* affichage de la version et du commit déployé ([#21](https://github.com/MagicCode666/BDbyNico/issues/21)) ([a0e148b](https://github.com/MagicCode666/BDbyNico/commit/a0e148b18def27e7449e6f1c417bdd1af361c48c))
+
 ## [0.5.1](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.5.0...bdbynico-v0.5.1) (2026-11-09)
 
 
