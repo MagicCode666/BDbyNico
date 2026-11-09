@@ -159,16 +159,3 @@ export function parseBubbleCsv(text: string): ImportPlan {
     },
   }
 }
-
-/** Ligne envoyée à la fonction serveur `import_editions` (catalogue partagé). */
-export function toEditionPayload(row: ImportRow) {
-  return {
-    isbn: row.isbn,
-    title: row.title,
-    series: row.seriesName,
-    volume: row.volume,
-    authors: row.authors,
-    publisher: row.publisher,
-    published_on: row.publishedOn,
-  }
-}

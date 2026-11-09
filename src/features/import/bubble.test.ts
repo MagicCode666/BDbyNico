@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { ImportFormatError, parseBubbleCsv, parseVolume, toEditionPayload } from './bubble'
+import { ImportFormatError, parseBubbleCsv, parseVolume } from './bubble'
+import { toEditionPayload } from './payload'
 
 const HEADER = [
   'Titre de la série',

@@ -6,6 +6,7 @@ import { useAuth } from './auth/useAuth'
 import AddAlbumPage from './features/collection/AddAlbumPage'
 import AlbumPage from './features/collection/AlbumPage'
 import CollectionPage from './features/collection/CollectionPage'
+import ImportPage from './features/import/ImportPage'
 import SeriesPage from './features/series/SeriesPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import HomePage from './pages/HomePage'
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/profil" element={<ProfilePage />} />
         <Route path="/collection" element={<CollectionPage />} />
         <Route path="/collection/ajouter" element={<AddAlbumPage />} />
+        <Route path="/collection/importer" element={<ImportPage />} />
         <Route path="/collection/:isbn" element={<AlbumPage />} />
         <Route path="/series/:seriesId" element={<SeriesPage />} />
       </Route>
