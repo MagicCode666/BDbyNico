@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '../auth/useAuth'
+import VersionBadge from '../components/VersionBadge'
 
 const linkClass = 'rounded border border-indigo-600 px-4 py-2 font-medium text-indigo-600'
 
@@ -31,6 +32,7 @@ export default function HomePage() {
             </Link>
           </div>
         ))}
+      <VersionBadge className="mt-8" />
     </main>
   )
 }
