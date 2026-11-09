@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../../auth/useAuth'
@@ -8,9 +8,24 @@ import SubmitButton from '../../components/SubmitButton'
 import TextField from '../../components/TextField'
 import { normalizeIsbn } from '../../lib/isbn'
 import { addAlbum, AlreadyInCollectionError } from './api'
+import { findAlbumInfo, type LookupSource } from './lookup'
 import { STATUS_LABELS, type Status } from './types'
 
 const optional = (value: string) => value.trim() || undefined
+
+type Lookup =
+  | { kind: 'idle' }
+  | { kind: 'searching' }
+  | { kind: 'found'; source: LookupSource }
+  | { kind: 'notfound' }
+  | { kind: 'failed' }
+
+const SOURCE_LABELS: Record<LookupSource, string> = {
+  catalogue: 'le catalogue partagé',
+  bnf: 'la BnF',
+  openlibrary: 'Open Library',
+  'bnf+openlibrary': 'la BnF et Open Library',
+}
 
 export default function AddAlbumPage() {
   const { user } = useAuth()
@@ -24,8 +39,60 @@ export default function AddAlbumPage() {
   const [publishedOn, setPublishedOn] = useState('')
   const [coverUrl, setCoverUrl] = useState('')
   const [status, setStatus] = useState<Status>('owned')
+  const [source, setSource] = useState<LookupSource | null>(null)
+  const [lookup, setLookup] = useState<Lookup>({ kind: 'idle' })
+  const [coverBroken, setCoverBroken] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Dernier ISBN recherché : permet d'ignorer les réponses arrivées en retard
+  const lastLookup = useRef<string | null>(null)
+
+  async function runLookup(normalizedIsbn: string) {
+    if (lastLookup.current === normalizedIsbn) return
+    lastLookup.current = normalizedIsbn
+    setLookup({ kind: 'searching' })
+    try {
+      const result = await findAlbumInfo(normalizedIsbn)
+      if (lastLookup.current !== normalizedIsbn) return
+      if (!result) {
+        setSource(null)
+        setLookup({ kind: 'notfound' })
+        return
+      }
+      const { info } = result
+      setTitle(info.title ?? '')
+      setSeriesName(info.seriesName ?? '')
+      setVolume(info.volume?.toString() ?? '')
+      setAuthors(info.authors.join(', '))
+      setPublisher(info.publisher ?? '')
+      setPublishedOn(info.publishedOn ?? '')
+      setCoverUrl(info.coverUrl ?? '')
+      setCoverBroken(false)
+      setSource(result.source)
+      setLookup({ kind: 'found', source: result.source })
+    } catch {
+      if (lastLookup.current !== normalizedIsbn) return
+      lastLookup.current = null // permet de réessayer
+      setLookup({ kind: 'failed' })
+    }
+  }
+
+  function onIsbnChange(value: string) {
+    setIsbn(value)
+    setError(null)
+    const cleaned = value.replace(/[\s-]/g, '')
+    const normalized = normalizeIsbn(value)
+    // Recherche automatique dès qu'un ISBN-13 complet et valide est saisi
+    // (un ISBN-10 passe par le bouton ou la sortie du champ, pour ne pas confondre avec un début d'ISBN-13)
+    if (normalized && cleaned.length === 13) void runLookup(normalized)
+  }
+
+  function onSearchClick() {
+    const normalized = normalizeIsbn(isbn)
+    if (!normalized) return setError('ISBN invalide (10 ou 13 chiffres, clé de contrôle comprise).')
+    setError(null)
+    void runLookup(normalized)
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -59,6 +126,7 @@ export default function AddAlbumPage() {
         publishedOn: optional(publishedOn),
         coverUrl: optional(coverUrl),
         status,
+        source: source ?? 'manual',
       })
       navigate(`/collection/${normalizedIsbn}`, { replace: true })
     } catch (e) {
@@ -67,17 +135,63 @@ export default function AddAlbumPage() {
     }
   }
 
+  const showCover = /^https?:\/\//.test(coverUrl.trim()) && !coverBroken
+
   return (
     <PageLayout title="Ajouter un album">
       <form onSubmit={onSubmit} noValidate className="flex max-w-lg flex-col gap-4">
-        <TextField
-          label="ISBN *"
-          name="isbn"
-          inputMode="numeric"
-          placeholder="978-2-…"
-          value={isbn}
-          onChange={(e) => setIsbn(e.target.value)}
-        />
+        <div className="flex items-end gap-2">
+          <div className="flex-1">
+            <TextField
+              label="ISBN *"
+              name="isbn"
+              inputMode="numeric"
+              placeholder="978-2-…"
+              value={isbn}
+              onChange={(e) => onIsbnChange(e.target.value)}
+              onBlur={() => {
+                const normalized = normalizeIsbn(isbn)
+                if (normalized) void runLookup(normalized)
+              }}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={onSearchClick}
+            disabled={lookup.kind === 'searching'}
+            className="rounded border border-indigo-600 px-3 py-2 font-medium text-indigo-600 disabled:opacity-50"
+          >
+            Rechercher
+          </button>
+        </div>
+        {lookup.kind === 'searching' && <p className="text-sm text-slate-600">Recherche…</p>}
+        {lookup.kind === 'found' && (
+          <FormMessage kind="success">
+            {`Informations trouvées dans ${SOURCE_LABELS[lookup.source]}. Vérifiez-les et corrigez-les si besoin.`}
+          </FormMessage>
+        )}
+        {lookup.kind === 'notfound' && (
+          <FormMessage kind="error">
+            Aucune information trouvée pour cet ISBN. Saisissez-les à la main.
+          </FormMessage>
+        )}
+        {lookup.kind === 'failed' && (
+          <FormMessage kind="error">
+            Recherche impossible pour le moment (réseau ?). Réessayez ou saisissez les informations
+            à la main.
+          </FormMessage>
+        )}
+
+        {showCover && (
+          <img
+            src={coverUrl.trim()}
+            alt="Aperçu de la couverture"
+            referrerPolicy="no-referrer"
+            onError={() => setCoverBroken(true)}
+            className="h-48 w-32 rounded bg-slate-100 object-cover"
+          />
+        )}
+
         <TextField
           label="Titre *"
           name="title"
@@ -127,7 +241,10 @@ export default function AddAlbumPage() {
           type="url"
           placeholder="https://…"
           value={coverUrl}
-          onChange={(e) => setCoverUrl(e.target.value)}
+          onChange={(e) => {
+            setCoverUrl(e.target.value)
+            setCoverBroken(false)
+          }}
         />
         <div className="flex flex-col gap-1">
           <label htmlFor="status" className="text-sm font-medium">
