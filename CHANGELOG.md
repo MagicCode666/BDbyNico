@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.9.0...bdbynico-v0.10.0) (2026-11-09)
+
+
+### Nouveautés
+
+* import de collection Bubble, dédicaces, export CSV et vidage ([#29](https://github.com/MagicCode666/BDbyNico/issues/29)) ([68f2675](https://github.com/MagicCode666/BDbyNico/commit/68f267580cfa19e0d82d194b694e94bc529cef07))
+
 ## [0.9.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.8.0...bdbynico-v0.9.0) (2026-11-09)
 
 
