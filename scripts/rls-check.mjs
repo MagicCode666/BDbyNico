@@ -110,8 +110,13 @@ r = await A.client
   .select()
 check('A ajoute un album à sa collection', !r.error && r.data?.length === 1, show(r))
 const itemId = r.data?.[0]?.id
-r = await B.client.from('collection_items').select('id')
-check('B ne voit pas la collection de A', !r.error && r.data?.length === 0, show(r))
+// B peut avoir sa propre collection : on vérifie qu'aucune ligne de A ne lui est visible
+r = await B.client.from('collection_items').select('id, user_id')
+check(
+  'B ne voit aucune ligne de la collection de A',
+  !r.error && r.data.every((row) => row.user_id === B.id && row.id !== itemId),
+  show(r),
+)
 r = await B.client.from('collection_items').insert({ user_id: A.id, isbn, status: 'wanted' })
 check('B ne peut pas insérer une ligne au nom de A', !!r.error, show(r))
 r = await B.client.from('collection_items').update({ status: 'wanted' }).eq('id', itemId).select()
@@ -124,6 +129,63 @@ r = await A.client.from('collection_items').insert({ user_id: A.id, isbn, status
 check('Doublon (même ISBN) refusé', !!r.error, show(r))
 r = await anon.from('collection_items').select('id')
 check('Un anonyme ne peut pas lire les collections', !!r.error || r.data?.length === 0, show(r))
+
+console.log('\n--- Séries et réglages personnels ---')
+r = await A.client
+  .from('series')
+  .select('id, total_volumes, total_source')
+  .eq('name_key', 'serie de test rls')
+const seriesId = r.data?.[0]?.id
+check(
+  'A voit la série du catalogue (avec total_source)',
+  !!seriesId && !!r.data[0].total_source,
+  show(r),
+)
+r = await A.client.from('series').update({ total_volumes: 999 }).eq('id', seriesId).select()
+check('A ne peut pas modifier le total partagé', !!r.error || r.data?.length === 0, show(r))
+r = await A.client.from('series').insert({ name: 'Série pirate' })
+check('A ne peut pas créer de série directement', !!r.error, show(r))
+r = await anon.from('series').select('id')
+check('Un anonyme ne peut pas lire les séries', !!r.error || r.data?.length === 0, show(r))
+
+r = await A.client
+  .from('user_series_settings')
+  .insert({ user_id: A.id, series_id: seriesId, ignored_volumes: [3, 5], total_override: 12 })
+  .select()
+check('A enregistre ses réglages de série', !r.error && r.data?.length === 1, show(r))
+r = await A.client
+  .from('user_series_settings')
+  .insert({ user_id: A.id, series_id: seriesId, total_override: 0 })
+check('Total personnel 0 refusé', !!r.error, show(r))
+r = await A.client
+  .from('user_series_settings')
+  .update({ total_override: 1000 })
+  .eq('series_id', seriesId)
+check('Total personnel 1000 refusé', !!r.error, show(r))
+r = await B.client.from('user_series_settings').select('series_id')
+check('B ne voit pas les réglages de A', !r.error && r.data?.length === 0, show(r))
+r = await B.client
+  .from('user_series_settings')
+  .insert({ user_id: A.id, series_id: seriesId, ignored_volumes: [1] })
+check('B ne peut pas écrire des réglages au nom de A', !!r.error, show(r))
+r = await B.client
+  .from('user_series_settings')
+  .update({ ignored_volumes: [1, 2, 3] })
+  .eq('user_id', A.id)
+  .select()
+check('B ne peut pas modifier les réglages de A', !r.error && r.data?.length === 0, show(r))
+r = await B.client.from('user_series_settings').delete().eq('user_id', A.id).select()
+check('B ne peut pas supprimer les réglages de A', !r.error && r.data?.length === 0, show(r))
+r = await A.client.from('user_series_settings').select('ignored_volumes, total_override')
+check(
+  'Les réglages de A sont intacts',
+  r.data?.length === 1 &&
+    show(r.data[0].ignored_volumes) === '[3,5]' &&
+    r.data[0].total_override === 12,
+  show(r),
+)
+r = await anon.from('user_series_settings').select('series_id')
+check('Un anonyme ne peut pas lire les réglages', !!r.error || r.data?.length === 0, show(r))
 
 console.log('\n--- Partage ---')
 r = await anon.rpc('get_shared_collection', { p_token: tokenA })
@@ -170,6 +232,8 @@ console.log('\n--- Nettoyage ---')
 await A.client.from('profiles').update({ share_enabled: false }).eq('id', A.id)
 r = await A.client.from('collection_items').delete().eq('id', itemId).select()
 check('A supprime son album de test', !r.error && r.data?.length === 1, show(r))
+r = await A.client.from('user_series_settings').delete().eq('series_id', seriesId).select()
+check('A supprime ses réglages de test', !r.error && r.data?.length === 1, show(r))
 
 console.log(`\n${passed} réussis, ${failed} échoués`)
 console.log(

@@ -138,6 +138,8 @@ export type Database = {
           id: string
           name: string
           name_key: string
+          total_checked_at: string | null
+          total_source: string
           total_volumes: number | null
         }
         Insert: {
@@ -145,6 +147,8 @@ export type Database = {
           id?: string
           name: string
           name_key: string
+          total_checked_at?: string | null
+          total_source?: string
           total_volumes?: number | null
         }
         Update: {
@@ -152,9 +156,43 @@ export type Database = {
           id?: string
           name?: string
           name_key?: string
+          total_checked_at?: string | null
+          total_source?: string
           total_volumes?: number | null
         }
         Relationships: []
+      }
+      user_series_settings: {
+        Row: {
+          ignored_volumes: number[]
+          series_id: string
+          total_override: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ignored_volumes?: number[]
+          series_id: string
+          total_override?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ignored_volumes?: number[]
+          series_id?: string
+          total_override?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'user_series_settings_series_id_fkey'
+            columns: ['series_id']
+            isOneToOne: false
+            referencedRelation: 'series'
+            referencedColumns: ['id']
+          },
+        ]
       }
     }
     Views: {
