@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.6.0...bdbynico-v0.7.0) (2026-11-09)
+
+
+### Nouveautés
+
+* totaux de séries par la BnF et réglages personnels ([#23](https://github.com/MagicCode666/BDbyNico/issues/23)) ([f4d40ee](https://github.com/MagicCode666/BDbyNico/commit/f4d40ee832ab54c97277aa1936c3dab86f4c3641))
+
 ## [0.6.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.5.1...bdbynico-v0.6.0) (2026-11-09)
 
 
