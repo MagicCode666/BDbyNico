@@ -27,6 +27,12 @@ export function normalizeIsbn(input: string): string | null {
   return null
 }
 
+/** ISBN-13 lu sur un code-barres EAN-13 de livre (préfixe 978/979), ou null pour tout autre code. */
+export function isbnFromBarcode(text: string): string | null {
+  const digits = text.trim()
+  return /^97[89]\d{10}$/.test(digits) && isValidIsbn13(digits) ? digits : null
+}
+
 /** ISBN-10 équivalent d'un ISBN-13 commençant par 978 (null sinon). */
 export function isbn13To10(isbn13: string): string | null {
   if (!isValidIsbn13(isbn13) || !isbn13.startsWith('978')) return null
