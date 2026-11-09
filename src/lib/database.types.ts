@@ -246,7 +246,12 @@ export type Database = {
         }[]
       }
       is_valid_isbn13: { Args: { p_isbn: string }; Returns: boolean }
+      isbn13_to_isbn10: { Args: { p_isbn: string }; Returns: string }
       regenerate_share_token: { Args: never; Returns: string }
+      set_edition_cover: {
+        Args: { p_cover_url: string; p_isbn: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

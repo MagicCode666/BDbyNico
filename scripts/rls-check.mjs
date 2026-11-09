@@ -103,6 +103,47 @@ check('Un anonyme ne peut pas lire le catalogue', !!r.error || r.data?.length ==
 r = await anon.rpc('add_edition', { p_isbn: isbn, p_title: 'x' })
 check('Un anonyme ne peut pas appeler add_edition', !!r.error, show(r))
 
+// Couvertures : adresse imposée (Open Library ou Amazon construites à partir de l'ISBN), jamais écrasée
+const coverOl = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`
+r = await anon.rpc('set_edition_cover', { p_isbn: isbn, p_cover_url: coverOl })
+check('Un anonyme ne peut pas appeler set_edition_cover', !!r.error, show(r))
+r = await A.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: 'https://exemple.invalid/couverture.jpg',
+})
+check('Adresse de couverture non autorisée refusée', !!r.error, show(r))
+r = await A.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: `https://covers.openlibrary.org/b/isbn/9780000000002-L.jpg`,
+})
+check("Adresse d'un autre ISBN refusée", !!r.error, show(r))
+r = await A.client.rpc('set_edition_cover', { p_isbn: isbn, p_cover_url: coverOl })
+check('A renseigne la couverture (adresse autorisée)', !r.error, show(r))
+r = await B.client.from('editions').select('cover_url').eq('isbn', isbn)
+check('La couverture est visible de B', r.data?.[0]?.cover_url === coverOl, show(r))
+// Une couverture déjà renseignée n'est jamais écrasée, même par une autre adresse autorisée
+const isbn10 = (() => {
+  const body = isbn.slice(3, 12)
+  const sum = [...body].reduce((s, d, i) => s + Number(d) * (10 - i), 0)
+  const check = (11 - (sum % 11)) % 11
+  return body + (check === 10 ? 'X' : check)
+})()
+const coverAmazon = `https://images-na.ssl-images-amazon.com/images/P/${isbn10}.01.LZZZZZZZ.jpg`
+r = await B.client.rpc('set_edition_cover', { p_isbn: isbn, p_cover_url: coverAmazon })
+check('Une autre adresse autorisée est acceptée sans erreur', !r.error, show(r))
+r = await B.client.from('editions').select('cover_url').eq('isbn', isbn)
+check(
+  "La couverture déjà renseignée n'est pas écrasée",
+  r.data?.[0]?.cover_url === coverOl,
+  show(r),
+)
+r = await A.client
+  .from('editions')
+  .update({ cover_url: 'https://x/y.jpg' })
+  .eq('isbn', isbn)
+  .select()
+check('A ne peut pas modifier une édition directement', !!r.error || r.data?.length === 0, show(r))
+
 console.log('\n--- Collection ---')
 r = await A.client
   .from('collection_items')
