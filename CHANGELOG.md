@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.2.0...bdbynico-v0.3.0) (2026-11-09)
+
+
+### Nouveautés
+
+* authentification (inscription, connexion, profil) ([#11](https://github.com/MagicCode666/BDbyNico/issues/11)) ([dc8e951](https://github.com/MagicCode666/BDbyNico/commit/dc8e951775a9b9151ea6d59314dda9e3223ab528))
+
 ## [0.2.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.1.0...bdbynico-v0.2.0) (2026-11-09)
 
 
