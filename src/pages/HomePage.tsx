@@ -13,9 +13,14 @@ export default function HomePage() {
       <p className="text-slate-600">Gérez votre collection de bandes dessinées.</p>
       {!loading &&
         (user ? (
-          <Link to="/profil" className={linkClass}>
-            Mon profil
-          </Link>
+          <div className="flex gap-3">
+            <Link to="/collection" className={linkClass}>
+              Ma collection
+            </Link>
+            <Link to="/profil" className={linkClass}>
+              Mon profil
+            </Link>
+          </div>
         ) : (
           <div className="flex gap-3">
             <Link to="/connexion" className={linkClass}>
