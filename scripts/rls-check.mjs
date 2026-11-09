@@ -144,6 +144,65 @@ r = await A.client
   .select()
 check('A ne peut pas modifier une édition directement', !!r.error || r.data?.length === 0, show(r))
 
+console.log('\n--- Import en masse ---')
+const mkIsbn = (base12) => {
+  const sum = [...base12].reduce((s, d, i) => s + Number(d) * (i % 2 === 0 ? 1 : 3), 0)
+  return base12 + ((10 - (sum % 10)) % 10)
+}
+const importIsbn = mkIsbn('978999999998')
+r = await anon.rpc('import_editions', { p_rows: [] })
+check('Un anonyme ne peut pas appeler import_editions', !!r.error, show(r))
+r = await A.client.rpc('import_editions', { p_rows: 'pas un tableau' })
+check('Données qui ne sont pas un tableau refusées', !!r.error, show(r))
+r = await A.client.rpc('import_editions', {
+  p_rows: Array.from({ length: 501 }, () => ({ isbn: importIsbn, title: 'x' })),
+})
+check('Plus de 500 lignes dans un envoi refusé', !!r.error, show(r))
+r = await A.client.rpc('import_editions', {
+  p_rows: [
+    {
+      isbn: importIsbn,
+      title: 'Import test',
+      series: 'Série de test RLS',
+      volume: 2,
+      authors: ['Test'],
+      publisher: 'Éditeur',
+      published_on: '2020-01-01',
+    },
+    { isbn: '9781234567890', title: 'ISBN invalide' },
+    { isbn: importIsbn, title: 'Doublon dans le lot' },
+    { isbn, title: 'Déjà présent' },
+    { isbn: mkIsbn('978999999997'), title: '' },
+  ],
+})
+// Premier passage : 1 créée + 2 déjà présentes ; passages suivants : 3 déjà présentes
+check(
+  'import_editions compte créées, existantes et invalides',
+  !r.error && r.data?.invalid === 2 && r.data.created + r.data.existing === 3,
+  show(r),
+)
+r = await B.client
+  .from('editions')
+  .select('title, volume, source, publisher')
+  .eq('isbn', importIsbn)
+check(
+  "L'édition importée est lisible de B avec ses champs",
+  r.data?.[0]?.title === 'Import test' &&
+    r.data[0].volume === 2 &&
+    r.data[0].source === 'import' &&
+    r.data[0].publisher === 'Éditeur',
+  show(r),
+)
+r = await A.client.rpc('import_editions', {
+  p_rows: [{ isbn: importIsbn, title: 'Autre titre', volume: 9 }],
+})
+r = await B.client.from('editions').select('title, volume').eq('isbn', importIsbn)
+check(
+  "Une édition existante n'est jamais modifiée par un import",
+  r.data?.[0]?.title === 'Import test' && r.data[0].volume === 2,
+  show(r),
+)
+
 console.log('\n--- Collection ---')
 r = await A.client
   .from('collection_items')
@@ -166,6 +225,32 @@ r = await B.client.from('collection_items').delete().eq('id', itemId).select()
 check("B ne peut pas supprimer l'album de A", !r.error && r.data?.length === 0, show(r))
 r = await A.client.from('collection_items').select('status').eq('id', itemId)
 check("L'album de A est intact", r.data?.[0]?.status === 'owned', show(r))
+r = await A.client
+  .from('collection_items')
+  .update({ dedication: 'drawing', dedication_by: 'Hergé', first_edition: true })
+  .eq('id', itemId)
+  .select()
+check(
+  'A renseigne dédicace (dessin) et édition originale',
+  !r.error &&
+    r.data?.[0]?.dedication === 'drawing' &&
+    r.data[0].dedication_by === 'Hergé' &&
+    r.data[0].first_edition === true,
+  show(r),
+)
+r = await A.client.from('collection_items').update({ dedication: 'autre' }).eq('id', itemId)
+check('Type de dédicace inconnu refusé', !!r.error, show(r))
+r = await A.client
+  .from('collection_items')
+  .update({ dedication_by: 'x'.repeat(101) })
+  .eq('id', itemId)
+check('Nom de dédicace trop long refusé', !!r.error, show(r))
+r = await B.client
+  .from('collection_items')
+  .update({ dedication: 'signature' })
+  .eq('id', itemId)
+  .select()
+check('B ne peut pas modifier la dédicace de A', !r.error && r.data?.length === 0, show(r))
 r = await A.client.from('collection_items').insert({ user_id: A.id, isbn, status: 'wanted' })
 check('Doublon (même ISBN) refusé', !!r.error, show(r))
 r = await anon.from('collection_items').select('id')

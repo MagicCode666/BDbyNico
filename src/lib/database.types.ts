@@ -13,6 +13,9 @@ export type Database = {
           acquired_on: string | null
           condition: string | null
           created_at: string
+          dedication: string | null
+          dedication_by: string | null
+          first_edition: boolean
           id: string
           isbn: string
           notes: string | null
@@ -26,6 +29,9 @@ export type Database = {
           acquired_on?: string | null
           condition?: string | null
           created_at?: string
+          dedication?: string | null
+          dedication_by?: string | null
+          first_edition?: boolean
           id?: string
           isbn: string
           notes?: string | null
@@ -39,6 +45,9 @@ export type Database = {
           acquired_on?: string | null
           condition?: string | null
           created_at?: string
+          dedication?: string | null
+          dedication_by?: string | null
+          first_edition?: boolean
           id?: string
           isbn?: string
           notes?: string | null
@@ -245,6 +254,7 @@ export type Database = {
           volume: number
         }[]
       }
+      import_editions: { Args: { p_rows: Json }; Returns: Json }
       is_valid_isbn13: { Args: { p_isbn: string }; Returns: boolean }
       isbn13_to_isbn10: { Args: { p_isbn: string }; Returns: string }
       regenerate_share_token: { Args: never; Returns: string }
