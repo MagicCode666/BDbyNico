@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.7.0...bdbynico-v0.8.0) (2026-11-09)
+
+
+### Nouveautés
+
+* page série, couvertures du catalogue et collection épurée ([#25](https://github.com/MagicCode666/BDbyNico/issues/25)) ([0efd099](https://github.com/MagicCode666/BDbyNico/commit/0efd099a7ef8279b62d9b0b247433a3fed26c380))
+
 ## [0.7.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.6.0...bdbynico-v0.7.0) (2026-11-09)
 
 
