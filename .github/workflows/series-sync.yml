@@ -1,0 +1,42 @@
+name: Totaux des séries
+
+# Calcule chaque nuit le total de tomes des séries d'après la BnF et alimente le catalogue.
+# Le passage régulier sert aussi de ping : l'offre gratuite de Supabase met la base en pause
+# après 7 jours sans activité.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: series-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Mise à jour des totaux
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Mettre à jour les séries
+        env:
+          SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning::Secret SUPABASE_SERVICE_ROLE_KEY absent : aucune mise à jour effectuée."
+            exit 0
+          fi
+          node scripts/update-series-totals.mjs
