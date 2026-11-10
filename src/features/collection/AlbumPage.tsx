@@ -6,6 +6,7 @@ import PageLayout from '../../components/PageLayout'
 import SubmitButton from '../../components/SubmitButton'
 import TextField from '../../components/TextField'
 import { formatIsbn } from '../../lib/isbn'
+import CoverReportDialog from '../governance/CoverReportDialog'
 import { Cover } from './AlbumCard'
 import { deleteEntry, getEntry, updateEntry } from './api'
 import { DEDICATION_LABELS, STATUS_LABELS, type Dedication, type Entry, type Status } from './types'
@@ -14,7 +15,7 @@ import { useAsync } from './useAsync'
 export default function AlbumPage() {
   const { isbn = '' } = useParams()
   const load = useCallback(() => getEntry(isbn), [isbn])
-  const { data: entry, loading, error } = useAsync(load)
+  const { data: entry, loading, error, reload } = useAsync(load)
 
   return (
     <PageLayout title="Fiche de l'album">
@@ -28,12 +29,12 @@ export default function AlbumPage() {
           </Link>
         </p>
       )}
-      {entry && <AlbumDetails key={entry.id} entry={entry} />}
+      {entry && <AlbumDetails key={entry.id} entry={entry} onReload={reload} />}
     </PageLayout>
   )
 }
 
-function AlbumDetails({ entry }: { entry: Entry }) {
+function AlbumDetails({ entry, onReload }: { entry: Entry; onReload: () => void }) {
   const navigate = useNavigate()
   const { edition } = entry
   const [status, setStatus] = useState<Status>(entry.status)
@@ -49,6 +50,7 @@ function AlbumDetails({ entry }: { entry: Entry }) {
   const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [reportingCover, setReportingCover] = useState(false)
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -90,7 +92,16 @@ function AlbumDetails({ entry }: { entry: Entry }) {
 
   return (
     <div className="grid gap-6 md:grid-cols-[12rem_1fr]">
-      <Cover entry={entry} className="aspect-[2/3] w-48 rounded" />
+      <div className="flex flex-col items-start gap-2">
+        <Cover entry={entry} className="aspect-[2/3] w-48 rounded" />
+        <button
+          type="button"
+          onClick={() => setReportingCover(true)}
+          className="text-xs text-slate-600 underline hover:text-indigo-600"
+        >
+          Cette couverture n'est pas bonne
+        </button>
+      </div>
       <div className="flex flex-col gap-4">
         <div>
           <h2 className="text-xl font-semibold">{edition.title}</h2>
@@ -107,6 +118,12 @@ function AlbumDetails({ entry }: { entry: Entry }) {
               .join(' — ')}
           </p>
         </div>
+
+        {edition.pending && (
+          <p role="status" className="rounded bg-amber-50 p-2 text-sm text-amber-800">
+            Cet album est en attente de validation : il n'est visible que de vous pour l'instant.
+          </p>
+        )}
 
         {/* Le message « enregistré » disparaît dès qu'on modifie à nouveau un champ */}
         <form
@@ -247,6 +264,15 @@ function AlbumDetails({ entry }: { entry: Entry }) {
           )}
         </div>
       </div>
+      {reportingCover && (
+        <CoverReportDialog
+          isbn={edition.isbn}
+          title={edition.title}
+          currentCover={edition.coverUrl}
+          onClose={() => setReportingCover(false)}
+          onChanged={onReload}
+        />
+      )}
     </div>
   )
 }

@@ -72,6 +72,7 @@ async function lookupSeries(db, series) {
     .select('isbn, authors, volume')
     .eq('series_id', series.id)
     .neq('source', 'bnf')
+    .eq('review_status', 'approved')
   if (error) throw error
   const isbns = owned.map((edition) => edition.isbn)
   const authors = topAuthors(owned)
@@ -98,6 +99,7 @@ async function upgradeCovers(db) {
     .from('editions')
     .select('isbn', { count: 'exact', head: true })
     .like('cover_url', `${OPEN_LIBRARY_PREFIX}%`)
+    .eq('cover_locked', false)
   if (countError) throw countError
   if (!count) return console.log('Couvertures : aucune à vérifier.')
   const day = Math.floor(Date.now() / 86_400_000)
@@ -106,6 +108,7 @@ async function upgradeCovers(db) {
     .from('editions')
     .select('isbn')
     .like('cover_url', `${OPEN_LIBRARY_PREFIX}%`)
+    .eq('cover_locked', false)
     .order('isbn')
     .range(from, from + COVER_BATCH - 1)
   if (error) throw error
@@ -117,6 +120,7 @@ async function upgradeCovers(db) {
       .update({ cover_url: url })
       .eq('isbn', isbn)
       .like('cover_url', `${OPEN_LIBRARY_PREFIX}%`)
+      .eq('cover_locked', false)
     if (updateError) throw updateError
   }
   const upgraded = { amazon: 0, bnf: 0 }

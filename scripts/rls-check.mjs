@@ -370,6 +370,77 @@ check('Un anonyme ne peut pas régénérer de jeton', !!r.error, show(r))
 r = await anon.rpc('delete_my_account')
 check('Un anonyme ne peut pas supprimer de compte', !!r.error, show(r))
 
+console.log('\n--- Gouvernance du catalogue ---')
+r = await A.client.from('profiles').update({ role: 'admin' }).eq('id', A.id)
+check('Un utilisateur ne peut pas se donner le rôle administrateur', !!r.error, show(r))
+r = await A.client.from('profiles').update({ contribution: 'collection_only' }).eq('id', A.id)
+check('Un utilisateur ne peut pas modifier son niveau de contribution', !!r.error, show(r))
+r = await A.client.from('profiles').select('role, contribution').eq('id', A.id).single()
+check(
+  'Un compte ordinaire a le rôle « user » et le niveau « full »',
+  r.data?.role === 'user' && r.data?.contribution === 'full',
+  show(r),
+)
+r = await B.client.rpc('report_cover', { p_isbn: isbn, p_cover_url: null })
+check("Un non-possesseur ne peut pas signaler la couverture d'un album", !!r.error, show(r))
+r = await A.client.rpc('report_cover', {
+  p_isbn: isbn,
+  p_cover_url: 'https://exemple.invalid/couverture.jpg',
+})
+check('Signalement avec une adresse non autorisée refusé', !!r.error, show(r))
+r = await anon.rpc('report_cover', { p_isbn: isbn, p_cover_url: null })
+check('Un anonyme ne peut pas signaler de couverture', !!r.error, show(r))
+r = await A.client.rpc('report_cover', { p_isbn: isbn, p_cover_url: null })
+check(
+  'Le possesseur signale une couverture (appliquée sans attente)',
+  r.data === 'applied',
+  show(r),
+)
+r = await A.client.from('editions').select('cover_url, cover_locked').eq('isbn', isbn).single()
+check(
+  'Le choix verrouille la couverture (le job ne la remplace plus)',
+  r.data?.cover_url === null && r.data?.cover_locked === true,
+  show(r),
+)
+r = await A.client.rpc('set_edition_cover', { p_isbn: isbn, p_cover_url: coverOl })
+r = await A.client.from('editions').select('cover_url').eq('isbn', isbn).single()
+check(
+  'La mise à jour automatique ne touche pas une couverture verrouillée',
+  r.data?.cover_url === null,
+  show(r),
+)
+r = await A.client.from('catalogue_changes').select('id, user_id, kind, status')
+check(
+  'A ne lit que ses propres lignes du journal',
+  !r.error && r.data.length > 0 && r.data.every((row) => row.user_id === A.id),
+  show(r),
+)
+r = await B.client.from('catalogue_changes').select('id, user_id')
+check(
+  'B ne voit aucune ligne du journal de A',
+  !r.error && r.data.every((row) => row.user_id !== A.id),
+  show(r),
+)
+r = await anon.from('catalogue_changes').select('id')
+check('Un anonyme ne peut pas lire le journal', !!r.error || r.data?.length === 0, show(r))
+r = await A.client.from('catalogue_changes').insert({ origin: 'user', kind: 'cover', isbn })
+check('Aucune écriture directe dans le journal', !!r.error, show(r))
+r = await A.client.rpc('review_change', { p_id: 1, p_accept: true })
+check('Un utilisateur ordinaire ne peut pas valider une proposition', !!r.error, show(r))
+r = await A.client.rpc('revert_change', { p_id: 1 })
+check('Un utilisateur ordinaire ne peut pas annuler un changement', !!r.error, show(r))
+r = await A.client.rpc('list_catalogue_changes')
+check('Un utilisateur ordinaire ne peut pas lister tout le journal', !!r.error, show(r))
+r = await A.client.rpc('list_users_admin')
+check('Un utilisateur ordinaire ne peut pas lister les utilisateurs', !!r.error, show(r))
+r = await A.client.rpc('set_contribution_level', { p_user: B.id, p_level: 'collection_only' })
+check('Un utilisateur ordinaire ne peut pas restreindre un autre utilisateur', !!r.error, show(r))
+r = await B.client.from('profiles').select('contribution').eq('id', B.id).single()
+check('Le niveau de B est resté « full »', r.data?.contribution === 'full', show(r))
+console.log(
+  '  (les parcours « collection seule », validation et annulation sont testés par supabase/tests/gouvernance.sql)',
+)
+
 console.log('\n--- Nettoyage ---')
 await A.client.from('profiles').update({ share_enabled: false }).eq('id', A.id)
 r = await A.client.from('collection_items').delete().eq('id', itemId).select()

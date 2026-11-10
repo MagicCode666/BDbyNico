@@ -26,7 +26,11 @@ export default function CollectionPage() {
   // Couvertures manquantes (après un import, par exemple) : cherchées au fil de l'eau, puis
   // enregistrées pour tous les utilisateurs
   const { covers, remaining } = useMissingCovers(
-    entries.map((e) => ({ isbn: e.edition.isbn, coverUrl: e.edition.coverUrl })),
+    entries.map((e) => ({
+      isbn: e.edition.isbn,
+      coverUrl: e.edition.coverUrl,
+      locked: e.edition.coverLocked,
+    })),
   )
   const entriesWithCovers = useMemo(
     () =>
@@ -59,6 +63,7 @@ export default function CollectionPage() {
     }
     return map
   }, [entries])
+  const pendingCount = useMemo(() => entries.filter((e) => e.edition.pending).length, [entries])
   const groups = useMemo(
     () => groupBySeries(filterEntries(entriesWithCovers, { status, query, read, dedicatedOnly })),
     [entriesWithCovers, status, query, read, dedicatedOnly],
@@ -122,6 +127,13 @@ export default function CollectionPage() {
       {remaining > 0 && (
         <p role="status" className="mb-3 text-sm text-slate-500">
           Récupération des couvertures… ({remaining} restante{remaining > 1 ? 's' : ''})
+        </p>
+      )}
+
+      {pendingCount > 0 && (
+        <p role="status" className="mb-3 rounded bg-amber-50 p-2 text-sm text-amber-800">
+          {pendingCount} album{pendingCount > 1 ? 's' : ''} en attente de validation : visible
+          {pendingCount > 1 ? 's' : ''} de vous seulement pour l'instant.
         </p>
       )}
 

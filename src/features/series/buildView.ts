@@ -7,6 +7,7 @@ export interface CatalogueEdition {
   volume: number | null
   coverUrl: string | null
   authors: string[]
+  coverLocked?: boolean
 }
 
 /** Une ligne de la collection de l'utilisateur. */
