@@ -1,3 +1,5 @@
+import type { PublicationStatus } from '../series/status'
+
 export type Status = 'owned' | 'wanted'
 
 export const STATUS_LABELS: Record<Status, string> = {
@@ -17,6 +19,7 @@ export interface SeriesInfo {
   id: string
   name: string
   totalVolumes: number | null
+  publicationStatus?: PublicationStatus | null
 }
 
 export interface Edition {

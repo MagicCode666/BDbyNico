@@ -147,6 +147,7 @@ export type Database = {
           id: string
           name: string
           name_key: string
+          publication_status: string | null
           total_checked_at: string | null
           total_source: string
           total_volumes: number | null
@@ -156,6 +157,7 @@ export type Database = {
           id?: string
           name: string
           name_key: string
+          publication_status?: string | null
           total_checked_at?: string | null
           total_source?: string
           total_volumes?: number | null
@@ -165,6 +167,7 @@ export type Database = {
           id?: string
           name?: string
           name_key?: string
+          publication_status?: string | null
           total_checked_at?: string | null
           total_source?: string
           total_volumes?: number | null
@@ -175,6 +178,7 @@ export type Database = {
         Row: {
           ignored_volumes: number[]
           series_id: string
+          status_override: string | null
           total_override: number | null
           updated_at: string
           user_id: string
@@ -182,6 +186,7 @@ export type Database = {
         Insert: {
           ignored_volumes?: number[]
           series_id: string
+          status_override?: string | null
           total_override?: number | null
           updated_at?: string
           user_id: string
@@ -189,6 +194,7 @@ export type Database = {
         Update: {
           ignored_volumes?: number[]
           series_id?: string
+          status_override?: string | null
           total_override?: number | null
           updated_at?: string
           user_id?: string

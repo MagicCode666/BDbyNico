@@ -116,6 +116,7 @@ export function parseNotices(xml) {
       authors,
       publisher: sub(f210, 'c'),
       publishedOn: yearToIso(sub(f210, 'd')),
+      dateText: sub(f210, 'd'),
       seriesName: sub(f225, 'a') ? cleanSeriesName(sub(f225, 'a')) : undefined,
       volumeText: sub(f225, 'v'),
       mention: [
@@ -203,6 +204,38 @@ export function bestMatch(notices, seriesName, ownedIsbns = []) {
     if (better) best = result
   }
   return best
+}
+
+/**
+ * Statut de publication d'après la « notice d'ensemble » de la série à la BnF : ses dates de
+ * parution sont ouvertes (« 2003- ») tant que la série continue et fermées (« 2003-2014 ») une
+ * fois terminée. Renvoie undefined quand la BnF ne dit rien (ou rien de sûr).
+ */
+export function publicationStatus(notices, seriesName) {
+  const key = nameKey(seriesName)
+  const umbrella = notices.filter(
+    (n) => /notice d'ensemble/i.test(n.mention) && n.title && nameKey(n.title) === key,
+  )
+  let status
+  for (const notice of umbrella) {
+    const text = notice.dateText ?? ''
+    if (/\d{4}\s*-\s*\d{4}/.test(text)) return 'finished'
+    if (/\d{4}\s*-\s*\]?\s*$/.test(text)) status = 'ongoing'
+  }
+  return status
+}
+
+/**
+ * Nouveau total à enregistrer, ou undefined s'il ne change pas. Un album que l'on possède prouve
+ * que son tome existe : le total n'est jamais inférieur au plus grand tome connu, même si la BnF
+ * ne le référence pas. Un tome possédé ne suffit pas à lui seul à créer un total (sans total
+ * fiable, il resterait présenté comme certain alors qu'il n'est qu'un minimum).
+ */
+export function decideTotal({ reliable, bnfTotal, current, ownedMax }) {
+  const trusted = reliable || !!current
+  if (!trusted) return undefined
+  const candidate = Math.max(reliable ? (bnfTotal ?? 0) : 0, ownedMax ?? 0)
+  return candidate > (current ?? 0) ? candidate : undefined
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))

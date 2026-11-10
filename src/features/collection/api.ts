@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase'
+import { toPublicationStatus } from '../series/status'
 import type { Dedication, Edition, Entry, SeriesInfo, Status } from './types'
 
 const SELECT = `
@@ -6,7 +7,7 @@ const SELECT = `
   first_edition,
   editions (
     isbn, title, volume, authors, publisher, published_on, cover_url,
-    series ( id, name, total_volumes )
+    series ( id, name, total_volumes, publication_status )
   )
 `
 
@@ -14,6 +15,7 @@ interface RawSeries {
   id: string
   name: string
   total_volumes: number | null
+  publication_status: string | null
 }
 
 interface RawEdition {
@@ -47,7 +49,14 @@ function toDedication(value: string | null): Dedication | null {
 }
 
 function toSeries(raw: RawSeries | null): SeriesInfo | null {
-  return raw ? { id: raw.id, name: raw.name, totalVolumes: raw.total_volumes } : null
+  return raw
+    ? {
+        id: raw.id,
+        name: raw.name,
+        totalVolumes: raw.total_volumes,
+        publicationStatus: toPublicationStatus(raw.publication_status),
+      }
+    : null
 }
 
 function toEdition(raw: RawEdition): Edition {

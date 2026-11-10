@@ -1,3 +1,4 @@
+import type { PublicationStatus } from '../series/status'
 import type { Entry, ReadFilter, Status } from './types'
 
 /** Minuscules sans accents, pour des recherches tolérantes. */
@@ -43,6 +44,7 @@ export interface SeriesGroup {
   key: string
   name: string | null
   totalVolumes: number | null
+  publicationStatus: PublicationStatus | null
   entries: Entry[]
 }
 
@@ -64,6 +66,7 @@ export function groupBySeries(entries: Entry[]): SeriesGroup[] {
         key,
         name: series?.name ?? null,
         totalVolumes: series?.totalVolumes ?? null,
+        publicationStatus: series?.publicationStatus ?? null,
         entries: [],
       }
       groups.set(key, group)
@@ -85,4 +88,13 @@ export function progressLabel(group: SeriesGroup, ownedCount: number): string {
   return group.totalVolumes
     ? `${ownedCount} / ${group.totalVolumes} tomes`
     : `${ownedCount} ${unit}`
+}
+
+/**
+ * Total à afficher : on ne peut pas posséder plus de tomes qu'il n'en existe, donc un tome possédé
+ * plus grand que le total connu (ex. tome absent de la base de référence) relève ce total.
+ */
+export function effectiveTotal(total: number | null, ownedVolumes: number[]): number | null {
+  const highest = Math.max(total ?? 0, ...ownedVolumes)
+  return highest > 0 ? highest : null
 }

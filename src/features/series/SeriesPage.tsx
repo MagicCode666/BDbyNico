@@ -14,6 +14,7 @@ import {
   type SeriesData,
 } from './api'
 import { buildSeriesView, type Slot } from './buildView'
+import { effectiveStatus, PUBLICATION_LABELS, type PublicationStatus } from './status'
 import { useMissingCovers } from './useMissingCovers'
 
 const buttonClass =
@@ -63,6 +64,7 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
     items,
     ignored: settings.ignored,
   })
+  const publication = effectiveStatus(settings.statusOverride, series.publicationStatus)
   const ignoredSlots = view.slots.filter((slot) => slot.kind === 'ignored')
   const visibleSlots = view.slots.filter((slot) => slot.kind !== 'ignored')
 
@@ -115,6 +117,14 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
     )
   }
 
+  function changeStatus(value: string) {
+    const statusOverride = value === 'ongoing' || value === 'finished' ? value : null
+    void run(
+      () => saveSeriesSettings(userId!, series.id, { ...settings, statusOverride }),
+      "Impossible d'enregistrer le statut.",
+    )
+  }
+
   function resetTotal() {
     setEditingTotal(false)
     setTotalInput('')
@@ -133,7 +143,12 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
           </span>
           {view.complete && (
             <span className="rounded bg-green-100 px-2 py-0.5 text-sm font-medium text-green-800">
-              Complète
+              {publication === 'ongoing' ? 'À jour' : 'Complète'}
+            </span>
+          )}
+          {publication && (
+            <span className="rounded bg-slate-100 px-2 py-0.5 text-sm text-slate-700">
+              {PUBLICATION_LABELS[publication]}
             </span>
           )}
         </p>
@@ -177,6 +192,27 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
             )}
           </div>
         )}
+        <div className="flex items-center gap-2 text-sm">
+          <label htmlFor="publication-status">Statut de la série</label>
+          <select
+            id="publication-status"
+            value={settings.statusOverride ?? ''}
+            disabled={busy}
+            onChange={(e) => changeStatus(e.target.value)}
+            className="rounded border border-slate-300 px-2 py-1"
+          >
+            <option value="">
+              {series.publicationStatus
+                ? `Automatique (${PUBLICATION_LABELS[series.publicationStatus].toLowerCase()})`
+                : 'Automatique (inconnu)'}
+            </option>
+            {(Object.keys(PUBLICATION_LABELS) as PublicationStatus[]).map((value) => (
+              <option key={value} value={value}>
+                {PUBLICATION_LABELS[value]}
+              </option>
+            ))}
+          </select>
+        </div>
         {view.missing.length > 0 && (
           <p className="text-sm text-slate-600">
             Manquent : {view.missing.map((v) => `T${v}`).join(', ')}

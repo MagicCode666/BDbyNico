@@ -9,7 +9,14 @@
 //                                                         le résultat (aucune clé, aucune écriture)
 import { createClient } from '@supabase/supabase-js'
 
-import { bestMatch, fetchNotices, mapLimit, topAuthors } from './lib/bnf-series.mjs'
+import {
+  bestMatch,
+  decideTotal,
+  fetchNotices,
+  mapLimit,
+  publicationStatus,
+  topAuthors,
+} from './lib/bnf-series.mjs'
 
 const args = process.argv.slice(2)
 const option = (flag) => {
@@ -32,6 +39,7 @@ async function inspectOne(name) {
     `Écartées : ${result.skipped.sansNumero} sans numéro, ${result.skipped.special} spéciales`,
   )
   console.log(`Série BnF retenue : ${result.bnfName}`)
+  console.log(`Statut de publication : ${publicationStatus(notices, result.bnfName) ?? 'inconnu'}`)
   console.log(`Total de tomes retenu : ${result.total ?? 'inconnu'}`)
   console.log(`Albums retenus (un par tome) : ${result.albums.length}`)
   console.log(
@@ -50,17 +58,22 @@ async function inspectOne(name) {
 async function lookupSeries(db, series) {
   const { data: owned, error } = await db
     .from('editions')
-    .select('isbn, authors')
+    .select('isbn, authors, volume')
     .eq('series_id', series.id)
     .neq('source', 'bnf')
   if (error) throw error
   const isbns = owned.map((edition) => edition.isbn)
   const authors = topAuthors(owned)
+  const ownedMax = Math.max(0, ...owned.map((edition) => edition.volume ?? 0))
+  const finish = (notices) => {
+    const result = bestMatch(notices, series.name, isbns)
+    return { ...result, ownedMax, status: publicationStatus(notices, result.bnfName) }
+  }
   if (authors.length > 0) {
-    const result = bestMatch(await fetchNotices(series.name, { authors }), series.name, isbns)
+    const result = finish(await fetchNotices(series.name, { authors }))
     if (result.reliable) return result
   }
-  return bestMatch(await fetchNotices(series.name), series.name, isbns)
+  return finish(await fetchNotices(series.name))
 }
 
 async function run() {
@@ -87,11 +100,16 @@ async function run() {
     try {
       const result = await lookupSeries(db, series)
       // Le total ne diminue jamais tout seul : une série ne perd pas de tomes
-      const newTotal =
-        result.reliable && result.total > (series.total_volumes ?? 0) ? result.total : undefined
+      const newTotal = decideTotal({
+        reliable: result.reliable,
+        bnfTotal: result.total,
+        current: series.total_volumes,
+        ownedMax: result.ownedMax,
+      })
       console.log(
         `- ${series.name}${result.bnfName === series.name ? '' : ` [BnF : ${result.bnfName}]`} : total ${series.total_volumes ?? '?'} -> ${newTotal ?? 'inchangé'}, ` +
           `${result.albums.length} album(s), ${result.skipped.special} spécial(aux) écarté(s)` +
+          (result.status ? `, ${result.status === 'finished' ? 'terminée' : 'en cours'}` : '') +
           (result.reliable
             ? ''
             : ` [peu fiable : ${Math.round(result.coverage * 100)} % des tomes référencés, ignoré]`),
@@ -99,6 +117,7 @@ async function run() {
       if (!dryRun) {
         const update = { total_checked_at: new Date().toISOString() }
         if (newTotal !== undefined) update.total_volumes = newTotal
+        if (result.reliable && result.status) update.publication_status = result.status
         const { error: updateError } = await db.from('series').update(update).eq('id', series.id)
         if (updateError) throw updateError
 

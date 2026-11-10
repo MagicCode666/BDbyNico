@@ -4,11 +4,13 @@ import {
   bestMatch,
   cleanSeriesName,
   computeSeries,
+  decideTotal,
   decodeEntities,
   mapLimit,
   nameKey,
   parseNotices,
   parseVolume,
+  publicationStatus,
   strippedName,
   topAuthors,
 } from './bnf-series.mjs'
@@ -231,5 +233,55 @@ describe('mapLimit', () => {
     })
     expect(results).toEqual([10, 20, 30, 40, 50, 60])
     expect(peak).toBe(2)
+  })
+})
+
+describe('decideTotal', () => {
+  it('relève le total au plus grand tome possédé (9/11 : BnF 5, tome 6 possédé)', () => {
+    expect(decideTotal({ reliable: true, bnfTotal: 5, current: 5, ownedMax: 6 })).toBe(6)
+  })
+
+  it('ne change rien quand le total est déjà suffisant', () => {
+    expect(decideTotal({ reliable: true, bnfTotal: 5, current: 5, ownedMax: 4 })).toBeUndefined()
+  })
+
+  it('ne diminue jamais le total', () => {
+    expect(decideTotal({ reliable: true, bnfTotal: 3, current: 8, ownedMax: 2 })).toBeUndefined()
+  })
+
+  it('sans correspondance fiable ni total, un tome possédé ne crée pas de total', () => {
+    expect(
+      decideTotal({ reliable: false, bnfTotal: null, current: null, ownedMax: 6 }),
+    ).toBeUndefined()
+  })
+
+  it('sans correspondance fiable mais avec un total, un tome plus grand le relève', () => {
+    expect(decideTotal({ reliable: false, bnfTotal: null, current: 5, ownedMax: 6 })).toBe(6)
+  })
+})
+
+describe('publicationStatus', () => {
+  const umbrella = (title, dateText) =>
+    parseNotices(
+      xml(
+        `<srw:record><srw:recordData><mxc:record>${[
+          field('200', [['a', title]]),
+          field('210', [['d', dateText]]),
+          field('300', [['a', "Notice d'ensemble gérant toutes les éditions spéciales"]]),
+        ].join('')}</mxc:record></srw:recordData></srw:record>`,
+      ),
+    )
+
+  it('série en cours : dates ouvertes', () => {
+    expect(publicationStatus(umbrella('XIII', '2003-'), 'XIII')).toBe('ongoing')
+  })
+
+  it('série terminée : dates fermées', () => {
+    expect(publicationStatus(umbrella('Bouncer', '2001-2020'), 'Bouncer')).toBe('finished')
+  })
+
+  it('ignore une autre série ou l absence de notice densemble', () => {
+    expect(publicationStatus(umbrella('Autre', '2003-'), 'XIII')).toBeUndefined()
+    expect(publicationStatus([], 'XIII')).toBeUndefined()
   })
 })
