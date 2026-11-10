@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.13.0...bdbynico-v0.14.0) (2026-11-10)
+
+
+### Nouveautés
+
+* couvertures, séries, intégrales, tome 0 et retour fidèle ([#39](https://github.com/MagicCode666/BDbyNico/issues/39)) ([c7bb5bd](https://github.com/MagicCode666/BDbyNico/commit/c7bb5bddae8cc74a0867f40e7b2848ab96613838))
+
 ## [0.13.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.12.0...bdbynico-v0.13.0) (2026-11-10)
 
 
