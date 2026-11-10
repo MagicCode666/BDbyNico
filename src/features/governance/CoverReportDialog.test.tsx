@@ -9,6 +9,8 @@ const BNF =
   'https://catalogue.bnf.fr/couverture?&appName=NE&idArk=ark:/12148/cb41107070n&couverture=1'
 const OPEN_LIBRARY = 'https://covers.openlibrary.org/b/isbn/9782723452144-L.jpg'
 
+// Le client Supabase exige des variables d'environnement absentes de la CI : inutile ici
+vi.mock('../../lib/supabase', () => ({ supabase: {} }))
 vi.mock('../collection/lookup/amazon', () => ({
   amazonCoverUrl: () =>
     'https://images-na.ssl-images-amazon.com/images/P/272345214X.01.LZZZZZZZ.jpg',

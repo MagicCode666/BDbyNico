@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { governanceErrorMessage } from './api'
+
+// Le client Supabase exige des variables d'environnement absentes de la CI : inutile ici
+vi.mock('../../lib/supabase', () => ({ supabase: {} }))
 
 describe('governanceErrorMessage', () => {
   it('garde le message du serveur quand il est connu et lisible', () => {
