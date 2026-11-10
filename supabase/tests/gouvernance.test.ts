@@ -58,4 +58,8 @@ describe('migrations et scénarios SQL', () => {
   it('le scénario de recherche globale réussit', async () => {
     expect(await runScenario(db, 'tests/recherche.sql')).toMatch(/^OK : \d+ vérifications$/)
   }, 120_000)
+
+  it('le scénario de la fiche album réussit', async () => {
+    expect(await runScenario(db, 'tests/fiche_album.sql')).toMatch(/^OK : \d+ vérifications$/)
+  }, 120_000)
 })

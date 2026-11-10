@@ -1,6 +1,14 @@
 // Calcul du total de tomes d'une série et de la liste de ses albums à partir du catalogue de la BnF.
 // Utilisé par le job quotidien (scripts/update-series-totals.mjs).
+import {
+  parseFormatCm,
+  parseLanguage,
+  parsePages,
+  parsePublicPrice,
+  parseSummary,
+} from '../../src/lib/bnfFields.ts'
 import { isbn13To10, normalizeIsbn } from '../../src/lib/isbn.ts'
+import { fetchWithRetry } from './covers.mjs'
 
 const SRU_URL = 'https://catalogue.bnf.fr/api/SRU'
 const PAGE_SIZE = 50
@@ -143,6 +151,13 @@ export function parseNotices(xml) {
       dateText: sub(f210, 'd'),
       seriesName: sub(f225, 'a') ? cleanSeriesName(sub(f225, 'a')) : undefined,
       volumeText: sub(f225, 'v'),
+      details: {
+        summary: parseSummary(sub(datafields(record, '330')[0], 'a')),
+        pages: parsePages(sub(datafields(record, '215')[0], 'a')),
+        formatCm: parseFormatCm(sub(datafields(record, '215')[0], 'd')),
+        publicPrice: parsePublicPrice(sub(datafields(record, '010').find((f) => sub(f, 'd')), 'd')),
+        language: parseLanguage(sub(datafields(record, '101')[0], 'a')),
+      },
       mention: [
         ...datafields(record, '205').map((field) => sub(field, 'a')),
         ...datafields(record, '300').map((field) => sub(field, 'a')),
@@ -369,4 +384,35 @@ export async function seriesNamesForIsbns(isbns, { fetchFn = fetch, max = 2 } = 
     .sort((a, b) => b.count - a.count)
     .slice(0, max)
     .map((entry) => entry.name)
+}
+
+/**
+ * Champs descriptifs (résumé, pages, format, prix, langue) des albums demandés, par ISBN-13.
+ * Un ISBN absent de la réponse n'apparaît pas dans le résultat. Une seule requête pour tout le lot.
+ */
+export async function fetchDetails(isbns, { fetchFn = fetch, retry } = {}) {
+  const wanted = new Set(isbns)
+  const terms = isbns.flatMap((isbn) => [isbn, isbn13To10(isbn)]).filter(Boolean)
+  if (terms.length === 0) return new Map()
+  const params = new URLSearchParams({
+    version: '1.2',
+    operation: 'searchRetrieve',
+    query: `bib.isbn any "${terms.join(' ')}"`,
+    recordSchema: 'unimarcxchange',
+    maximumRecords: '50',
+  })
+  const response = await fetchWithRetry(
+    fetchFn,
+    `${SRU_URL}?${params}`,
+    { signal: AbortSignal.timeout(30000) },
+    retry,
+  )
+  if (!response.ok) throw new Error(`BnF : HTTP ${response.status}`)
+  const found = new Map()
+  for (const notice of parseNotices(await response.text())) {
+    if (notice.isbn && wanted.has(notice.isbn) && !found.has(notice.isbn)) {
+      found.set(notice.isbn, notice.details)
+    }
+  }
+  return found
 }
