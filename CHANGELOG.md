@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.11.0...bdbynico-v0.12.0) (2026-11-10)
+
+
+### Nouveautés
+
+* statut des séries (en cours / terminée) et total cohérent avec les tomes possédés ([#35](https://github.com/MagicCode666/BDbyNico/issues/35)) ([fbfe50b](https://github.com/MagicCode666/BDbyNico/commit/fbfe50b1543d0858e37224c9e7637dd7b1df6685))
+
 ## [0.11.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.10.1...bdbynico-v0.11.0) (2026-11-10)
 
 
