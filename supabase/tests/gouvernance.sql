@@ -490,6 +490,155 @@ begin
   if c <> 1 then raise exception 'ECHEC : la recherche de séries (casse et accents ignorés) est fausse (%)', c; end if;
   n := n + 1;
 
+  -- 8f. Intégrales et hors-séries : type d'album et plage de tomes ---------------------------------
+  -- un non-possesseur est refusé
+  begin
+    perform pg_temp._t_as(oth);
+    perform public.set_edition_kind(i_c, 'integral', 1, 3);
+    reset role;
+    raise exception 'ECHEC : un non-possesseur a pu changer le type d''un album';
+  exception when insufficient_privilege then
+    reset role; n := n + 1;
+  end;
+  -- type inconnu, plage inversée ou incomplète : refusés
+  foreach v in array array['kind', 'inverted', 'half'] loop
+    begin
+      perform pg_temp._t_as(ctr);
+      if v = 'kind' then perform public.set_edition_kind(i_c, 'coffret', null, null);
+      elsif v = 'inverted' then perform public.set_edition_kind(i_c, 'integral', 3, 1);
+      else perform public.set_edition_kind(i_c, 'integral', 2, null); end if;
+      reset role;
+      raise exception 'ECHEC : une valeur invalide (%) a été acceptée', v;
+    exception when invalid_parameter_value then
+      reset role; n := n + 1;
+    end;
+  end loop;
+
+  -- un possesseur déclare une intégrale des tomes 1 à 3 : appliqué, journalisé
+  perform pg_temp._t_as(ctr);
+  v := public.set_edition_kind(i_c, 'integral', 1, 3);
+  reset role;
+  if v <> 'applied' then raise exception 'ECHEC : le type de l''album n''a pas été appliqué (%)', v; end if;
+  n := n + 1;
+  if (select kind || ':' || volume_from || '-' || volume_to from public.editions where isbn = i_c) <> 'integral:1-3' then
+    raise exception 'ECHEC : type ou plage non enregistrés'; end if;
+  n := n + 1;
+  select id into ch from public.catalogue_changes
+    where isbn = i_c and kind = 'edition_kind' and status = 'applied'
+      and old_value = 'album:' and new_value = 'integral:1-3';
+  if ch is null then raise exception 'ECHEC : le changement de type n''est pas journalisé'; end if;
+  n := n + 1;
+  perform pg_temp._t_as(ctr);
+  v := public.set_edition_kind(i_c, 'integral', 1, 3);
+  reset role;
+  if v <> 'unchanged' then raise exception 'ECHEC : un changement identique devrait être « unchanged » (%)', v; end if;
+  n := n + 1;
+
+  -- une plage sur un album ordinaire est ignorée ; la contrainte protège aussi les écritures directes
+  perform pg_temp._t_as(ctr);
+  perform public.set_edition_kind(i_c, 'special', 1, 3);
+  reset role;
+  if (select kind || ':' || coalesce(volume_from::text, 'null') from public.editions where isbn = i_c) <> 'special:null' then
+    raise exception 'ECHEC : la plage d''un hors-série n''a pas été ignorée'; end if;
+  n := n + 1;
+  begin
+    update public.editions set kind = 'album', volume_from = 1, volume_to = 2 where isbn = i_c;
+    raise exception 'ECHEC : une plage sur un album ordinaire a été acceptée par la contrainte';
+  exception when check_violation then
+    n := n + 1;
+  end;
+  perform pg_temp._t_as(ctr);
+  perform public.set_edition_kind(i_c, 'integral', 1, 3);
+  reset role;
+
+  -- annulation : refusée si le type a changé depuis, sinon rétablit l'ancienne valeur
+  select id into ch from public.catalogue_changes
+    where isbn = i_c and kind = 'edition_kind' and status = 'applied'
+      and old_value = 'integral:1-3' and new_value = 'special:';
+  begin
+    perform pg_temp._t_as(mdr);
+    perform public.revert_change(ch);
+    reset role;
+    raise exception 'ECHEC : annulation acceptée alors que le type avait changé depuis';
+  exception when others then
+    reset role;
+    if sqlerrm like 'ECHEC%' then raise; end if;
+    n := n + 1;
+  end;
+  select id into ch from public.catalogue_changes
+    where isbn = i_c and kind = 'edition_kind' and status = 'applied' and new_value = 'integral:1-3'
+    order by id desc limit 1;
+  perform pg_temp._t_as(mdr);
+  perform public.revert_change(ch);
+  reset role;
+  if (select kind from public.editions where isbn = i_c) <> 'special' then
+    raise exception 'ECHEC : l''annulation n''a pas rétabli le type précédent'; end if;
+  n := n + 1;
+  perform pg_temp._t_as(ctr);
+  perform public.set_edition_kind(i_c, 'album', null, null);
+  reset role;
+
+  -- « collection seule » : la proposition de type attend la validation
+  perform pg_temp._t_as(rst);
+  v := public.set_edition_kind(i_r, 'integral', 1, 2);
+  reset role;
+  if v <> 'pending' then raise exception 'ECHEC : le type proposé aurait dû être en attente (%)', v; end if;
+  n := n + 1;
+  if (select kind from public.editions where isbn = i_r) <> 'album' then
+    raise exception 'ECHEC : une proposition de type en attente a modifié le catalogue'; end if;
+  n := n + 1;
+  select id into ch from public.catalogue_changes
+    where isbn = i_r and kind = 'edition_kind' and status = 'pending';
+  perform pg_temp._t_as(mdr);
+  perform public.review_change(ch, true);
+  reset role;
+  if (select kind || ':' || volume_from || '-' || volume_to from public.editions where isbn = i_r) <> 'integral:1-2' then
+    raise exception 'ECHEC : la validation n''a pas appliqué le type'; end if;
+  n := n + 1;
+  perform pg_temp._t_as(mdr);
+  perform public.revert_change(ch);
+  reset role;
+  if (select kind from public.editions where isbn = i_r) <> 'album' then
+    raise exception 'ECHEC : l''annulation du type validé n''a pas rétabli l''album'; end if;
+  n := n + 1;
+  -- refus d'une proposition : le catalogue ne bouge pas
+  perform pg_temp._t_as(rst);
+  perform public.set_edition_kind(i_r, 'special', null, null);
+  reset role;
+  select id into ch from public.catalogue_changes
+    where isbn = i_r and kind = 'edition_kind' and status = 'pending';
+  perform pg_temp._t_as(mdr);
+  perform public.review_change(ch, false);
+  reset role;
+  if (select kind from public.editions where isbn = i_r) <> 'album'
+     or (select status from public.catalogue_changes where id = ch) <> 'rejected' then
+    raise exception 'ECHEC : le refus d''un type proposé est incorrect'; end if;
+  n := n + 1;
+
+  -- le journal d'administration affiche les changements de type
+  perform pg_temp._t_as(mdr);
+  select count(*) into c from public.list_catalogue_changes(p_status => 'applied') where kind = 'edition_kind';
+  reset role;
+  if c < 1 then raise exception 'ECHEC : le journal n''affiche pas les changements de type'; end if;
+  n := n + 1;
+
+  -- import : type et plage lus, valeurs invalides ramenées à un album ordinaire ou sans plage
+  perform pg_temp._t_as(ctr);
+  perform public.import_editions(jsonb_build_array(
+    jsonb_build_object('isbn', pg_temp._t_isbn('978990000006'), 'title', 'Intégrale 1-3', 'kind', 'integral',
+                       'volume_from', '1', 'volume_to', '3'),
+    jsonb_build_object('isbn', pg_temp._t_isbn('978990000007'), 'title', 'Intégrale mal formée', 'kind', 'integral',
+                       'volume_from', '3', 'volume_to', '1'),
+    jsonb_build_object('isbn', pg_temp._t_isbn('978990000008'), 'title', 'Hors-série', 'kind', 'special'),
+    jsonb_build_object('isbn', pg_temp._t_isbn('978990000009'), 'title', 'Type inconnu', 'kind', 'coffret')));
+  reset role;
+  if (select kind || ':' || volume_from || '-' || volume_to from public.editions where isbn = pg_temp._t_isbn('978990000006')) <> 'integral:1-3'
+     or (select kind || ':' || coalesce(volume_from::text, 'null') from public.editions where isbn = pg_temp._t_isbn('978990000007')) <> 'integral:null'
+     or (select kind from public.editions where isbn = pg_temp._t_isbn('978990000008')) <> 'special'
+     or (select kind from public.editions where isbn = pg_temp._t_isbn('978990000009')) <> 'album' then
+    raise exception 'ECHEC : l''import ne lit pas correctement le type et la plage'; end if;
+  n := n + 1;
+
   -- 9. Le job (sans utilisateur) remplace une couverture : journalisé « job », annulable --------
   update public.editions set cover_url = ol_c, cover_locked = false where isbn = i_c;
   perform set_config('request.jwt.claims', '', true);

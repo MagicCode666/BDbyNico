@@ -489,6 +489,64 @@ r = await A.client.rpc('set_contribution_level', { p_user: B.id, p_level: 'colle
 check('Un utilisateur ordinaire ne peut pas restreindre un autre utilisateur', !!r.error, show(r))
 r = await B.client.from('profiles').select('contribution').eq('id', B.id).single()
 check('Le niveau de B est resté « full »', r.data?.contribution === 'full', show(r))
+// (B peut être administrateur, donc autorisé : le contrôle d'un non-possesseur se fait avec A)
+r = await A.client.rpc('set_edition_kind', {
+  p_isbn: importIsbn,
+  p_kind: 'integral',
+  p_from: 1,
+  p_to: 3,
+})
+check("A ne peut pas changer le type d'un album qu'il ne possède pas", !!r.error, show(r))
+r = await anon.rpc('set_edition_kind', { p_isbn: govIsbn, p_kind: 'integral', p_from: 1, p_to: 3 })
+check("Un anonyme ne peut pas changer le type d'un album", !!r.error, show(r))
+r = await A.client.rpc('set_edition_kind', {
+  p_isbn: govIsbn,
+  p_kind: 'coffret',
+  p_from: 1,
+  p_to: 3,
+})
+check("Un type d'album inconnu est refusé", !!r.error, show(r))
+r = await A.client.rpc('set_edition_kind', {
+  p_isbn: govIsbn,
+  p_kind: 'integral',
+  p_from: 3,
+  p_to: 1,
+})
+check('Une plage de tomes inversée est refusée', !!r.error, show(r))
+r = await A.client.rpc('set_edition_kind', {
+  p_isbn: govIsbn,
+  p_kind: 'integral',
+  p_from: 1,
+  p_to: 3,
+})
+check(
+  'Le possesseur déclare une intégrale des tomes 1 à 3',
+  !r.error && ['applied', 'unchanged'].includes(r.data),
+  show(r),
+)
+r = await A.client
+  .from('editions')
+  .select('kind, volume_from, volume_to')
+  .eq('isbn', govIsbn)
+  .single()
+check(
+  'Le type et la plage sont enregistrés',
+  r.data?.kind === 'integral' && r.data?.volume_from === 1 && r.data?.volume_to === 3,
+  show(r),
+)
+r = await A.client.from('editions').update({ kind: 'album' }).eq('isbn', govIsbn).select()
+check("Aucune modification directe du type d'un album", !!r.error || r.data?.length === 0, show(r))
+r = await A.client.rpc('set_edition_kind', {
+  p_isbn: govIsbn,
+  p_kind: 'album',
+  p_from: null,
+  p_to: null,
+})
+check(
+  "Le possesseur rétablit l'album ordinaire (état de départ du prochain passage)",
+  !r.error && ['applied', 'unchanged'].includes(r.data),
+  show(r),
+)
 r = await A.client.rpc('rename_series', { p_series: seriesId, p_name: 'Nom pirate' })
 check('Un utilisateur ordinaire ne peut pas renommer une série', !!r.error, show(r))
 r = await A.client.rpc('set_series_total', { p_series: seriesId, p_total: 99 })

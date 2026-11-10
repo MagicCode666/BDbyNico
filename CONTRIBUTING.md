@@ -51,6 +51,14 @@ Le catalogue (albums, séries, couvertures) est partagé : chaque changement est
   Un utilisateur « collection seule » ne modifie pas le catalogue : ses ajouts d'albums inconnus et
   ses corrections de couverture sont mis en attente jusqu'à validation. L'administrateur le règle
   dans `/admin`, onglet « Utilisateurs ».
+- **Intégrales, coffrets et hors-séries** (`editions.kind` : `album`, `integral`, `special`, avec
+  la plage de tomes `volume_from` / `volume_to` d'une intégrale ; plage vide : toute la série) :
+  ce sont des objets distincts des tomes qu'ils reprennent. Ils n'ont pas de case dans la grille
+  des tomes et ne comptent pas comme leur possession ; ils s'affichent dans une section dédiée de la
+  page série. Chacun exclut pour lui les tomes unitaires qu'il ne veut pas (réglage personnel déjà
+  existant), ce qui compte pour une série complète. Le type vient de l'import (champ « Type » de
+  Bubble), de la recherche (la BnF écrit « Réunit : … ») ou de la fiche de l'album (possesseur) :
+  changement partagé, journalisé, annulable ; en attente pour un utilisateur « collection seule ».
 - **Couverture choisie à la main** (`editions.cover_locked`) : le job ne la remplace plus.
 - **Séries** : l'onglet « Séries » de `/admin` permet aux modérateurs de renommer une série, de
   fixer son total partagé et son statut (en cours / terminée). Ces changements sont journalisés et

@@ -77,6 +77,8 @@ async function lookupSeries(db, series) {
     .eq('series_id', series.id)
     .neq('source', 'bnf')
     .eq('review_status', 'approved')
+    // Intégrales et hors-séries ne sont pas des tomes : ni repère de série, ni numéro à compter
+    .eq('kind', 'album')
   if (error) throw error
   const isbns = owned.map((edition) => edition.isbn)
   const authors = topAuthors(owned)
