@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.12.0...bdbynico-v0.13.0) (2026-11-10)
+
+
+### Nouveautés
+
+* gouvernance du catalogue, signalement de couverture et couvertures BnF ([#37](https://github.com/MagicCode666/BDbyNico/issues/37)) ([64e159f](https://github.com/MagicCode666/BDbyNico/commit/64e159f86d00c28e3613019d1a63b9f8506fbdd1))
+
 ## [0.12.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.11.0...bdbynico-v0.12.0) (2026-11-10)
 
 
