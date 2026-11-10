@@ -1,14 +1,22 @@
 import { supabase } from '../../lib/supabase'
 import type { Status } from '../collection/types'
 import type { CatalogueEdition, UserItem } from './buildView'
+import { toPublicationStatus, type PublicationStatus } from './status'
 
 export interface SeriesSettings {
   ignored: number[]
   totalOverride: number | null
+  /** Statut choisi par l'utilisateur (prioritaire sur celui de la BnF). */
+  statusOverride?: PublicationStatus | null
 }
 
 export interface SeriesData {
-  series: { id: string; name: string; totalVolumes: number | null }
+  series: {
+    id: string
+    name: string
+    totalVolumes: number | null
+    publicationStatus: PublicationStatus | null
+  }
   editions: CatalogueEdition[]
   items: UserItem[]
   settings: SeriesSettings
@@ -20,7 +28,7 @@ const NO_SETTINGS: SeriesSettings = { ignored: [], totalOverride: null }
 export async function getSeriesData(seriesId: string): Promise<SeriesData | null> {
   const { data: series, error: seriesError } = await supabase
     .from('series')
-    .select('id, name, total_volumes')
+    .select('id, name, total_volumes, publication_status')
     .eq('id', seriesId)
     .maybeSingle()
   if (seriesError) throw seriesError
@@ -61,17 +69,26 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
 
   const { data: settingsRow, error: settingsError } = await supabase
     .from('user_series_settings')
-    .select('ignored_volumes, total_override')
+    .select('ignored_volumes, total_override, status_override')
     .eq('series_id', seriesId)
     .maybeSingle()
   if (settingsError) throw settingsError
 
   return {
-    series: { id: series.id, name: series.name, totalVolumes: series.total_volumes },
+    series: {
+      id: series.id,
+      name: series.name,
+      totalVolumes: series.total_volumes,
+      publicationStatus: toPublicationStatus(series.publication_status),
+    },
     editions,
     items,
     settings: settingsRow
-      ? { ignored: settingsRow.ignored_volumes, totalOverride: settingsRow.total_override }
+      ? {
+          ignored: settingsRow.ignored_volumes,
+          totalOverride: settingsRow.total_override,
+          statusOverride: toPublicationStatus(settingsRow.status_override),
+        }
       : NO_SETTINGS,
   }
 }
@@ -80,12 +97,16 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
 export async function listSeriesSettings(): Promise<Map<string, SeriesSettings>> {
   const { data, error } = await supabase
     .from('user_series_settings')
-    .select('series_id, ignored_volumes, total_override')
+    .select('series_id, ignored_volumes, total_override, status_override')
   if (error) throw error
   return new Map(
     data.map((row) => [
       row.series_id,
-      { ignored: row.ignored_volumes, totalOverride: row.total_override },
+      {
+        ignored: row.ignored_volumes,
+        totalOverride: row.total_override,
+        statusOverride: toPublicationStatus(row.status_override),
+      },
     ]),
   )
 }
@@ -101,6 +122,7 @@ export async function saveSeriesSettings(
       series_id: seriesId,
       ignored_volumes: [...new Set(settings.ignored)].sort((a, b) => a - b),
       total_override: settings.totalOverride,
+      status_override: settings.statusOverride ?? null,
     },
     { onConflict: 'user_id,series_id' },
   )

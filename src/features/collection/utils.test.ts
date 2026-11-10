@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Entry } from './types'
-import { filterEntries, groupBySeries, normalizeText, progressLabel } from './utils'
+import { effectiveTotal, filterEntries, groupBySeries, normalizeText, progressLabel } from './utils'
 
 function entry(
   overrides: Partial<Entry> & { title?: string; seriesName?: string; volume?: number },
@@ -102,5 +102,23 @@ describe('progressLabel', () => {
     const noTotal = { ...group, totalVolumes: null }
     expect(progressLabel(noTotal, 1)).toBe('1 tome')
     expect(progressLabel(noTotal, 2)).toBe('2 tomes')
+  })
+})
+
+describe('effectiveTotal', () => {
+  it('relève le total au plus grand tome possédé', () => {
+    expect(effectiveTotal(5, [1, 2, 3, 4, 5, 6])).toBe(6)
+  })
+
+  it('garde le total quand il est suffisant', () => {
+    expect(effectiveTotal(10, [1, 2])).toBe(10)
+  })
+
+  it('reste inconnu sans total ni tome numéroté', () => {
+    expect(effectiveTotal(null, [])).toBeNull()
+  })
+
+  it('se déduit des tomes possédés quand le total est inconnu', () => {
+    expect(effectiveTotal(null, [2, 4])).toBe(4)
   })
 })
