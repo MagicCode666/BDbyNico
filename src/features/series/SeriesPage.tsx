@@ -51,7 +51,9 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
   const [totalInput, setTotalInput] = useState(settings.totalOverride?.toString() ?? '')
 
   // Couvertures manquantes : recherchées à la première visite, puis enregistrées pour tous
-  const { covers, remaining } = useMissingCovers(editions)
+  const { covers, remaining } = useMissingCovers(
+    editions.map((e) => ({ isbn: e.isbn, coverUrl: e.coverUrl, locked: e.coverLocked })),
+  )
   const editionsWithCovers = useMemo(
     () => editions.map((e) => ({ ...e, coverUrl: e.coverUrl ?? covers[e.isbn] ?? null })),
     [editions, covers],

@@ -1,19 +1,24 @@
 import { amazonCoverUrl, imageExists } from '../collection/lookup/amazon'
+import { findBnfCover } from '../collection/lookup/bnf'
 
 /**
- * Cherche la couverture d'un ISBN-13 : Open Library d'abord, Amazon en repli.
+ * Cherche la couverture d'un ISBN-13 : Amazon, puis la BnF, puis Open Library en dernier
+ * recours. Open Library fournit parfois la page de titre du livre (presque blanche) au lieu de la couverture, alors
+ * qu'Amazon a presque toujours la bonne pour la BD française.
  * Les adresses renvoyées sont exactement celles que la base accepte (voir `set_edition_cover`).
  * Pour économiser la bande passante (jusqu'à plusieurs centaines d'albums après un import),
  * l'existence est vérifiée sur une petite version de l'image (quelques Ko).
  */
 export async function findCover(isbn: string): Promise<string | undefined> {
+  const amazon = amazonCoverUrl(isbn)
+  if (amazon && (await imageExists(amazon.replace('LZZZZZZZ', 'MZZZZZZZ')))) return amazon
+  const bnf = await findBnfCover(isbn)
+  if (bnf) return bnf
   // « default=false » : Open Library répond 404 (et non une image vide) quand il n'a rien
   const smallOpenLibrary = `https://covers.openlibrary.org/b/isbn/${isbn}-S.jpg?default=false`
   if (await imageExists(smallOpenLibrary)) {
     return `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`
   }
-  const amazon = amazonCoverUrl(isbn)
-  if (amazon && (await imageExists(amazon.replace('LZZZZZZZ', 'MZZZZZZZ')))) return amazon
   return undefined
 }
 

@@ -8,6 +8,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalogue_changes: {
+        Row: {
+          created_at: string
+          id: number
+          isbn: string
+          kind: string
+          new_value: string | null
+          old_value: string | null
+          origin: string
+          reverts_id: number | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          isbn: string
+          kind: string
+          new_value?: string | null
+          old_value?: string | null
+          origin: string
+          reverts_id?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          isbn?: string
+          kind?: string
+          new_value?: string | null
+          old_value?: string | null
+          origin?: string
+          reverts_id?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       collection_items: {
         Row: {
           acquired_on: string | null
@@ -70,12 +115,14 @@ export type Database = {
       editions: {
         Row: {
           authors: string[]
+          cover_locked: boolean
           cover_url: string | null
           created_at: string
           created_by: string | null
           isbn: string
           published_on: string | null
           publisher: string | null
+          review_status: string
           series_id: string | null
           source: string | null
           title: string
@@ -83,12 +130,14 @@ export type Database = {
         }
         Insert: {
           authors?: string[]
+          cover_locked?: boolean
           cover_url?: string | null
           created_at?: string
           created_by?: string | null
           isbn: string
           published_on?: string | null
           publisher?: string | null
+          review_status?: string
           series_id?: string | null
           source?: string | null
           title: string
@@ -96,12 +145,14 @@ export type Database = {
         }
         Update: {
           authors?: string[]
+          cover_locked?: boolean
           cover_url?: string | null
           created_at?: string
           created_by?: string | null
           isbn?: string
           published_on?: string | null
           publisher?: string | null
+          review_status?: string
           series_id?: string | null
           source?: string | null
           title?: string
@@ -119,23 +170,29 @@ export type Database = {
       }
       profiles: {
         Row: {
+          contribution: string
           created_at: string
           id: string
           pseudo: string
+          role: string
           share_enabled: boolean
           share_token: string
         }
         Insert: {
+          contribution?: string
           created_at?: string
           id: string
           pseudo: string
+          role?: string
           share_enabled?: boolean
           share_token?: string
         }
         Update: {
+          contribution?: string
           created_at?: string
           id?: string
           pseudo?: string
+          role?: string
           share_enabled?: boolean
           share_token?: string
         }
@@ -264,6 +321,60 @@ export type Database = {
       is_valid_isbn13: { Args: { p_isbn: string }; Returns: boolean }
       isbn13_to_isbn10: { Args: { p_isbn: string }; Returns: string }
       regenerate_share_token: { Args: never; Returns: string }
+      is_admin: { Args: never; Returns: boolean }
+      is_moderator: { Args: never; Returns: boolean }
+      list_catalogue_changes: {
+        Args: {
+          p_before?: number
+          p_hide_job?: boolean
+          p_limit?: number
+          p_origin?: string
+          p_status?: string
+          p_user?: string
+        }
+        Returns: {
+          created_at: string
+          current_cover: string | null
+          id: number
+          isbn: string
+          kind: string
+          new_value: string | null
+          old_value: string | null
+          origin: string
+          pseudo: string | null
+          reverts_id: number | null
+          reviewed_at: string | null
+          reviewed_pseudo: string | null
+          series_name: string | null
+          status: string
+          title: string | null
+          user_id: string | null
+          volume: number | null
+        }[]
+      }
+      list_users_admin: {
+        Args: never
+        Returns: {
+          change_count: number
+          collection_count: number
+          contribution: string
+          created_at: string
+          id: string
+          pending_count: number
+          pseudo: string
+          role: string
+        }[]
+      }
+      report_cover: {
+        Args: { p_cover_url: string | null; p_isbn: string }
+        Returns: string
+      }
+      review_change: { Args: { p_accept: boolean; p_id: number }; Returns: undefined }
+      revert_change: { Args: { p_id: number }; Returns: undefined }
+      set_contribution_level: {
+        Args: { p_level: string; p_user: string }
+        Returns: undefined
+      }
       set_edition_cover: {
         Args: { p_cover_url: string; p_isbn: string }
         Returns: undefined

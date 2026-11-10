@@ -9,6 +9,8 @@ import SubmitButton from '../components/SubmitButton'
 import TextField from '../components/TextField'
 import ClearCollectionDialog from '../features/collection/ClearCollectionDialog'
 import { exportCollection } from '../features/export/exportCollection'
+import { countPending } from '../features/governance/api'
+import { useAccess } from '../features/governance/useAccess'
 import { supabase } from '../lib/supabase'
 
 export default function ProfilePage() {
@@ -23,6 +25,8 @@ export default function ProfilePage() {
   const [exporting, setExporting] = useState(false)
   const [exportMessage, setExportMessage] = useState<string | null>(null)
   const [clearing, setClearing] = useState(false)
+  const { access } = useAccess()
+  const [pendingCount, setPendingCount] = useState(0)
 
   useEffect(() => {
     if (!userId) return
@@ -75,6 +79,19 @@ export default function ProfilePage() {
     setExporting(false)
   }
 
+  // Propositions à valider (modérateurs seulement)
+  const isModerator = access.isModerator
+  useEffect(() => {
+    if (!isModerator) return
+    let cancelled = false
+    countPending()
+      .then((count) => !cancelled && setPendingCount(count))
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [isModerator])
+
   async function onSignOut() {
     await signOut()
     navigate('/connexion', { replace: true })
@@ -110,6 +127,19 @@ export default function ProfilePage() {
       >
         Se déconnecter
       </button>
+
+      {isModerator && (
+        <section className="flex flex-col gap-2 border-t border-slate-200 pt-4">
+          <h2 className="font-semibold">Administration</h2>
+          <Link
+            to="/admin"
+            className="rounded border border-slate-300 px-4 py-2 text-center font-medium hover:bg-slate-50"
+          >
+            Catalogue : propositions et journal
+            {pendingCount > 0 && ` (${pendingCount} à valider)`}
+          </Link>
+        </section>
+      )}
 
       <section className="flex flex-col gap-2 border-t border-slate-200 pt-4">
         <h2 className="font-semibold">Mes données</h2>

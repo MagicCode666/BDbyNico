@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { isbn13To10 } from '../../../lib/isbn'
 import { amazonCoverUrl } from './amazon'
-import { parseBnfResponse } from './bnf'
+import { bnfCoverUrl, parseBnfArk, parseBnfResponse } from './bnf'
 import { toIsoDate } from './dates'
 import { mergeBookInfo } from './merge'
 import { parseOpenLibrary, parseSeries } from './openLibrary'
@@ -195,5 +195,20 @@ describe('isbn13To10', () => {
   it('renvoie null hors préfixe 978 ou si invalide', () => {
     expect(isbn13To10('9791234567896')).toBeNull()
     expect(isbn13To10('9782203001177')).toBeNull()
+  })
+})
+
+describe('couverture de la BnF', () => {
+  it("lit l'identifiant de la notice dans une réponse SRU", () => {
+    const xml =
+      '<mxc:controlfield tag="003">http://catalogue.bnf.fr/ark:/12148/cb41492610m</mxc:controlfield>'
+    expect(parseBnfArk(xml)).toBe('cb41492610m')
+    expect(parseBnfArk('<srw:records/>')).toBeUndefined()
+  })
+
+  it("construit l'adresse du service de couvertures", () => {
+    expect(bnfCoverUrl('cb41492610m')).toBe(
+      'https://catalogue.bnf.fr/couverture?&appName=NE&idArk=ark:/12148/cb41492610m&couverture=1',
+    )
   })
 })

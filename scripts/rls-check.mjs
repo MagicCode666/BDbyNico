@@ -131,6 +131,22 @@ const isbn10 = (() => {
 const coverAmazon = `https://images-na.ssl-images-amazon.com/images/P/${isbn10}.01.LZZZZZZZ.jpg`
 r = await B.client.rpc('set_edition_cover', { p_isbn: isbn, p_cover_url: coverAmazon })
 check('Une autre adresse autorisée est acceptée sans erreur', !r.error, show(r))
+const bnfBase = 'https://catalogue.bnf.fr/couverture?&appName=NE&idArk=ark:/12148/cb41492610m'
+r = await B.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: `${bnfBase}&couverture=1`,
+})
+check('Une adresse de couverture de la BnF est acceptée sans erreur', !r.error, show(r))
+r = await B.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: `${bnfBase}&couverture=1&autre=1`,
+})
+check('Une adresse de la BnF avec un paramètre en trop est refusée', !!r.error, show(r))
+r = await B.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: `${bnfBase}&couverture=1`.replace('catalogue.bnf.fr', 'exemple.invalid'),
+})
+check('Une fausse adresse de la BnF (autre site) est refusée', !!r.error, show(r))
 r = await B.client.from('editions').select('cover_url').eq('isbn', isbn)
 check(
   "La couverture déjà renseignée n'est pas écrasée",
@@ -288,8 +304,13 @@ r = await A.client
   .update({ total_override: 1000 })
   .eq('series_id', seriesId)
 check('Total personnel 1000 refusé', !!r.error, show(r))
-r = await B.client.from('user_series_settings').select('series_id')
-check('B ne voit pas les réglages de A', !r.error && r.data?.length === 0, show(r))
+// B peut avoir ses propres réglages : on vérifie qu'aucune ligne de A ne lui est visible
+r = await B.client.from('user_series_settings').select('series_id, user_id')
+check(
+  'B ne voit aucun réglage de A',
+  !r.error && r.data.every((row) => row.user_id !== A.id),
+  show(r),
+)
 r = await B.client
   .from('user_series_settings')
   .insert({ user_id: A.id, series_id: seriesId, ignored_volumes: [1] })
@@ -354,8 +375,113 @@ check('Un anonyme ne peut pas régénérer de jeton', !!r.error, show(r))
 r = await anon.rpc('delete_my_account')
 check('Un anonyme ne peut pas supprimer de compte', !!r.error, show(r))
 
+console.log('\n--- Gouvernance du catalogue ---')
+r = await A.client.from('profiles').update({ role: 'admin' }).eq('id', A.id)
+check('Un utilisateur ne peut pas se donner le rôle administrateur', !!r.error, show(r))
+r = await A.client.from('profiles').update({ contribution: 'collection_only' }).eq('id', A.id)
+check('Un utilisateur ne peut pas modifier son niveau de contribution', !!r.error, show(r))
+r = await A.client.from('profiles').select('role, contribution').eq('id', A.id).single()
+check(
+  'Un compte ordinaire a le rôle « user » et le niveau « full »',
+  r.data?.role === 'user' && r.data?.contribution === 'full',
+  show(r),
+)
+// Album dédié (le verrou de couverture persiste d'un passage à l'autre : l'état de départ importe peu)
+const govIsbn = mkIsbn('978999999996')
+const govCover = `https://covers.openlibrary.org/b/isbn/${govIsbn}-L.jpg`
+r = await A.client.rpc('add_edition', {
+  p_isbn: govIsbn,
+  p_title: 'TEST RLS gouvernance - à supprimer',
+  p_series_name: 'Série de test RLS',
+  p_volume: 2,
+})
+check('A crée un album pour les tests de gouvernance', !r.error, show(r))
+await A.client.from('collection_items').insert({ user_id: A.id, isbn: govIsbn, status: 'owned' })
+r = await A.client.from('collection_items').select('id').eq('isbn', govIsbn).single()
+const govItemId = r.data?.id
+check('A possède cet album', !r.error && !!govItemId, show(r))
+// A n'a pas cet album dans sa collection (créé par l'import de test) : refusé.
+// (B ne convient pas ici : il peut être administrateur, donc autorisé à corriger tout album.)
+r = await A.client.rpc('report_cover', { p_isbn: importIsbn, p_cover_url: null })
+check("Un non-possesseur ne peut pas signaler la couverture d'un album", !!r.error, show(r))
+r = await A.client.rpc('report_cover', {
+  p_isbn: govIsbn,
+  p_cover_url: 'https://exemple.invalid/couverture.jpg',
+})
+check('Signalement avec une adresse non autorisée refusé', !!r.error, show(r))
+r = await anon.rpc('report_cover', { p_isbn: govIsbn, p_cover_url: null })
+check('Un anonyme ne peut pas signaler de couverture', !!r.error, show(r))
+r = await A.client.rpc('report_cover', { p_isbn: govIsbn, p_cover_url: govCover })
+check(
+  'Le possesseur choisit une couverture autorisée',
+  !r.error && ['applied', 'unchanged'].includes(r.data),
+  show(r),
+)
+r = await A.client.rpc('report_cover', { p_isbn: govIsbn, p_cover_url: null })
+check(
+  'Le possesseur signale « pas de couverture » (appliqué sans attente)',
+  r.data === 'applied',
+  show(r),
+)
+r = await A.client.from('editions').select('cover_url, cover_locked').eq('isbn', govIsbn).single()
+check(
+  'Le choix verrouille la couverture (le job ne la remplace plus)',
+  r.data?.cover_url === null && r.data?.cover_locked === true,
+  show(r),
+)
+r = await A.client.rpc('set_edition_cover', { p_isbn: govIsbn, p_cover_url: govCover })
+r = await A.client.from('editions').select('cover_url').eq('isbn', govIsbn).single()
+check(
+  'La mise à jour automatique ne touche pas une couverture verrouillée',
+  r.data?.cover_url === null,
+  show(r),
+)
+r = await A.client.from('catalogue_changes').select('id, user_id, kind, status')
+check(
+  'A ne lit que ses propres lignes du journal',
+  !r.error && r.data.length > 0 && r.data.every((row) => row.user_id === A.id),
+  show(r),
+)
+// Un modérateur ou un administrateur lit tout le journal (voulu) : le contrôle dépend du rôle de B
+r = await B.client.from('profiles').select('role').eq('id', B.id).single()
+const bIsModerator = r.data?.role === 'moderator' || r.data?.role === 'admin'
+r = await B.client.from('catalogue_changes').select('id, user_id')
+check(
+  bIsModerator
+    ? 'B (modérateur) lit tout le journal, y compris les lignes de A'
+    : 'B ne voit aucune ligne du journal de A',
+  !r.error &&
+    (bIsModerator
+      ? r.data.some((row) => row.user_id === A.id)
+      : r.data.every((row) => row.user_id !== A.id)),
+  show(r),
+)
+r = await anon.from('catalogue_changes').select('id')
+check('Un anonyme ne peut pas lire le journal', !!r.error || r.data?.length === 0, show(r))
+r = await A.client
+  .from('catalogue_changes')
+  .insert({ origin: 'user', kind: 'cover', isbn: govIsbn })
+check('Aucune écriture directe dans le journal', !!r.error, show(r))
+r = await A.client.rpc('review_change', { p_id: 1, p_accept: true })
+check('Un utilisateur ordinaire ne peut pas valider une proposition', !!r.error, show(r))
+r = await A.client.rpc('revert_change', { p_id: 1 })
+check('Un utilisateur ordinaire ne peut pas annuler un changement', !!r.error, show(r))
+r = await A.client.rpc('list_catalogue_changes')
+check('Un utilisateur ordinaire ne peut pas lister tout le journal', !!r.error, show(r))
+r = await A.client.rpc('list_users_admin')
+check('Un utilisateur ordinaire ne peut pas lister les utilisateurs', !!r.error, show(r))
+r = await A.client.rpc('set_contribution_level', { p_user: B.id, p_level: 'collection_only' })
+check('Un utilisateur ordinaire ne peut pas restreindre un autre utilisateur', !!r.error, show(r))
+r = await B.client.from('profiles').select('contribution').eq('id', B.id).single()
+check('Le niveau de B est resté « full »', r.data?.contribution === 'full', show(r))
+console.log(
+  '  (les parcours « collection seule », validation et annulation sont testés par supabase/tests/gouvernance.sql)',
+)
+
 console.log('\n--- Nettoyage ---')
 await A.client.from('profiles').update({ share_enabled: false }).eq('id', A.id)
+r = await A.client.from('collection_items').delete().eq('id', govItemId).select()
+check("A retire l'album de gouvernance de sa collection", !r.error && r.data?.length === 1, show(r))
 r = await A.client.from('collection_items').delete().eq('id', itemId).select()
 check('A supprime son album de test', !r.error && r.data?.length === 1, show(r))
 r = await A.client.from('user_series_settings').delete().eq('series_id', seriesId).select()

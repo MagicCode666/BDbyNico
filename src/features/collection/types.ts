@@ -31,6 +31,10 @@ export interface Edition {
   publishedOn: string | null
   coverUrl: string | null
   series: SeriesInfo | null
+  /** Couverture choisie à la main : la recherche automatique n'y touche plus. */
+  coverLocked?: boolean
+  /** En attente de validation par un modérateur (visible de son auteur seulement). */
+  pending?: boolean
 }
 
 /** Un album de la collection de l'utilisateur : la ligne `collection_items` + son édition. */
