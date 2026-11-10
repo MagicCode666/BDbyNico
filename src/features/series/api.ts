@@ -36,7 +36,7 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
 
   const { data: editionRows, error: editionsError } = await supabase
     .from('editions')
-    .select('isbn, title, volume, cover_url, authors')
+    .select('isbn, title, volume, cover_url, cover_locked, authors')
     .eq('series_id', seriesId)
     .order('volume', { ascending: true, nullsFirst: false })
   if (editionsError) throw editionsError
@@ -46,6 +46,7 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
     title: row.title,
     volume: row.volume,
     coverUrl: row.cover_url,
+    coverLocked: row.cover_locked,
     authors: row.authors,
   }))
 

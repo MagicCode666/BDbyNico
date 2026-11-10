@@ -39,6 +39,24 @@ Le total partagé d'une série (`series.total_volumes`) n'est écrit que par un 
 - Corriger une série à la main (SQL Editor de Supabase) : `update series set total_volumes = 24, total_source = 'manual' where name = 'Tintin';` — le job n'y touche plus. Pour repasser en automatique : `total_source = 'auto'`.
 - Les corrections des utilisateurs sont personnelles (table `user_series_settings` : tomes ignorés, total personnel).
 
+## Gouvernance du catalogue
+
+Le catalogue (albums, séries, couvertures) est partagé : chaque changement est journalisé
+(table `catalogue_changes`) et peut être annulé depuis la page `/admin`.
+
+- **Rôles** (`profiles.role`) : `user`, `moderator` (valide et annule), `admin` (en plus, gère
+  les niveaux de contribution). Ils ne se règlent que par SQL, jamais depuis l'application :
+  `update public.profiles set role = 'admin' where id = (select id from auth.users where email = '…');`
+- **Niveau de contribution** (`profiles.contribution`) : `full` (par défaut) ou `collection_only`.
+  Un utilisateur « collection seule » ne modifie pas le catalogue : ses ajouts d'albums inconnus et
+  ses corrections de couverture sont mis en attente jusqu'à validation. L'administrateur le règle
+  dans `/admin`, onglet « Utilisateurs ».
+- **Couverture choisie à la main** (`editions.cover_locked`) : le job ne la remplace plus.
+- **Test des règles** : `npm test` rejoue toutes les migrations sur un Postgres embarqué (PGlite,
+  sans secret) puis le scénario `supabase/tests/gouvernance.sql` (droits, journal, propositions,
+  validation, annulation). Le même scénario peut tourner sur la vraie base (il s'annule lui-même) :
+  `npx supabase db query --remote --yes -f supabase/tests/gouvernance.sql`.
+
 ## Versions
 
 [SemVer](https://semver.org/lang/fr/) : `MAJEUR.MINEUR.CORRECTIF`. Le changelog est généré à partir des messages de commit.

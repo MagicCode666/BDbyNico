@@ -9,6 +9,8 @@ const CONCURRENCY = 4
 interface WithCover {
   isbn: string
   coverUrl: string | null
+  /** Couverture choisie à la main (même vide) : on ne la recherche pas. */
+  locked?: boolean
 }
 
 /**
@@ -20,7 +22,7 @@ export function useMissingCovers(editions: WithCover[]) {
   const [done, setDone] = useState(0)
 
   const missingKey = editions
-    .filter((e) => !e.coverUrl)
+    .filter((e) => !e.coverUrl && !e.locked)
     .map((e) => e.isbn)
     .join(',')
   const todo = useMemo(
