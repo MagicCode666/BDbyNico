@@ -427,6 +427,20 @@ export type Database = {
         Args: { p_accept: boolean; p_id: number }
         Returns: undefined
       }
+      norm_text: { Args: { p_text: string }; Returns: string }
+      search_catalogue: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          cover_url: string
+          detail: string
+          isbn: string
+          kind: string
+          label: string
+          my_status: string
+          ref: string
+          series_id: string
+        }[]
+      }
       set_contribution_level: {
         Args: { p_level: string; p_user: string }
         Returns: undefined
