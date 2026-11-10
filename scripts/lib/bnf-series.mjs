@@ -149,27 +149,70 @@ export function computeSeries(notices, seriesName) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-/** Récupère les notices de la BnF susceptibles d'appartenir à la série (par pages de 50). */
-export async function fetchNotices(seriesName, { fetchFn = fetch, delayMs = 400 } = {}) {
+/** Exécute `task` sur chaque élément, `limit` à la fois, en gardant l'ordre des résultats. */
+export async function mapLimit(items, limit, task) {
+  const results = new Array(items.length)
+  let next = 0
+  async function worker() {
+    while (next < items.length) {
+      const index = next++
+      results[index] = await task(items[index], index)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+  return results
+}
+
+/** Une page de résultats, avec quelques nouvelles tentatives si la BnF est surchargée. */
+async function fetchPage(query, start, fetchFn, retryDelayMs) {
+  const params = new URLSearchParams({
+    version: '1.2',
+    operation: 'searchRetrieve',
+    query,
+    recordSchema: 'unimarcxchange',
+    maximumRecords: String(PAGE_SIZE),
+    startRecord: String(start),
+  })
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const response = await fetchFn(`${SRU_URL}?${params}`, {
+        signal: AbortSignal.timeout(30000),
+      })
+      if (!response.ok) throw new Error(`BnF : HTTP ${response.status}`)
+      const xml = await response.text()
+      return {
+        total: Number(xml.match(/numberOfRecords>(\d+)/)?.[1] ?? 0),
+        notices: parseNotices(xml),
+      }
+    } catch (error) {
+      if (attempt >= 3) throw error
+      await sleep(retryDelayMs * attempt)
+    }
+  }
+}
+
+/**
+ * Récupère les notices de la BnF susceptibles d'appartenir à la série (par pages de 50).
+ * La première page donne le nombre total ; les suivantes sont lues `pageConcurrency` à la fois.
+ */
+export async function fetchNotices(
+  seriesName,
+  { fetchFn = fetch, retryDelayMs = 1000, pageConcurrency = 3 } = {},
+) {
   const term = seriesName.replace(/"/g, ' ')
   const query = `bib.anywhere all "${term}" and bib.doctype all "a"`
-  const notices = []
-  for (let start = 1; start <= MAX_NOTICES; start += PAGE_SIZE) {
-    const params = new URLSearchParams({
-      version: '1.2',
-      operation: 'searchRetrieve',
-      query,
-      recordSchema: 'unimarcxchange',
-      maximumRecords: String(PAGE_SIZE),
-      startRecord: String(start),
-    })
-    const response = await fetchFn(`${SRU_URL}?${params}`, { signal: AbortSignal.timeout(30000) })
-    if (!response.ok) throw new Error(`BnF : HTTP ${response.status}`)
-    const xml = await response.text()
-    const total = Number(xml.match(/numberOfRecords>(\d+)/)?.[1] ?? 0)
-    notices.push(...parseNotices(xml))
-    if (start + PAGE_SIZE > total) break
-    await sleep(delayMs)
+  const first = await fetchPage(query, 1, fetchFn, retryDelayMs)
+  const starts = []
+  for (
+    let start = 1 + PAGE_SIZE;
+    start <= MAX_NOTICES && start <= first.total;
+    start += PAGE_SIZE
+  ) {
+    starts.push(start)
   }
-  return notices
+  const others = await mapLimit(starts, pageConcurrency, async (start) => {
+    const page = await fetchPage(query, start, fetchFn, retryDelayMs)
+    return page.notices
+  })
+  return [...first.notices, ...others.flat()]
 }
