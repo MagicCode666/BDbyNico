@@ -1,276 +1,246 @@
-import { useCallback, useState, type FormEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 
+import { useAuth } from '../../auth/useAuth'
 import FormMessage from '../../components/FormMessage'
 import PageLayout from '../../components/PageLayout'
-import SubmitButton from '../../components/SubmitButton'
-import TextField from '../../components/TextField'
+import { languageName } from '../../lib/bnfFields'
 import { formatIsbn } from '../../lib/isbn'
 import CoverReportDialog from '../governance/CoverReportDialog'
+import { getSeriesData, addCatalogueEdition, type SeriesData } from '../series/api'
+import { PUBLICATION_LABELS } from '../series/status'
+import { CoverImage } from './AlbumCard'
+import AlbumCollectionCard from './AlbumCollectionCard'
+import AlbumSeriesStrip from './AlbumSeriesStrip'
+import { fillEditionDetails, getCatalogueEdition, getEntry } from './api'
 import KindEditor from './KindEditor'
-import { Cover } from './AlbumCard'
-import { deleteEntry, getEntry, updateEntry } from './api'
-import { DEDICATION_LABELS, STATUS_LABELS, type Dedication, type Entry, type Status } from './types'
+import { KIND_LABELS, toAlbumKind } from './kinds'
+import { lookupBnf } from './lookup/bnf'
+import type { Edition, Entry } from './types'
 import { useAsync } from './useAsync'
+
+interface AlbumData {
+  edition: Edition
+  entry: Entry | null
+  series: SeriesData | null
+}
+
+async function loadAlbum(isbn: string): Promise<AlbumData | null> {
+  const [edition, entry] = await Promise.all([getCatalogueEdition(isbn), getEntry(isbn)])
+  const known = entry?.edition ?? edition
+  if (!known) return null
+  // Les données de la série sont un plus : leur échec ne doit pas masquer l'album
+  const series = known.series ? await getSeriesData(known.series.id).catch(() => null) : null
+  return { edition: known, entry, series }
+}
 
 export default function AlbumPage() {
   const { isbn = '' } = useParams()
-  const load = useCallback(() => getEntry(isbn), [isbn])
-  const { data: entry, loading, error, reload } = useAsync(load)
+  const load = useCallback(() => loadAlbum(isbn), [isbn])
+  const { data, loading, error, reload } = useAsync(load)
+
+  const crumbs = [
+    { label: 'Accueil', to: '/' },
+    { label: 'Ma collection', to: '/collection' },
+    ...(data?.edition.series
+      ? [{ label: data.edition.series.name, to: `/series/${data.edition.series.id}` }]
+      : []),
+    { label: data?.edition.title ?? 'Album' },
+  ]
 
   return (
-    <PageLayout title="Fiche de l'album">
-      {loading && <p className="text-muted">Chargement…</p>}
+    <PageLayout title="Fiche de l'album" crumbs={crumbs} hideTitle>
+      {loading && !data && <p className="text-muted">Chargement…</p>}
       {error && <FormMessage kind="error">Impossible de charger cet album.</FormMessage>}
-      {!loading && !error && !entry && (
+      {!loading && !error && !data && (
         <p className="text-muted">
-          Cet album n'est pas dans votre collection.{' '}
+          Cet album n'est pas dans le catalogue.{' '}
           <Link to="/collection" className="text-accent-text underline">
             Retour à la collection
           </Link>
         </p>
       )}
-      {entry && <AlbumDetails key={entry.id} entry={entry} onReload={reload} />}
+      {data && <AlbumDetails key={data.edition.isbn} data={data} onReload={reload} />}
     </PageLayout>
   )
 }
 
-function AlbumDetails({ entry, onReload }: { entry: Entry; onReload: () => void }) {
-  const navigate = useNavigate()
-  const { edition } = entry
-  const [status, setStatus] = useState<Status>(entry.status)
-  const [read, setRead] = useState(entry.read)
-  const [price, setPrice] = useState(entry.price?.toString() ?? '')
-  const [condition, setCondition] = useState(entry.condition ?? '')
-  const [notes, setNotes] = useState(entry.notes ?? '')
-  const [acquiredOn, setAcquiredOn] = useState(entry.acquiredOn ?? '')
-  const [dedication, setDedication] = useState<Dedication | ''>(entry.dedication ?? '')
-  const [dedicationBy, setDedicationBy] = useState(entry.dedicationBy ?? '')
-  const [firstEdition, setFirstEdition] = useState(entry.firstEdition)
-  const [error, setError] = useState<string | null>(null)
-  const [saved, setSaved] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const [reportingCover, setReportingCover] = useState(false)
+const secondaryButton =
+  'rounded border border-line-strong bg-surface px-3 py-2 text-sm font-medium hover:bg-raised disabled:opacity-50'
 
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault()
-    const priceNumber = price.trim() === '' ? null : Number(price.replace(',', '.'))
-    if (priceNumber !== null && (!Number.isFinite(priceNumber) || priceNumber < 0)) {
-      return setError('Le prix doit être un nombre positif.')
-    }
+function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => void }) {
+  const { edition, entry, series } = data
+  const { user } = useAuth()
+  const [reportingCover, setReportingCover] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  useAutoFillDetails(edition, onReload)
+
+  async function add(status: 'owned' | 'wanted') {
+    if (!user) return
     setBusy(true)
     setError(null)
     try {
-      await updateEntry(entry.id, {
-        status,
-        read,
-        price: priceNumber,
-        condition: condition.trim() || null,
-        notes: notes.trim() || null,
-        acquiredOn: acquiredOn || null,
-        dedication: dedication || null,
-        dedicationBy: dedicationBy.trim() || null,
-        firstEdition,
-      })
-      setSaved(true)
+      await addCatalogueEdition(user.id, edition.isbn, status)
+      onReload()
     } catch {
-      setError("Impossible d'enregistrer les modifications.")
+      setError("Impossible de l'ajouter à votre collection.")
     }
     setBusy(false)
   }
 
-  async function onDelete() {
-    setBusy(true)
-    try {
-      await deleteEntry(entry.id)
-      navigate('/collection', { replace: true })
-    } catch {
-      setError("Impossible de supprimer l'album.")
-      setBusy(false)
-    }
-  }
+  const kind = toAlbumKind(edition.kind)
+  const publication = edition.series?.publicationStatus
+  const published = edition.publishedOn ? formatDate(edition.publishedOn) : null
+  const facts: [string, string | null][] = [
+    ['Éditeur', edition.publisher],
+    ['Parution', published],
+    ['Pages', edition.pages ? String(edition.pages) : null],
+    ['Format', edition.formatCm ? `${edition.formatCm} cm de haut` : null],
+    [
+      'Prix public',
+      edition.publicPrice != null
+        ? `${edition.publicPrice.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €`
+        : null,
+    ],
+    ['Langue', languageName(edition.language) ?? null],
+    ['Type', KIND_LABELS[kind]],
+    ['ISBN', formatIsbn(edition.isbn)],
+  ]
 
   return (
-    <div className="grid gap-6 md:grid-cols-[12rem_1fr]">
-      <div className="flex flex-col items-start gap-2">
-        <Cover entry={entry} className="aspect-[2/3] w-48 rounded" />
-        <button
-          type="button"
-          onClick={() => setReportingCover(true)}
-          className="text-xs text-muted underline hover:text-accent-text"
-        >
-          Cette couverture n'est pas bonne
-        </button>
-      </div>
-      <div className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-xl font-semibold">{edition.title}</h2>
-          <p className="text-sm text-muted">
-            {[
-              edition.series &&
-                `${edition.series.name}${edition.volume !== null ? ` · tome ${edition.volume}` : ''}`,
-              edition.authors.join(', '),
-              edition.publisher,
-              edition.publishedOn,
-              `ISBN ${formatIsbn(edition.isbn)}`,
-            ]
-              .filter(Boolean)
-              .join(' — ')}
-          </p>
-        </div>
-
-        {edition.pending && (
-          <p role="status" className="rounded bg-warn-soft p-2 text-sm text-warn">
-            Cet album est en attente de validation : il n'est visible que de vous pour l'instant.
-          </p>
-        )}
-
-        <KindEditor
-          key={`${edition.kind}-${edition.volumeFrom}-${edition.volumeTo}`}
-          edition={edition}
-          onChanged={onReload}
-        />
-
-        {/* Le message « enregistré » disparaît dès qu'on modifie à nouveau un champ */}
-        <form
-          onSubmit={onSubmit}
-          onChange={() => setSaved(false)}
-          noValidate
-          className="flex max-w-lg flex-col gap-4"
-        >
-          <div className="flex flex-col gap-1">
-            <label htmlFor="status" className="text-sm font-medium">
-              Statut
-            </label>
-            <select
-              id="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as Status)}
-              className="rounded border border-line-strong px-3 py-2"
-            >
-              {(Object.keys(STATUS_LABELS) as Status[]).map((value) => (
-                <option key={value} value={value}>
-                  {STATUS_LABELS[value]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input type="checkbox" checked={read} onChange={(e) => setRead(e.target.checked)} />
-            Lu
-          </label>
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={firstEdition}
-              onChange={(e) => setFirstEdition(e.target.checked)}
+    <div className="flex flex-col gap-6">
+      <section
+        className="card-lift grid gap-5 p-5 sm:grid-cols-[10rem_minmax(0,1fr)]"
+        style={{
+          backgroundImage:
+            'radial-gradient(560px 260px at 14% -4%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%), var(--grad-surface)',
+        }}
+      >
+        <div className="flex flex-col items-start gap-2">
+          <div className="cover-art aspect-[2/3] w-28 sm:w-40">
+            <CoverImage
+              coverUrl={edition.coverUrl}
+              title={edition.title}
+              className="aspect-[2/3] rounded"
             />
-            Édition originale
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="dedication" className="text-sm font-medium">
-                Dédicace
-              </label>
-              <select
-                id="dedication"
-                value={dedication}
-                onChange={(e) => setDedication(e.target.value as Dedication | '')}
-                className="rounded border border-line-strong px-3 py-2"
-              >
-                <option value="">Aucune</option>
-                {(Object.keys(DEDICATION_LABELS) as Dedication[]).map((value) => (
-                  <option key={value} value={value}>
-                    {DEDICATION_LABELS[value]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {dedication && (
-              <TextField
-                label="Dédicacé par"
-                name="dedicationBy"
-                placeholder="Auteur ou artiste"
-                maxLength={100}
-                value={dedicationBy}
-                onChange={(e) => setDedicationBy(e.target.value)}
-              />
+          </div>
+          <button
+            type="button"
+            onClick={() => setReportingCover(true)}
+            className="text-xs text-muted underline hover:text-accent-text"
+          >
+            Cette couverture n'est pas bonne
+          </button>
+        </div>
+        <div className="flex min-w-0 flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {kind !== 'album' && <span className="badge badge-accent">{KIND_LABELS[kind]}</span>}
+            {entry && (
+              <span className="badge">
+                {entry.status === 'owned' ? 'Dans ma collection' : 'Dans mes envies'}
+                {entry.read ? ' · lu' : ''}
+              </span>
+            )}
+            {publication && edition.series && (
+              <span className="badge">{PUBLICATION_LABELS[publication]}</span>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <TextField
-              label="Prix (€)"
-              name="price"
-              inputMode="decimal"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-            <TextField
-              label="Date d'achat"
-              name="acquiredOn"
-              type="date"
-              value={acquiredOn}
-              onChange={(e) => setAcquiredOn(e.target.value)}
-            />
-          </div>
-          <TextField
-            label="État"
-            name="condition"
-            placeholder="Neuf, bon, abîmé…"
-            maxLength={50}
-            value={condition}
-            onChange={(e) => setCondition(e.target.value)}
-          />
-          <div className="flex flex-col gap-1">
-            <label htmlFor="notes" className="text-sm font-medium">
-              Notes
-            </label>
-            <textarea
-              id="notes"
-              rows={3}
-              maxLength={2000}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="rounded border border-line-strong px-3 py-2 focus:border-accent focus:outline-none"
-            />
-          </div>
-          {error && <FormMessage kind="error">{error}</FormMessage>}
-          {saved && <FormMessage kind="success">Modifications enregistrées.</FormMessage>}
-          <SubmitButton busy={busy}>Enregistrer</SubmitButton>
-        </form>
-
-        <div className="max-w-lg border-t border-line pt-4">
-          {confirmDelete ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm">Retirer cet album de votre collection ?</span>
+          <h1 className="title-metal text-3xl sm:text-5xl">{edition.title}</h1>
+          {edition.series && (
+            <p>
+              <Link
+                to={`/series/${edition.series.id}`}
+                className="font-medium text-accent-text hover:underline"
+              >
+                {edition.series.name}
+              </Link>
+              {edition.volume !== null && (
+                <span className="text-muted"> · Tome {edition.volume}</span>
+              )}
+            </p>
+          )}
+          {edition.authors.length > 0 && (
+            <p className="text-muted">{edition.authors.join(' · ')}</p>
+          )}
+          <p className="text-sm text-muted">
+            {[edition.publisher, published].filter(Boolean).join(' · ')}
+          </p>
+          {!entry && (
+            <div
+              className="flex flex-wrap gap-2 pt-1"
+              role="group"
+              aria-label="Ajouter à ma collection"
+            >
               <button
                 type="button"
-                onClick={onDelete}
                 disabled={busy}
-                className="rounded bg-danger px-3 py-1 text-sm font-medium text-white disabled:opacity-50"
+                onClick={() => add('owned')}
+                className="rounded bg-accent px-4 py-2 text-sm font-semibold text-on-accent disabled:opacity-50"
               >
-                Oui, retirer
+                Je l'ai
               </button>
               <button
                 type="button"
-                onClick={() => setConfirmDelete(false)}
-                className="rounded border border-line-strong px-3 py-1 text-sm"
+                disabled={busy}
+                onClick={() => add('wanted')}
+                className={secondaryButton}
               >
-                Annuler
+                Je le veux
               </button>
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className="text-sm text-danger-text underline"
-            >
-              Retirer de ma collection
-            </button>
           )}
+          {error && <FormMessage kind="error">{error}</FormMessage>}
         </div>
+      </section>
+
+      {edition.pending && (
+        <p role="status" className="rounded bg-warn-soft p-2 text-sm text-warn">
+          Cet album est en attente de validation : il n'est visible que de vous pour l'instant.
+        </p>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
+        <div className="flex min-w-0 flex-col gap-6">
+          {edition.summary && (
+            <section className="card flex flex-col gap-2 p-5" aria-labelledby="resume">
+              <h2 id="resume" className="font-display text-xl font-bold uppercase tracking-wide">
+                Résumé
+              </h2>
+              <p className="leading-relaxed text-muted">{edition.summary}</p>
+              <p className="text-xs text-muted">Source : catalogue de la BnF.</p>
+            </section>
+          )}
+
+          <section className="card flex flex-col gap-3 p-5" aria-labelledby="a-propos">
+            <h2 id="a-propos" className="font-display text-xl font-bold uppercase tracking-wide">
+              Caractéristiques
+            </h2>
+            <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+              {facts
+                .filter(([, value]) => value)
+                .map(([label, value]) => (
+                  <div key={label} className="flex justify-between gap-3 border-b border-line py-1">
+                    <dt className="text-muted">{label}</dt>
+                    <dd className="text-right font-medium">{value}</dd>
+                  </div>
+                ))}
+            </dl>
+            {entry && (
+              <KindEditor
+                key={`${edition.kind}-${edition.volumeFrom}-${edition.volumeTo}`}
+                edition={edition}
+                onChanged={onReload}
+              />
+            )}
+          </section>
+
+          {series && <AlbumSeriesStrip data={series} currentIsbn={edition.isbn} />}
+        </div>
+
+        {entry && <AlbumCollectionCard key={entry.id} entry={entry} />}
       </div>
+
       {reportingCover && (
         <CoverReportDialog
           isbn={edition.isbn}
@@ -282,4 +252,38 @@ function AlbumDetails({ entry, onReload }: { entry: Entry; onReload: () => void 
       )}
     </div>
   )
+}
+
+/** « 2021-03-12 » → « 12 mars 2021 » ; « 1989-01-01 » (année seule) → « 1989 ». */
+function formatDate(iso: string): string {
+  const [year, month, day] = iso.split('-').map(Number)
+  if (!year) return iso
+  if (month === 1 && day === 1) return String(year)
+  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+
+/**
+ * Une fiche jamais complétée est demandée à la BnF à l'ouverture, puis enregistrée dans le
+ * catalogue (sans écraser l'existant) : chaque album n'est interrogé qu'une fois.
+ */
+function useAutoFillDetails(edition: Edition, onReload: () => void) {
+  const tried = useRef(false)
+  const { isbn, detailsChecked, pending } = edition
+  useEffect(() => {
+    if (tried.current || detailsChecked || pending) return
+    tried.current = true
+    lookupBnf(isbn)
+      .then(async (info) => {
+        await fillEditionDetails(isbn, info ?? {})
+        if (info?.summary || info?.pages || info?.formatCm || info?.publicPrice || info?.language) {
+          onReload()
+        }
+      })
+      .catch(() => undefined)
+  }, [isbn, detailsChecked, pending, onReload])
 }

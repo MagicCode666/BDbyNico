@@ -1,3 +1,4 @@
+import type { AlbumDetails } from '../../lib/bnfFields'
 import { supabase } from '../../lib/supabase'
 import { toPublicationStatus } from '../series/status'
 import { toAlbumKind } from './kinds'
@@ -9,6 +10,7 @@ const SELECT = `
   editions (
     isbn, title, volume, authors, publisher, published_on, cover_url,
     review_status, cover_locked, kind, volume_from, volume_to,
+    summary, pages, format_cm, public_price, language, details_checked_at,
     series ( id, name, total_volumes, publication_status, starts_at_zero )
   )
 `
@@ -34,6 +36,12 @@ interface RawEdition {
   kind?: string
   volume_from?: number | null
   volume_to?: number | null
+  summary?: string | null
+  pages?: number | null
+  format_cm?: number | null
+  public_price?: number | string | null
+  language?: string | null
+  details_checked_at?: string | null
   series: RawSeries | null
 }
 
@@ -83,6 +91,13 @@ function toEdition(raw: RawEdition): Edition {
     volumeFrom: raw.volume_from ?? null,
     volumeTo: raw.volume_to ?? null,
     pending: raw.review_status === 'pending',
+    summary: raw.summary ?? null,
+    pages: raw.pages ?? null,
+    formatCm: raw.format_cm ?? null,
+    // numeric(6,2) arrive parfois sous forme de texte
+    publicPrice: raw.public_price == null ? null : Number(raw.public_price),
+    language: raw.language ?? null,
+    detailsChecked: raw.details_checked_at != null,
   }
 }
 
@@ -125,12 +140,25 @@ export async function getCatalogueEdition(isbn: string): Promise<Edition | null>
   const { data, error } = await supabase
     .from('editions')
     .select(
-      'isbn, title, volume, authors, publisher, published_on, cover_url, cover_locked, review_status, kind, volume_from, volume_to, series ( id, name, total_volumes )',
+      'isbn, title, volume, authors, publisher, published_on, cover_url, cover_locked, review_status, kind, volume_from, volume_to, summary, pages, format_cm, public_price, language, details_checked_at, series ( id, name, total_volumes, publication_status, starts_at_zero )',
     )
     .eq('isbn', isbn)
     .maybeSingle()
   if (error) throw error
   return data ? toEdition(data as unknown as RawEdition) : null
+}
+
+/** Complète la fiche d'un album avec ce que la BnF en dit (jamais d'écrasement côté base). */
+export async function fillEditionDetails(isbn: string, details: AlbumDetails): Promise<void> {
+  const { error } = await supabase.rpc('fill_edition_details', {
+    p_isbn: isbn,
+    p_summary: details.summary,
+    p_pages: details.pages,
+    p_format_cm: details.formatCm,
+    p_public_price: details.publicPrice,
+    p_language: details.language,
+  })
+  if (error) throw error
 }
 
 export interface NewAlbum {
