@@ -1,13 +1,16 @@
 // @vitest-environment node
 import { PGlite } from '@electric-sql/pglite'
+import { pg_trgm } from '@electric-sql/pglite/contrib/pg_trgm'
 import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto'
 import { unaccent } from '@electric-sql/pglite/contrib/unaccent'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
-// Rejoue toutes les migrations sur un Postgres embarqué (sans aucun secret), puis le scénario
-// supabase/tests/gouvernance.sql : droits, journal, propositions en attente, validation, annulation.
+// Rejoue toutes les migrations sur un Postgres embarqué (sans aucun secret), puis les scénarios
+// SQL de supabase/tests : gouvernance (droits, journal, propositions, validation, annulation),
+// recherche globale. Chaque scénario se termine par une exception qui annule ses écritures et dont
+// le message donne le résultat (« OK : n vérifications »).
 const root = join(import.meta.dirname, '..')
 const read = (path: string) => readFileSync(join(root, path), 'utf8')
 
@@ -29,20 +32,38 @@ const SUPABASE_ENV = `
   alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;
 `
 
-describe('migrations et gouvernance du catalogue', () => {
-  it('toutes les migrations passent et le scénario de gouvernance réussit', async () => {
-    const db = new PGlite({ extensions: { unaccent, pgcrypto } })
+async function runScenario(db: PGlite, file: string): Promise<string> {
+  return db.exec(read(file)).then(
+    () => 'Le scénario aurait dû se terminer par une exception',
+    (error: Error) => error.message,
+  )
+}
+
+describe('migrations et scénarios SQL', () => {
+  let db: PGlite
+
+  beforeAll(async () => {
+    db = new PGlite({ extensions: { unaccent, pgcrypto, pg_trgm } })
     await db.exec(SUPABASE_ENV)
     const migrations = readdirSync(join(root, 'migrations'))
       .filter((name) => name.endsWith('.sql'))
       .sort()
     for (const name of migrations) await db.exec(read(`migrations/${name}`))
+  }, 120_000)
 
-    // Le scénario se termine toujours par une exception (annulation de ses écritures)
-    const outcome = await db.exec(read('tests/gouvernance.sql')).then(
-      () => 'Le scénario aurait dû se terminer par une exception',
-      (error: Error) => error.message,
-    )
-    expect(outcome).toMatch(/^OK : \d+ vérifications$/)
+  it('le scénario de gouvernance réussit', async () => {
+    expect(await runScenario(db, 'tests/gouvernance.sql')).toMatch(/^OK : \d+ vérifications$/)
+  }, 120_000)
+
+  it('le scénario de recherche globale réussit', async () => {
+    expect(await runScenario(db, 'tests/recherche.sql')).toMatch(/^OK : \d+ vérifications$/)
+  }, 120_000)
+
+  it('le scénario de la fiche album réussit', async () => {
+    expect(await runScenario(db, 'tests/fiche_album.sql')).toMatch(/^OK : \d+ vérifications$/)
+  }, 120_000)
+
+  it('le scénario des genres réussit', async () => {
+    expect(await runScenario(db, 'tests/genres.sql')).toMatch(/^OK : \d+ vérifications$/)
   }, 120_000)
 })

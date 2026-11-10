@@ -22,17 +22,17 @@ export default function ExistingDialog({ count, onConfirm, onCancel }: ExistingD
         role="dialog"
         aria-modal="true"
         aria-labelledby="existing-title"
-        className="w-full max-w-md rounded bg-white p-5 shadow-lg"
+        className="w-full max-w-md rounded bg-surface p-5 shadow-lg"
       >
         <h2 id="existing-title" className="mb-2 text-lg font-semibold">
           {count} album{plural ? 's sont' : ' est'} déjà dans votre collection
         </h2>
-        <p className="mb-4 text-sm text-slate-600">
+        <p className="mb-4 text-sm text-muted">
           Que faire de {plural ? 'ces albums' : 'cet album'} ?
         </p>
 
         <div className="mb-5 flex flex-col gap-3">
-          <label className="flex cursor-pointer gap-3 rounded border border-slate-200 p-3 has-[:checked]:border-indigo-600">
+          <label className="flex cursor-pointer gap-3 rounded border border-line p-3 has-[:checked]:border-accent">
             <input
               type="radio"
               name="existing-mode"
@@ -42,10 +42,10 @@ export default function ExistingDialog({ count, onConfirm, onCancel }: ExistingD
             />
             <span>
               <span className="block font-medium">Les ignorer (recommandé)</span>
-              <span className="text-sm text-slate-600">Ils restent exactement comme ils sont.</span>
+              <span className="text-sm text-muted">Ils restent exactement comme ils sont.</span>
             </span>
           </label>
-          <label className="flex cursor-pointer gap-3 rounded border border-slate-200 p-3 has-[:checked]:border-indigo-600">
+          <label className="flex cursor-pointer gap-3 rounded border border-line p-3 has-[:checked]:border-accent">
             <input
               type="radio"
               name="existing-mode"
@@ -54,7 +54,7 @@ export default function ExistingDialog({ count, onConfirm, onCancel }: ExistingD
             />
             <span>
               <span className="block font-medium">Les compléter</span>
-              <span className="text-sm text-slate-600">
+              <span className="text-sm text-muted">
                 Ajoute ce que le fichier sait en plus (lu, prix, dédicace, édition originale, envie
                 devenue possédée), sans rien effacer. La date d'achat et vos notes ne sont pas
                 touchées.
@@ -67,14 +67,14 @@ export default function ExistingDialog({ count, onConfirm, onCancel }: ExistingD
           <button
             type="button"
             onClick={onCancel}
-            className="rounded border border-slate-300 px-4 py-2 text-sm font-medium"
+            className="rounded border border-line-strong px-4 py-2 text-sm font-medium"
           >
             Annuler
           </button>
           <button
             type="button"
             onClick={() => onConfirm(mode)}
-            className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            className="rounded bg-accent px-4 py-2 text-sm font-medium text-on-accent hover:bg-accent-strong"
           >
             Lancer l'import
           </button>

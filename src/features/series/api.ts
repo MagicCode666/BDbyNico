@@ -2,6 +2,7 @@ import { supabase } from '../../lib/supabase'
 import { toAlbumKind } from '../collection/kinds'
 import type { Status } from '../collection/types'
 import type { CatalogueEdition, UserItem } from './buildView'
+import { toGenres, type GenreId } from './genres'
 import { toPublicationStatus, type PublicationStatus } from './status'
 
 export interface SeriesSettings {
@@ -18,6 +19,7 @@ export interface SeriesData {
     totalVolumes: number | null
     publicationStatus: PublicationStatus | null
     startsAtZero: boolean
+    genres: GenreId[]
   }
   editions: CatalogueEdition[]
   items: UserItem[]
@@ -30,7 +32,7 @@ const NO_SETTINGS: SeriesSettings = { ignored: [], totalOverride: null }
 export async function getSeriesData(seriesId: string): Promise<SeriesData | null> {
   const { data: series, error: seriesError } = await supabase
     .from('series')
-    .select('id, name, total_volumes, publication_status, starts_at_zero')
+    .select('id, name, total_volumes, publication_status, starts_at_zero, genres')
     .eq('id', seriesId)
     .maybeSingle()
   if (seriesError) throw seriesError
@@ -87,6 +89,7 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
       totalVolumes: series.total_volumes,
       publicationStatus: toPublicationStatus(series.publication_status),
       startsAtZero: series.starts_at_zero,
+      genres: toGenres(series.genres),
     },
     editions,
     items,

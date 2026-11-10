@@ -35,7 +35,7 @@ export default function LoginPage() {
       footer={
         <>
           Pas encore de compte ?{' '}
-          <Link to="/inscription" className="text-indigo-600 underline">
+          <Link to="/inscription" className="text-accent-text underline">
             Créer un compte
           </Link>
         </>
@@ -64,7 +64,7 @@ export default function LoginPage() {
         <SubmitButton busy={busy}>Se connecter</SubmitButton>
       </form>
       <p className="text-center text-sm">
-        <Link to="/mot-de-passe-oublie" className="text-indigo-600 underline">
+        <Link to="/mot-de-passe-oublie" className="text-accent-text underline">
           Mot de passe oublié ?
         </Link>
       </p>

@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
     <AuthCard
       title="Mot de passe oublié"
       footer={
-        <Link to="/connexion" className="text-indigo-600 underline">
+        <Link to="/connexion" className="text-accent-text underline">
           Retour à la connexion
         </Link>
       }

@@ -43,6 +43,14 @@ export interface Edition {
   volumeTo?: number | null
   /** En attente de validation par un modérateur (visible de son auteur seulement). */
   pending?: boolean
+  /** Fiche descriptive (BnF) : tous les champs sont facultatifs. */
+  summary?: string | null
+  pages?: number | null
+  formatCm?: number | null
+  publicPrice?: number | null
+  language?: string | null
+  /** La BnF a déjà été interrogée pour ces champs (même sans résultat). */
+  detailsChecked?: boolean
 }
 
 /** Un album de la collection de l'utilisateur : la ligne `collection_items` + son édition. */

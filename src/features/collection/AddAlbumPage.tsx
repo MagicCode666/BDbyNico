@@ -209,7 +209,7 @@ export default function AddAlbumPage() {
             type="button"
             onClick={onSearchClick}
             disabled={lookup.kind === 'searching'}
-            className="rounded border border-indigo-600 px-3 py-2 font-medium text-indigo-600 disabled:opacity-50"
+            className="rounded border border-accent px-3 py-2 font-medium text-accent-text disabled:opacity-50"
           >
             Rechercher
           </button>
@@ -217,13 +217,13 @@ export default function AddAlbumPage() {
             type="button"
             onClick={() => setScanning((on) => !on)}
             aria-pressed={scanning}
-            className="rounded border border-indigo-600 px-3 py-2 font-medium text-indigo-600"
+            className="rounded border border-accent px-3 py-2 font-medium text-accent-text"
           >
             Scanner
           </button>
         </div>
         {scanning && <BarcodeScanner onDetect={onScanned} onClose={() => setScanning(false)} />}
-        {lookup.kind === 'searching' && <p className="text-sm text-slate-600">Recherche…</p>}
+        {lookup.kind === 'searching' && <p className="text-sm text-muted">Recherche…</p>}
         {lookup.kind === 'found' && (
           <FormMessage kind="success">
             {`Informations trouvées dans ${SOURCE_LABELS[lookup.source]}. Vérifiez-les et corrigez-les si besoin.`}
@@ -247,7 +247,7 @@ export default function AddAlbumPage() {
             alt="Aperçu de la couverture"
             referrerPolicy="no-referrer"
             onError={() => setCoverBroken(true)}
-            className="h-48 w-32 rounded bg-slate-100 object-cover"
+            className="h-48 w-32 rounded bg-raised object-cover"
           />
         )}
 
@@ -313,7 +313,7 @@ export default function AddAlbumPage() {
             id="album-kind"
             value={kind}
             onChange={(e) => setKind(toAlbumKind(e.target.value))}
-            className="rounded border border-slate-300 px-3 py-2"
+            className="rounded border border-line-strong px-3 py-2"
           >
             {(Object.keys(KIND_LABELS) as AlbumKind[]).map((value) => (
               <option key={value} value={value}>
@@ -337,7 +337,7 @@ export default function AddAlbumPage() {
                 value={rangeTo}
                 onChange={(e) => setRangeTo(e.target.value)}
               />
-              <p className="w-full text-xs text-slate-500">
+              <p className="w-full text-xs text-muted">
                 Laissez les deux vides pour une intégrale de toute la série. Une intégrale est un
                 objet distinct des tomes qu'elle reprend.
               </p>
@@ -352,7 +352,7 @@ export default function AddAlbumPage() {
             id="status"
             value={status}
             onChange={(e) => setStatus(e.target.value as Status)}
-            className="rounded border border-slate-300 px-3 py-2"
+            className="rounded border border-line-strong px-3 py-2"
           >
             {(Object.keys(STATUS_LABELS) as Status[]).map((value) => (
               <option key={value} value={value}>

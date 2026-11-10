@@ -1,9 +1,10 @@
+import type { AlbumDetails } from '../../../lib/bnfFields'
 import type { AlbumKind } from '../kinds'
 
 export type LookupSource = 'catalogue' | 'bnf' | 'openlibrary' | 'bnf+openlibrary'
 
 /** Informations d'un album trouvées par une recherche (tous les champs sont optionnels). */
-export interface BookInfo {
+export interface BookInfo extends AlbumDetails {
   title?: string
   seriesName?: string
   volume?: number

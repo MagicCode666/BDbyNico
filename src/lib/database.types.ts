@@ -130,6 +130,12 @@ export type Database = {
           cover_url: string | null
           created_at: string
           created_by: string | null
+          details_checked_at: string | null
+          format_cm: number | null
+          language: string | null
+          pages: number | null
+          public_price: number | null
+          summary: string | null
           isbn: string
           kind: string
           published_on: string | null
@@ -148,6 +154,12 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           created_by?: string | null
+          details_checked_at?: string | null
+          format_cm?: number | null
+          language?: string | null
+          pages?: number | null
+          public_price?: number | null
+          summary?: string | null
           isbn: string
           kind?: string
           published_on?: string | null
@@ -166,6 +178,12 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           created_by?: string | null
+          details_checked_at?: string | null
+          format_cm?: number | null
+          language?: string | null
+          pages?: number | null
+          public_price?: number | null
+          summary?: string | null
           isbn?: string
           kind?: string
           published_on?: string | null
@@ -221,6 +239,7 @@ export type Database = {
       series: {
         Row: {
           created_at: string
+          genres: string[]
           id: string
           name: string
           name_key: string
@@ -233,6 +252,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          genres?: string[]
           id?: string
           name: string
           name_key: string
@@ -245,6 +265,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          genres?: string[]
           id?: string
           name?: string
           name_key?: string
@@ -335,6 +356,21 @@ export type Database = {
         }
       }
       delete_my_account: { Args: never; Returns: undefined }
+      fill_edition_details: {
+        Args: {
+          p_format_cm?: number
+          p_isbn: string
+          p_language?: string
+          p_pages?: number
+          p_public_price?: number
+          p_summary?: string
+        }
+        Returns: undefined
+      }
+      set_series_genres: {
+        Args: { p_genres: string[]; p_series: string }
+        Returns: undefined
+      }
       get_shared_collection: {
         Args: { p_token: string }
         Returns: {
@@ -426,6 +462,20 @@ export type Database = {
       review_change: {
         Args: { p_accept: boolean; p_id: number }
         Returns: undefined
+      }
+      norm_text: { Args: { p_text: string }; Returns: string }
+      search_catalogue: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          cover_url: string
+          detail: string
+          isbn: string
+          kind: string
+          label: string
+          my_status: string
+          ref: string
+          series_id: string
+        }[]
       }
       set_contribution_level: {
         Args: { p_level: string; p_user: string }

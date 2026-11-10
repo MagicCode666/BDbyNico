@@ -8,6 +8,8 @@ import AlbumPage from './features/collection/AlbumPage'
 import CollectionPage from './features/collection/CollectionPage'
 import AdminPage from './features/governance/AdminPage'
 import ImportPage from './features/import/ImportPage'
+import ExplorerPage from './features/explorer/ExplorerPage'
+import SearchPage from './features/search/SearchPage'
 import SeriesPage from './features/series/SeriesPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import HomePage from './pages/HomePage'
@@ -34,6 +36,8 @@ export default function App() {
       <Route path="/nouveau-mot-de-passe" element={<ResetPasswordPage />} />
       <Route element={<RequireAuth />}>
         <Route path="/profil" element={<ProfilePage />} />
+        <Route path="/recherche" element={<SearchPage />} />
+        <Route path="/explorer" element={<ExplorerPage />} />
         <Route path="/collection" element={<CollectionPage />} />
         <Route path="/collection/ajouter" element={<AddAlbumPage />} />
         <Route path="/collection/importer" element={<ImportPage />} />

@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../auth/useAuth'
 import { PSEUDO_MAX_LENGTH, validatePseudo } from '../auth/validation'
-import AuthCard from '../components/AuthCard'
 import FormMessage from '../components/FormMessage'
+import PageLayout from '../components/PageLayout'
 import SubmitButton from '../components/SubmitButton'
 import TextField from '../components/TextField'
 import ClearCollectionDialog from '../features/collection/ClearCollectionDialog'
@@ -12,6 +12,8 @@ import { exportCollection } from '../features/export/exportCollection'
 import { countPending } from '../features/governance/api'
 import { useAccess } from '../features/governance/useAccess'
 import { supabase } from '../lib/supabase'
+import { THEME_LABELS, toPreference, type ThemePreference } from '../theme/theme'
+import { useTheme } from '../theme/useTheme'
 
 export default function ProfilePage() {
   const { user, signOut } = useAuth()
@@ -26,6 +28,7 @@ export default function ProfilePage() {
   const [exportMessage, setExportMessage] = useState<string | null>(null)
   const [clearing, setClearing] = useState(false)
   const { access } = useAccess()
+  const { preference, setPreference } = useTheme()
   const [pendingCount, setPendingCount] = useState(0)
 
   useEffect(() => {
@@ -98,78 +101,106 @@ export default function ProfilePage() {
   }
 
   return (
-    <AuthCard
-      title="Mon profil"
-      footer={
-        <Link to="/" className="text-indigo-600 underline">
-          Retour à l'accueil
-        </Link>
-      }
-    >
-      <p className="text-center text-sm text-slate-600">{user?.email}</p>
-      <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-        <TextField
-          label="Pseudo"
-          name="pseudo"
-          maxLength={PSEUDO_MAX_LENGTH}
-          disabled={!loaded}
-          value={pseudo}
-          onChange={(e) => setPseudo(e.target.value)}
-        />
-        {error && <FormMessage kind="error">{error}</FormMessage>}
-        {saved && <FormMessage kind="success">Pseudo enregistré.</FormMessage>}
-        <SubmitButton busy={busy}>Enregistrer</SubmitButton>
-      </form>
-      <button
-        type="button"
-        onClick={onSignOut}
-        className="rounded border border-slate-300 px-4 py-2 font-medium hover:bg-slate-50"
-      >
-        Se déconnecter
-      </button>
-
-      {isModerator && (
-        <section className="flex flex-col gap-2 border-t border-slate-200 pt-4">
-          <h2 className="font-semibold">Administration</h2>
-          <Link
-            to="/admin"
-            className="rounded border border-slate-300 px-4 py-2 text-center font-medium hover:bg-slate-50"
+    <PageLayout title="Mon profil">
+      <div className="flex max-w-2xl flex-col gap-5">
+        <section className="card flex flex-col gap-4 p-5">
+          <h2 className="text-xl">Mon compte</h2>
+          <p className="text-sm text-muted">{user?.email}</p>
+          <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+            <TextField
+              label="Pseudo"
+              name="pseudo"
+              maxLength={PSEUDO_MAX_LENGTH}
+              disabled={!loaded}
+              value={pseudo}
+              onChange={(e) => setPseudo(e.target.value)}
+            />
+            {error && <FormMessage kind="error">{error}</FormMessage>}
+            {saved && <FormMessage kind="success">Pseudo enregistré.</FormMessage>}
+            <SubmitButton busy={busy}>Enregistrer</SubmitButton>
+          </form>
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="rounded border border-line-strong px-4 py-2 font-medium hover:bg-raised"
           >
-            Catalogue : propositions et journal
-            {pendingCount > 0 && ` (${pendingCount} à valider)`}
-          </Link>
+            Se déconnecter
+          </button>
         </section>
-      )}
 
-      <section className="flex flex-col gap-2 border-t border-slate-200 pt-4">
-        <h2 className="font-semibold">Mes données</h2>
-        <p className="text-sm text-slate-600">
-          Téléchargez votre collection (CSV). Ce fichier peut être réimporté dans BDbyNico.
-        </p>
-        <button
-          type="button"
-          onClick={onExport}
-          disabled={exporting}
-          className="rounded border border-slate-300 px-4 py-2 font-medium hover:bg-slate-50 disabled:opacity-50"
-        >
-          {exporting ? 'Export en cours…' : 'Exporter ma collection'}
-        </button>
-        {exportMessage && <FormMessage kind="success">{exportMessage}</FormMessage>}
-      </section>
+        <section className="card flex flex-col gap-3 p-5">
+          <h2 className="text-xl">Apparence</h2>
+          <label htmlFor="theme" className="text-sm font-medium">
+            Thème
+          </label>
+          <select
+            id="theme"
+            value={preference}
+            onChange={(e) => setPreference(toPreference(e.target.value))}
+            className="rounded border border-line-strong px-3 py-2 focus:border-accent focus:outline-none"
+          >
+            {(Object.keys(THEME_LABELS) as ThemePreference[]).map((value) => (
+              <option key={value} value={value}>
+                {THEME_LABELS[value]}
+              </option>
+            ))}
+          </select>
+          <p className="text-sm text-muted">
+            « Automatique » suit le réglage de votre appareil (mode sombre ou clair).
+          </p>
+        </section>
 
-      <section className="flex flex-col gap-2 rounded border border-red-200 p-3">
-        <h2 className="font-semibold text-red-700">Zone dangereuse</h2>
-        <p className="text-sm text-slate-600">
-          Retirer tous les albums de votre collection. Votre compte n'est pas supprimé.
-        </p>
-        <button
-          type="button"
-          onClick={() => setClearing(true)}
-          className="rounded border border-red-300 px-4 py-2 font-medium text-red-700 hover:bg-red-50"
-        >
-          Vider ma collection…
-        </button>
-      </section>
+        {isModerator && (
+          <section className="card flex flex-col gap-3 p-5">
+            <h2 className="text-xl">Administration</h2>
+            <Link
+              to="/admin"
+              className="rounded border border-line-strong px-4 py-2 text-center font-medium hover:bg-raised"
+            >
+              Catalogue : propositions et journal
+              {pendingCount > 0 && ` (${pendingCount} à valider)`}
+            </Link>
+          </section>
+        )}
+
+        <section className="card flex flex-col gap-3 p-5">
+          <h2 className="text-xl">Mes données</h2>
+          <p className="text-sm text-muted">
+            Téléchargez votre collection (CSV). Ce fichier peut être réimporté dans BDbyNico.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={onExport}
+              disabled={exporting}
+              className="rounded border border-line-strong px-4 py-2 font-medium hover:bg-raised disabled:opacity-50"
+            >
+              {exporting ? 'Export en cours…' : 'Exporter ma collection'}
+            </button>
+            <Link
+              to="/collection/importer"
+              className="rounded border border-line-strong px-4 py-2 font-medium hover:bg-raised"
+            >
+              Importer une collection
+            </Link>
+          </div>
+          {exportMessage && <FormMessage kind="success">{exportMessage}</FormMessage>}
+        </section>
+
+        <section className="flex flex-col gap-3 rounded border border-danger bg-danger-soft p-5">
+          <h2 className="text-xl text-danger-text">Zone dangereuse</h2>
+          <p className="text-sm text-muted">
+            Retirer tous les albums de votre collection. Votre compte n'est pas supprimé.
+          </p>
+          <button
+            type="button"
+            onClick={() => setClearing(true)}
+            className="rounded border border-danger px-4 py-2 font-medium text-danger-text hover:bg-danger-soft"
+          >
+            Vider ma collection…
+          </button>
+        </section>
+      </div>
 
       {clearing && userId && (
         <ClearCollectionDialog
@@ -178,6 +209,6 @@ export default function ProfilePage() {
           onDone={() => navigate('/collection', { replace: true })}
         />
       )}
-    </AuthCard>
+    </PageLayout>
   )
 }

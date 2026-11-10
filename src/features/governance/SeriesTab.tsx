@@ -12,7 +12,7 @@ import {
 } from './api'
 
 const buttonClass =
-  'rounded border border-slate-300 px-2 py-1 text-xs font-medium hover:border-indigo-600 disabled:opacity-50'
+  'rounded border border-line-strong px-2 py-1 text-xs font-medium hover:border-accent disabled:opacity-50'
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Automatique (BnF)' },
@@ -29,7 +29,7 @@ export default function SeriesTab() {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-muted">
         Corrigez une série pour tout le monde : nom, total, statut. Chaque changement est inscrit au
         journal et peut être annulé. Un total ou un statut fixé ici n'est plus modifié par la mise à
         jour automatique.
@@ -50,22 +50,22 @@ export default function SeriesTab() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Nom de la série (casse et accents ignorés)"
-          className="flex-1 rounded border border-slate-300 px-3 py-2 text-sm"
+          className="flex-1 rounded border border-line-strong px-3 py-2 text-sm"
         />
         <button type="submit" className={buttonClass}>
           Rechercher
         </button>
       </form>
       {error && <FormMessage kind="error">Impossible de charger les séries.</FormMessage>}
-      {loading && !data && <p className="text-slate-600">Chargement…</p>}
-      {data?.length === 0 && <p className="text-slate-600">Aucune série trouvée.</p>}
+      {loading && !data && <p className="text-muted">Chargement…</p>}
+      {data?.length === 0 && <p className="text-muted">Aucune série trouvée.</p>}
       <ul className="flex flex-col gap-2">
         {data?.map((series) => (
           <SeriesRow key={series.id} series={series} onChanged={reload} />
         ))}
       </ul>
       {data?.length === 30 && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           Les 30 premières séries : précisez la recherche pour en voir d'autres.
         </p>
       )}
@@ -106,8 +106,8 @@ function SeriesRow({ series, onChanged }: { series: AdminSeries; onChanged: () =
   }
 
   return (
-    <li className="flex flex-col gap-2 rounded border border-slate-200 p-3 text-sm">
-      <p className="text-xs text-slate-500">
+    <li className="flex flex-col gap-2 rounded border border-line p-3 text-sm">
+      <p className="text-xs text-muted">
         {series.editionCount} album(s) · total {series.totalVolumes ?? 'inconnu'}
         {series.totalSource === 'manual' && ' (fixé à la main)'} · statut {statusWord(series)}
         {series.statusSource === 'manual' && ' (fixé à la main)'}
@@ -119,7 +119,7 @@ function SeriesRow({ series, onChanged }: { series: AdminSeries; onChanged: () =
             value={name}
             maxLength={200}
             onChange={(e) => setName(e.target.value)}
-            className="w-72 max-w-full rounded border border-slate-300 px-2 py-1"
+            className="w-72 max-w-full rounded border border-line-strong px-2 py-1"
           />
         </label>
         <button
@@ -140,7 +140,7 @@ function SeriesRow({ series, onChanged }: { series: AdminSeries; onChanged: () =
             max={999}
             value={total}
             onChange={(e) => setTotal(e.target.value)}
-            className="w-24 rounded border border-slate-300 px-2 py-1"
+            className="w-24 rounded border border-line-strong px-2 py-1"
           />
         </label>
         <button type="button" disabled={busy} onClick={saveTotal} className={buttonClass}>
@@ -176,7 +176,7 @@ function SeriesRow({ series, onChanged }: { series: AdminSeries; onChanged: () =
               "Impossible d'enregistrer le statut.",
             )
           }
-          className="rounded border border-slate-300 px-2 py-1"
+          className="rounded border border-line-strong px-2 py-1"
         >
           {STATUS_OPTIONS.map(({ value, label }) => (
             <option key={value} value={value}>
