@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.15.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.14.0...bdbynico-v0.15.0) (2026-11-10)
+
+
+### Nouveautés
+
+* refonte de l'interface (identité, thèmes, navigation) ([#42](https://github.com/MagicCode666/BDbyNico/issues/42)) ([b592abc](https://github.com/MagicCode666/BDbyNico/commit/b592abcdfd634914ba3d2033b3e151b88180bc4a))
+
+
+### Corrections
+
+* le job de couvertures réessaie après une coupure de la BnF ou d'Amazon ([#41](https://github.com/MagicCode666/BDbyNico/issues/41)) ([6cd98eb](https://github.com/MagicCode666/BDbyNico/commit/6cd98ebfaf415234eff95d8314c60d6af7165515))
+
 ## [0.14.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.13.0...bdbynico-v0.14.0) (2026-11-10)
 
 
