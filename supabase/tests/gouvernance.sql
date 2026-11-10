@@ -320,6 +320,20 @@ begin
     reset role; n := n + 1;
   end;
 
+  -- 8b. Les lignes des albums de test (ISBN 97899999999…) n'apparaissent pas dans le journal admin
+  insert into public.catalogue_changes (user_id, origin, kind, isbn, new_value)
+  values (ctr, 'user', 'cover', '9789999999995', 'https://exemple.invalid/test');
+  perform pg_temp._t_as(mdr);
+  select count(*) into c from public.list_catalogue_changes() where isbn = '9789999999995';
+  reset role;
+  if c <> 0 then raise exception 'ECHEC : une ligne de test apparait dans le journal admin'; end if;
+  n := n + 1;
+  perform pg_temp._t_as(mdr);
+  select count(*) into c from public.list_catalogue_changes() where isbn = i_c;
+  reset role;
+  if c = 0 then raise exception 'ECHEC : le filtre masque aussi les vraies lignes'; end if;
+  n := n + 1;
+
   -- 9. Le job (sans utilisateur) remplace une couverture : journalisé « job », annulable --------
   update public.editions set cover_url = ol_c, cover_locked = false where isbn = i_c;
   perform set_config('request.jwt.claims', '', true);
