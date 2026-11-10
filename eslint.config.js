@@ -22,4 +22,15 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Scripts Node (job nocturne, contrôle RLS) : une fonction ou une variable non définie doit
+    // faire échouer le lint (la vérification de syntaxe seule ne la voit pas)
+    files: ['scripts/**/*.{js,mjs}'],
+    extends: [js.configs.recommended, prettier],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: globals.node,
+    },
+  },
 ])

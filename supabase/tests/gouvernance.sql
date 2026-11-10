@@ -639,6 +639,27 @@ begin
     raise exception 'ECHEC : l''import ne lit pas correctement le type et la plage'; end if;
   n := n + 1;
 
+  -- 8f-bis. Le créateur d'un album qui ne le possède pas n'a aucun droit de plus qu'un autre ----------
+  -- (ctr a créé cet album par import sans l'ajouter à sa collection)
+  begin
+    perform pg_temp._t_as(ctr);
+    perform public.set_edition_kind(pg_temp._t_isbn('978990000006'), 'album', null, null);
+    reset role;
+    raise exception 'ECHEC : le créateur non possesseur a pu changer le type d''un album';
+  exception when insufficient_privilege then
+    reset role; n := n + 1;
+  end;
+  -- dès qu'il le possède, il le peut
+  perform pg_temp._t_as(ctr);
+  insert into public.collection_items (user_id, isbn, status)
+    values (ctr, pg_temp._t_isbn('978990000006'), 'owned');
+  v := public.set_edition_kind(pg_temp._t_isbn('978990000006'), 'album', null, null);
+  reset role;
+  if v <> 'applied' then
+    raise exception 'ECHEC : le possesseur n''a pas pu changer le type (%)', v; end if;
+  n := n + 1;
+  delete from public.collection_items where isbn = pg_temp._t_isbn('978990000006');
+
   -- 8g. Tome 0 : la série le mémorise tant que le catalogue en connaît un (album approuvé) ----------
   if not (select starts_at_zero from public.series where name = 'Série tome zéro') then
     raise exception 'ECHEC : une série avec un tome 0 n''est pas marquée'; end if;

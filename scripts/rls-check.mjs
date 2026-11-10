@@ -224,7 +224,7 @@ check(
     r.data[0].publisher === 'Éditeur',
   show(r),
 )
-r = await A.client.rpc('import_editions', {
+await A.client.rpc('import_editions', {
   p_rows: [{ isbn: importIsbn, title: 'Autre titre', volume: 9 }],
 })
 r = await B.client.from('editions').select('title, volume').eq('isbn', importIsbn)
@@ -444,7 +444,7 @@ check(
   r.data?.cover_url === null && r.data?.cover_locked === true,
   show(r),
 )
-r = await A.client.rpc('set_edition_cover', { p_isbn: govIsbn, p_cover_url: govCover })
+await A.client.rpc('set_edition_cover', { p_isbn: govIsbn, p_cover_url: govCover })
 r = await A.client.from('editions').select('cover_url').eq('isbn', govIsbn).single()
 check(
   'La mise à jour automatique ne touche pas une couverture verrouillée',
