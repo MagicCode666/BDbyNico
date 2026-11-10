@@ -154,6 +154,9 @@ export default function CollectionPage() {
           // Jamais plus de tomes possédés que de tomes existants
           const total = effectiveTotal(settings?.totalOverride ?? group.totalVolumes, owned.volumes)
           const ownedNumbered = new Set(owned.volumes).size
+          // Un tome 0 (prologue) s'ajoute au total : 7 / 7 pour les tomes 0 à 6
+          const shownTotal = total ? total + (owned.volumes.includes(0) ? 1 : 0) : null
+          const shownOwned = total ? ownedNumbered : owned.count
           const publication = effectiveStatus(settings?.statusOverride, group.publicationStatus)
           const showProgress = group.name !== null && status === 'owned'
           const complete =
@@ -177,10 +180,7 @@ export default function CollectionPage() {
                 </h2>
                 {showProgress && (
                   <span className="flex items-center gap-2 text-sm text-slate-600">
-                    {progressLabel(
-                      { ...group, totalVolumes: total },
-                      total ? ownedNumbered : owned.count,
-                    )}
+                    {progressLabel({ ...group, totalVolumes: shownTotal }, shownOwned)}
                     {publication && (
                       <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
                         {PUBLICATION_LABELS[publication]}
@@ -194,17 +194,17 @@ export default function CollectionPage() {
                   </span>
                 )}
               </div>
-              {showProgress && total ? (
+              {showProgress && shownTotal ? (
                 <div
                   role="progressbar"
                   aria-valuemin={0}
-                  aria-valuemax={total}
-                  aria-valuenow={Math.min(owned.count, total)}
+                  aria-valuemax={shownTotal}
+                  aria-valuenow={Math.min(shownOwned, shownTotal)}
                   className="mb-3 h-1.5 overflow-hidden rounded bg-slate-100"
                 >
                   <div
                     className="h-full bg-indigo-600"
-                    style={{ width: `${Math.min(100, (owned.count / total) * 100)}%` }}
+                    style={{ width: `${Math.min(100, (shownOwned / shownTotal) * 100)}%` }}
                   />
                 </div>
               ) : null}

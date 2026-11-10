@@ -47,7 +47,6 @@ export function parseVolume(text: string): { volume: number | null; warning?: st
   if (!/^\d+$/.test(value))
     return { volume: null, warning: `Tome « ${value} » ignoré (non numérique)` }
   const number = Number(value)
-  if (number === 0) return { volume: null, warning: 'Tome 0 traité comme « sans numéro »' }
   if (number >= 1900 && number <= 2100) {
     return { volume: null, warning: `Tome « ${value} » ignoré (c'est probablement une année)` }
   }

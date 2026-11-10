@@ -70,7 +70,7 @@ describe('parseVolume', () => {
   it.each([
     ['12', 12],
     ['', null],
-    ['0', null],
+    ['0', 0],
     ['1989', null],
     ['2020', null],
     ['1000', null],
@@ -81,7 +81,7 @@ describe('parseVolume', () => {
   })
   it('explique pourquoi un tome est écarté', () => {
     expect(parseVolume('1989').warning).toContain('année')
-    expect(parseVolume('0').warning).toContain('sans numéro')
+    expect(parseVolume('0').warning).toBeUndefined()
     expect(parseVolume('').warning).toBeUndefined()
   })
 })
@@ -197,13 +197,22 @@ describe('parseBubbleCsv', () => {
     const plan = parseBubbleCsv(
       csv(
         { serie: 'Astérix', album: 'Hors numérotation', tome: '1989', ean: '9782203001176' },
-        { serie: 'Trilogie', album: 'Zéro', tome: '0', ean: '9782800116303' },
+        { serie: 'Trilogie', album: 'Trop grand', tome: '5000', ean: '9782800116303' },
       ),
     )
     expect(plan.rows.map((r) => r.volume)).toEqual([null, null])
     expect(plan.warnings).toHaveLength(2)
     expect(plan.warnings[0]).toMatchObject({ line: 2 })
     expect(plan.warnings[1]).toMatchObject({ line: 3 })
+  })
+
+  it('garde le tome 0 (prologue) sans avertissement', () => {
+    const plan = parseBubbleCsv(
+      csv({ serie: 'Trilogie', album: 'Zéro', tome: '0', ean: '9782800116303' }),
+    )
+    expect(plan.rows[0].volume).toBe(0)
+    expect(plan.rows[0].seriesName).toBe('Trilogie')
+    expect(plan.warnings).toHaveLength(0)
   })
 
   it('marque les titres absents et propose un repli lisible', () => {

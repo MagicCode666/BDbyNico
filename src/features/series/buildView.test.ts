@@ -126,3 +126,48 @@ describe('buildSeriesView', () => {
     expect(slot.kind === 'missing' && slot.edition.coverUrl).toBe('https://x/y.jpg')
   })
 })
+
+describe('tome 0 (prologue)', () => {
+  const e0 = edition(0)
+  const e1 = edition(1)
+  const e2 = edition(2)
+
+  it("donne une case au tome 0 quand l'utilisateur le possède", () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e0, e1, e2],
+      items: [item(e0), item(e1), item(e2)],
+      ignored: [],
+    })
+    expect(view.slots.map((s) => s.volume)).toEqual([0, 1, 2])
+    expect(view.ownedCount).toBe(3)
+    expect(view.targetCount).toBe(3)
+    expect(view.complete).toBe(true)
+  })
+
+  it("ne réclame pas le tome 0 qu'on n'a pas : il est proposé à part", () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e0, e1, e2],
+      items: [item(e1), item(e2)],
+      ignored: [],
+    })
+    expect(view.slots.map((s) => s.volume)).toEqual([1, 2])
+    expect(view.complete).toBe(true)
+    expect(view.unnumbered.map((u) => u.edition.volume)).toEqual([0])
+  })
+
+  it('un tome 0 possédé ne fait pas dépasser le total', () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e0, e1, e2],
+      items: [item(e0), item(e1)],
+      ignored: [],
+    })
+    expect(view.total).toBe(2)
+    expect(view.missing).toEqual([2])
+  })
+})

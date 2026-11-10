@@ -334,6 +334,16 @@ begin
   if c = 0 then raise exception 'ECHEC : le filtre masque aussi les vraies lignes'; end if;
   n := n + 1;
 
+  -- 8c. L'import en masse conserve le tome 0 (prologue)
+  perform pg_temp._t_as(ctr);
+  perform public.import_editions(jsonb_build_array(jsonb_build_object(
+    'isbn', pg_temp._t_isbn('978990000004'), 'title', 'Prologue', 'series', 'Série tome zéro',
+    'volume', '0')));
+  reset role;
+  if (select volume from public.editions where isbn = pg_temp._t_isbn('978990000004')) is distinct from 0 then
+    raise exception 'ECHEC : le tome 0 n''a pas été conservé par l''import'; end if;
+  n := n + 1;
+
   -- 9. Le job (sans utilisateur) remplace une couverture : journalisé « job », annulable --------
   update public.editions set cover_url = ol_c, cover_locked = false where isbn = i_c;
   perform set_config('request.jwt.claims', '', true);

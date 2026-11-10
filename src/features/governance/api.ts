@@ -47,7 +47,8 @@ export type ReportResult = 'applied' | 'pending' | 'unchanged'
 export async function reportCover(isbn: string, coverUrl: string | null): Promise<ReportResult> {
   const { data, error } = await supabase.rpc('report_cover', {
     p_isbn: isbn,
-    p_cover_url: coverUrl,
+    // La fonction accepte null (« aucune couverture ») : les types générés ne le disent pas
+    p_cover_url: coverUrl as string,
   })
   if (error) throw error
   return data === 'pending' || data === 'unchanged' ? data : 'applied'

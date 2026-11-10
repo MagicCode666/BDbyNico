@@ -25,7 +25,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          id?: number
+          id?: never
           isbn: string
           kind: string
           new_value?: string | null
@@ -39,7 +39,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          id?: number
+          id?: never
           isbn?: string
           kind?: string
           new_value?: string | null
@@ -51,7 +51,15 @@ export type Database = {
           status?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'catalogue_changes_reverts_id_fkey'
+            columns: ['reverts_id']
+            isOneToOne: false
+            referencedRelation: 'catalogue_changes'
+            referencedColumns: ['id']
+          },
+        ]
       }
       collection_items: {
         Row: {
@@ -285,12 +293,14 @@ export type Database = {
         }
         Returns: {
           authors: string[]
+          cover_locked: boolean
           cover_url: string | null
           created_at: string
           created_by: string | null
           isbn: string
           published_on: string | null
           publisher: string | null
+          review_status: string
           series_id: string | null
           source: string | null
           title: string
@@ -318,11 +328,14 @@ export type Database = {
         }[]
       }
       import_editions: { Args: { p_rows: Json }; Returns: Json }
+      is_admin: { Args: never; Returns: boolean }
+      is_allowed_cover_url: {
+        Args: { p_cover_url: string; p_isbn: string }
+        Returns: boolean
+      }
+      is_moderator: { Args: never; Returns: boolean }
       is_valid_isbn13: { Args: { p_isbn: string }; Returns: boolean }
       isbn13_to_isbn10: { Args: { p_isbn: string }; Returns: string }
-      regenerate_share_token: { Args: never; Returns: string }
-      is_admin: { Args: never; Returns: boolean }
-      is_moderator: { Args: never; Returns: boolean }
       list_catalogue_changes: {
         Args: {
           p_before?: number
@@ -334,22 +347,22 @@ export type Database = {
         }
         Returns: {
           created_at: string
-          current_cover: string | null
+          current_cover: string
           id: number
           isbn: string
           kind: string
-          new_value: string | null
-          old_value: string | null
+          new_value: string
+          old_value: string
           origin: string
-          pseudo: string | null
-          reverts_id: number | null
-          reviewed_at: string | null
-          reviewed_pseudo: string | null
-          series_name: string | null
+          pseudo: string
+          reverts_id: number
+          reviewed_at: string
+          reviewed_pseudo: string
+          series_name: string
           status: string
-          title: string | null
-          user_id: string | null
-          volume: number | null
+          title: string
+          user_id: string
+          volume: number
         }[]
       }
       list_users_admin: {
@@ -365,12 +378,16 @@ export type Database = {
           role: string
         }[]
       }
+      regenerate_share_token: { Args: never; Returns: string }
       report_cover: {
-        Args: { p_cover_url: string | null; p_isbn: string }
+        Args: { p_cover_url: string; p_isbn: string }
         Returns: string
       }
-      review_change: { Args: { p_accept: boolean; p_id: number }; Returns: undefined }
       revert_change: { Args: { p_id: number }; Returns: undefined }
+      review_change: {
+        Args: { p_accept: boolean; p_id: number }
+        Returns: undefined
+      }
       set_contribution_level: {
         Args: { p_level: string; p_user: string }
         Returns: undefined
