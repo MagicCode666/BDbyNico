@@ -6,6 +6,8 @@ const SRU_URL = 'https://catalogue.bnf.fr/api/SRU'
 const PAGE_SIZE = 50
 /** Part minimale de tomes référencés pour considérer le total comme fiable. */
 const MIN_COVERAGE = 0.5
+/** Seuil réduit quand un album que l'on possède confirme qu'il s'agit bien de la série. */
+const MIN_COVERAGE_CONFIRMED = 0.25
 // Plafond de notices lues par série (24 requêtes) : suffisant pour les plus grosses séries
 const MAX_NOTICES = 1200
 
@@ -35,8 +37,33 @@ export function nameKey(name) {
     .normalize('NFD')
     .replace(/\p{M}/gu, '')
     .toLowerCase()
+    .replace(/&/g, ' et ')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
+}
+
+/**
+ * Retire la précision entre parenthèses ajoutée par certaines bases (« Lucky Luke (Dargaud) »
+ * → « Lucky Luke »). Une parenthèse avec un chiffre (« Gaston (40ème Anniversaire) ») désigne
+ * une collection à part : le nom est alors gardé tel quel.
+ */
+export function strippedName(name) {
+  const stripped = name.replace(/\s*\([^)\d]*\)\s*/g, ' ').trim()
+  return stripped || name
+}
+
+/** Les auteurs les plus fréquents (nom complet) d'une liste d'albums. */
+export function topAuthors(editions, count = 3) {
+  const tally = new Map()
+  for (const edition of editions) {
+    for (const author of new Set(edition.authors ?? [])) {
+      tally.set(author, (tally.get(author) ?? 0) + 1)
+    }
+  }
+  return [...tally]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, count)
+    .map(([author]) => author)
 }
 
 function datafields(record, tag) {
@@ -105,7 +132,7 @@ export function parseNotices(xml) {
  * Garde les notices de la série (nom exact) qui sont de vrais tomes numérotés,
  * puis renvoie le total (plus grand numéro) et un album par tome.
  */
-export function computeSeries(notices, seriesName) {
+export function computeSeries(notices, seriesName, { minCoverage = MIN_COVERAGE } = {}) {
   const key = nameKey(seriesName)
   const inSeries = notices.filter((n) => n.seriesName && nameKey(n.seriesName) === key)
   const kept = []
@@ -143,8 +170,39 @@ export function computeSeries(notices, seriesName) {
     skipped,
     matched: inSeries.length,
     coverage,
-    reliable: coverage >= MIN_COVERAGE,
+    reliable: coverage >= minCoverage,
   }
+}
+
+/**
+ * Trouve dans les notices la série qui correspond le mieux au nom donné. Le nom du site d'origine
+ * peut différer de celui de la BnF (« Gaston Lagaffe » / « Gaston », « Tintin » / « Les aventures
+ * de Tintin ») : sont candidates les séries au même nom (sans la précision entre parenthèses)
+ * et celles qui contiennent un album que l'on possède déjà (`ownedIsbns`).
+ * On garde la candidate fiable qui référence le plus de tomes.
+ */
+export function bestMatch(notices, seriesName, ownedIsbns = []) {
+  const wanted = new Set([nameKey(seriesName), nameKey(strippedName(seriesName))])
+  const owned = new Set(ownedIsbns)
+  const candidates = new Map()
+  const confirmed = new Set()
+  for (const notice of notices) {
+    if (!notice.seriesName) continue
+    const key = nameKey(notice.seriesName)
+    const isOwned = notice.isbn && owned.has(notice.isbn)
+    if (wanted.has(key) || isOwned) candidates.set(key, notice.seriesName)
+    if (isOwned) confirmed.add(key)
+  }
+  let best = { ...computeSeries(notices, seriesName), bnfName: seriesName }
+  for (const [key, name] of candidates) {
+    const minCoverage = confirmed.has(key) ? MIN_COVERAGE_CONFIRMED : MIN_COVERAGE
+    const result = { ...computeSeries(notices, name, { minCoverage }), bnfName: name }
+    const better =
+      (result.reliable && !best.reliable) ||
+      (result.reliable === best.reliable && result.albums.length > best.albums.length)
+    if (better) best = result
+  }
+  return best
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -197,10 +255,15 @@ async function fetchPage(query, start, fetchFn, retryDelayMs) {
  */
 export async function fetchNotices(
   seriesName,
-  { fetchFn = fetch, retryDelayMs = 1000, pageConcurrency = 3 } = {},
+  { fetchFn = fetch, retryDelayMs = 1000, pageConcurrency = 3, authors = [] } = {},
 ) {
-  const term = seriesName.replace(/"/g, ' ')
-  const query = `bib.anywhere all "${term}" and bib.doctype all "a"`
+  const quote = (text) => text.replace(/"/g, ' ')
+  // Restreindre aux auteurs connus évite de noyer les séries au nom courant (« XIII », « Le Chat »)
+  const byAuthor =
+    authors.length > 0
+      ? ` and (${authors.map((author) => `bib.author all "${quote(author)}"`).join(' or ')})`
+      : ''
+  const query = `bib.anywhere all "${quote(strippedName(seriesName))}"${byAuthor} and bib.doctype all "a"`
   const first = await fetchPage(query, 1, fetchFn, retryDelayMs)
   const starts = []
   for (
