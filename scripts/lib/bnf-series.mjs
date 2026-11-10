@@ -1,6 +1,6 @@
 // Calcul du total de tomes d'une série et de la liste de ses albums à partir du catalogue de la BnF.
 // Utilisé par le job quotidien (scripts/update-series-totals.mjs).
-import { normalizeIsbn } from '../../src/lib/isbn.ts'
+import { isbn13To10, normalizeIsbn } from '../../src/lib/isbn.ts'
 
 const SRU_URL = 'https://catalogue.bnf.fr/api/SRU'
 const PAGE_SIZE = 50
@@ -50,6 +50,30 @@ export function nameKey(name) {
 export function strippedName(name) {
   const stripped = name.replace(/\s*\([^)\d]*\)\s*/g, ' ').trim()
   return stripped || name
+}
+
+/**
+ * Noms de série à essayer à la BnF pour un nom d'origine : le nom sans sa précision entre
+ * parenthèses, puis le nom contenu dans la parenthèse. Bubble écrit par exemple
+ * « La Maison Des Fragances (Les Parfums Du Pouvoir - La saga de la Maison Capella) » alors que la
+ * série s'appelle « Les parfums du pouvoir ». Une parenthèse avec un chiffre désigne une
+ * collection à part (« Gaston (40ème Anniversaire) ») : elle n'est pas essayée.
+ */
+export function nameVariants(name) {
+  const variants = [strippedName(name)]
+  // Seulement une parenthèse de la forme « Série - sous-titre » ; « (Dargaud) » ou « (Divers) »
+  // sont des précisions (éditeur, auteur), pas des noms de série.
+  const inner = name.match(/\(([^)\d]+)\)/)?.[1]
+  const parts = inner?.split(/\s+[-–—]\s+/)
+  const first = parts && parts.length > 1 ? parts[0].trim() : undefined
+  if (first && first.length >= 3) variants.push(first)
+  const seen = new Set()
+  return variants.filter((variant) => {
+    const key = nameKey(variant)
+    if (!key || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
 
 /** Les auteurs les plus fréquents (nom complet) d'une liste d'albums. */
@@ -311,4 +335,38 @@ export async function fetchNotices(
     return page.notices
   })
   return [...first.notices, ...others.flat()]
+}
+
+/**
+ * Noms de série que la BnF donne aux albums déjà connus (par ISBN), du plus fréquent au moins
+ * fréquent. C'est la façon la plus sûre de retrouver le nom officiel d'une série dont le nom
+ * d'origine diffère (« Tintin » → « Les aventures de Tintin »).
+ */
+export async function seriesNamesForIsbns(isbns, { fetchFn = fetch, max = 2 } = {}) {
+  const wanted = new Set(isbns)
+  const terms = [...wanted]
+    .slice(0, 20)
+    .flatMap((isbn) => [isbn, isbn13To10(isbn)])
+    .filter(Boolean)
+  if (terms.length === 0) return []
+  const params = new URLSearchParams({
+    version: '1.2',
+    operation: 'searchRetrieve',
+    query: `bib.isbn any "${terms.join(' ')}"`,
+    recordSchema: 'unimarcxchange',
+    maximumRecords: '50',
+  })
+  const response = await fetchFn(`${SRU_URL}?${params}`, { signal: AbortSignal.timeout(30000) })
+  if (!response.ok) throw new Error(`BnF : HTTP ${response.status}`)
+  const counts = new Map()
+  for (const notice of parseNotices(await response.text())) {
+    if (!notice.seriesName || !notice.isbn || !wanted.has(notice.isbn)) continue
+    const key = nameKey(notice.seriesName)
+    const current = counts.get(key)
+    counts.set(key, { name: notice.seriesName, count: (current?.count ?? 0) + 1 })
+  }
+  return [...counts.values()]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, max)
+    .map((entry) => entry.name)
 }

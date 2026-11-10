@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import FormMessage from '../../components/FormMessage'
 import PageLayout from '../../components/PageLayout'
+import { useScrollRestoration } from '../../lib/useScrollRestoration'
 import { CoverImage } from '../collection/AlbumCard'
 import { useAsync } from '../collection/useAsync'
 import {
@@ -14,7 +15,13 @@ import {
   type SeriesData,
 } from './api'
 import { buildSeriesView, type Slot } from './buildView'
-import { effectiveStatus, PUBLICATION_LABELS, type PublicationStatus } from './status'
+import IntegralsSection from './IntegralsSection'
+import {
+  completionLabel,
+  effectiveStatus,
+  PUBLICATION_LABELS,
+  type PublicationStatus,
+} from './status'
 import { useMissingCovers } from './useMissingCovers'
 
 const buttonClass =
@@ -45,6 +52,7 @@ export default function SeriesPage() {
 function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void }) {
   const { user } = useAuth()
   const { series, editions, items, settings } = data
+  useScrollRestoration(`series:${series.id}`, true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editingTotal, setEditingTotal] = useState(false)
@@ -65,8 +73,12 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
     editions: editionsWithCovers,
     items,
     ignored: settings.ignored,
+    startsAtZero: series.startsAtZero,
   })
   const publication = effectiveStatus(settings.statusOverride, series.publicationStatus)
+  // Le tome 0 (prologue) compte dans la série : « 10 tomes » pour les tomes 0 à 9
+  const tomeCount = view.slots.length
+  const tomesLabel = view.hasVolumeZero ? ' tomes (dont le tome 0)' : ' tomes'
   const ignoredSlots = view.slots.filter((slot) => slot.kind === 'ignored')
   const visibleSlots = view.slots.filter((slot) => slot.kind !== 'ignored')
 
@@ -91,6 +103,15 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
           ignored: [...settings.ignored, volume],
         }),
       "Impossible d'ignorer ce tome.",
+    )
+  const ignoreMany = (volumes: number[]) =>
+    run(
+      () =>
+        saveSeriesSettings(userId!, series.id, {
+          ...settings,
+          ignored: [...settings.ignored, ...volumes],
+        }),
+      "Impossible d'exclure ces tomes.",
     )
   const restore = (volume: number) =>
     run(
@@ -145,7 +166,7 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
           </span>
           {view.complete && (
             <span className="rounded bg-green-100 px-2 py-0.5 text-sm font-medium text-green-800">
-              {publication === 'ongoing' ? 'À jour' : 'Complète'}
+              {completionLabel(true, publication)}
             </span>
           )}
           {publication && (
@@ -159,7 +180,9 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
             ? `Total personnel : ${settings.totalOverride} tomes${series.totalVolumes ? ` (total partagé : ${series.totalVolumes})` : ''}`
             : view.totalIsEstimate
               ? `Total inconnu : au moins ${view.total} tomes (à confirmer)`
-              : `Total : ${view.total} tomes`}
+              : publication === 'finished'
+                ? `Total : ${tomeCount}${tomesLabel}`
+                : `Au moins ${tomeCount}${tomesLabel} connus (série non terminée : de nouveaux tomes ont pu sortir)`}
         </p>
         {editingTotal ? (
           <form onSubmit={saveTotal} className="flex items-center gap-2" noValidate>
@@ -242,6 +265,16 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
           />
         ))}
       </section>
+
+      <IntegralsSection
+        integrals={view.integrals}
+        total={view.total}
+        ignored={settings.ignored}
+        ownedVolumes={view.slots.filter((slot) => slot.kind === 'owned').map((slot) => slot.volume)}
+        busy={busy}
+        onAdd={addEdition}
+        onIgnoreMany={ignoreMany}
+      />
 
       {view.unnumbered.length > 0 && (
         <section>

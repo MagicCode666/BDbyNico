@@ -7,6 +7,7 @@ import SubmitButton from '../../components/SubmitButton'
 import TextField from '../../components/TextField'
 import { formatIsbn } from '../../lib/isbn'
 import CoverReportDialog from '../governance/CoverReportDialog'
+import KindEditor from './KindEditor'
 import { Cover } from './AlbumCard'
 import { deleteEntry, getEntry, updateEntry } from './api'
 import { DEDICATION_LABELS, STATUS_LABELS, type Dedication, type Entry, type Status } from './types'
@@ -124,6 +125,12 @@ function AlbumDetails({ entry, onReload }: { entry: Entry; onReload: () => void 
             Cet album est en attente de validation : il n'est visible que de vous pour l'instant.
           </p>
         )}
+
+        <KindEditor
+          key={`${edition.kind}-${edition.volumeFrom}-${edition.volumeTo}`}
+          edition={edition}
+          onChanged={onReload}
+        />
 
         {/* Le message « enregistré » disparaît dès qu'on modifie à nouveau un champ */}
         <form

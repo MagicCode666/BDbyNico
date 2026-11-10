@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import FormMessage from '../../components/FormMessage'
 import { amazonCoverUrl, imageExists } from '../collection/lookup/amazon'
 import { findBnfCover } from '../collection/lookup/bnf'
+import { abebooksCoverUrl, decitreCoverUrl } from '../collection/lookup/retailers'
 import { CoverImage } from '../collection/AlbumCard'
 import { governanceErrorMessage, reportCover, type ReportResult } from './api'
 
@@ -24,14 +25,20 @@ interface Props {
 /** Cherche la couverture de l'ISBN dans toutes les sources, sauf celle déjà affichée. */
 async function findCandidates(isbn: string, current: string | null): Promise<Candidate[]> {
   const amazon = amazonCoverUrl(isbn)
-  const [amazonOk, bnf, openLibraryOk] = await Promise.all([
+  const decitre = decitreCoverUrl(isbn)
+  const abebooks = abebooksCoverUrl(isbn)
+  const [amazonOk, bnf, decitreOk, abebooksOk, openLibraryOk] = await Promise.all([
     amazon ? imageExists(amazon.replace('LZZZZZZZ', 'MZZZZZZZ')) : Promise.resolve(false),
     findBnfCover(isbn),
+    imageExists(decitre),
+    imageExists(abebooks),
     imageExists(`https://covers.openlibrary.org/b/isbn/${isbn}-S.jpg?default=false`),
   ])
   const all: Candidate[] = []
   if (amazon && amazonOk) all.push({ source: 'Amazon', url: amazon })
   if (bnf) all.push({ source: 'BnF', url: bnf })
+  if (decitreOk) all.push({ source: 'Decitre', url: decitre })
+  if (abebooksOk) all.push({ source: 'AbeBooks', url: abebooks })
   if (openLibraryOk) {
     all.push({ source: 'Open Library', url: `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg` })
   }

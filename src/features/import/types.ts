@@ -1,3 +1,4 @@
+import type { AlbumKind } from '../collection/kinds'
 import type { Dedication, Status } from '../collection/types'
 
 /** Un album à importer, nettoyé et prêt à être envoyé. */
@@ -10,6 +11,11 @@ export interface ImportRow {
   /** Null pour un album seul (sans série) ou quand le fichier n'en donne pas. */
   seriesName: string | null
   volume: number | null
+  /** Album ordinaire, intégrale ou hors-série (champ « Type » de Bubble). */
+  kind: AlbumKind
+  /** Intégrale : tomes repris (null : toute la série). */
+  volumeFrom: number | null
+  volumeTo: number | null
   authors: string[]
   publisher: string | null
   /** AAAA-MM-JJ */

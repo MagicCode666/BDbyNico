@@ -1,4 +1,5 @@
 import type { PublicationStatus } from '../series/status'
+import { isOutsideGrid } from './kinds'
 import type { Entry, ReadFilter, Status } from './types'
 
 /** Minuscules sans accents, pour des recherches tolérantes. */
@@ -45,12 +46,17 @@ export interface SeriesGroup {
   name: string | null
   totalVolumes: number | null
   publicationStatus: PublicationStatus | null
+  startsAtZero: boolean
   entries: Entry[]
 }
 
 function compareEntries(a: Entry, b: Entry): number {
-  const va = a.edition.volume ?? Number.MAX_SAFE_INTEGER
-  const vb = b.edition.volume ?? Number.MAX_SAFE_INTEGER
+  // Les tomes d'abord, puis les intégrales et hors-séries (par premier tome repris)
+  const outsideA = isOutsideGrid(a.edition.kind) ? 1 : 0
+  const outsideB = isOutsideGrid(b.edition.kind) ? 1 : 0
+  if (outsideA !== outsideB) return outsideA - outsideB
+  const va = (outsideA ? a.edition.volumeFrom : a.edition.volume) ?? Number.MAX_SAFE_INTEGER
+  const vb = (outsideB ? b.edition.volumeFrom : b.edition.volume) ?? Number.MAX_SAFE_INTEGER
   return va - vb || a.edition.title.localeCompare(b.edition.title, 'fr')
 }
 
@@ -67,6 +73,7 @@ export function groupBySeries(entries: Entry[]): SeriesGroup[] {
         name: series?.name ?? null,
         totalVolumes: series?.totalVolumes ?? null,
         publicationStatus: series?.publicationStatus ?? null,
+        startsAtZero: series?.startsAtZero ?? false,
         entries: [],
       }
       groups.set(key, group)

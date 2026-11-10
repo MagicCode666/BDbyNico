@@ -15,6 +15,7 @@ import {
   amazonCoverUrl,
   bnfCoverExists,
   bnfCoverUrls,
+  findRetailerCover,
   OPEN_LIBRARY_PREFIX,
 } from './lib/covers.mjs'
 import {
@@ -22,7 +23,10 @@ import {
   decideTotal,
   fetchNotices,
   mapLimit,
+  nameKey,
+  nameVariants,
   publicationStatus,
+  seriesNamesForIsbns,
   topAuthors,
 } from './lib/bnf-series.mjs'
 
@@ -73,89 +77,137 @@ async function lookupSeries(db, series) {
     .eq('series_id', series.id)
     .neq('source', 'bnf')
     .eq('review_status', 'approved')
+    // Intégrales et hors-séries ne sont pas des tomes : ni repère de série, ni numéro à compter
+    .eq('kind', 'album')
   if (error) throw error
   const isbns = owned.map((edition) => edition.isbn)
   const authors = topAuthors(owned)
   const ownedMax = Math.max(0, ...owned.map((edition) => edition.volume ?? 0))
-  const finish = (notices) => {
-    const result = bestMatch(notices, series.name, isbns)
-    return { ...result, ownedMax, status: publicationStatus(notices, result.bnfName) }
+
+  // Noms à essayer : d'abord celui que la BnF donne aux albums déjà connus, puis les variantes
+  // du nom d'origine (sans la précision entre parenthèses, nom contenu dans la parenthèse)
+  let anchored = []
+  try {
+    anchored = await seriesNamesForIsbns(isbns)
+  } catch {
+    // la recherche par ISBN est un plus : on continue avec le nom d'origine
   }
-  if (authors.length > 0) {
-    const result = finish(await fetchNotices(series.name, { authors }))
-    if (result.reliable) return result
+  const names = []
+  for (const name of [...anchored, ...nameVariants(series.name)]) {
+    if (!names.some((known) => nameKey(known) === nameKey(name))) names.push(name)
   }
-  return finish(await fetchNotices(series.name))
+
+  let fallback
+  for (const name of names.slice(0, 3)) {
+    for (const withAuthors of authors.length > 0 ? [true, false] : [false]) {
+      const notices = await fetchNotices(name, withAuthors ? { authors } : {})
+      const result = {
+        ...bestMatch(notices, name, isbns),
+        ownedMax,
+        status: undefined,
+      }
+      result.status = publicationStatus(notices, result.bnfName)
+      if (result.reliable) return result
+      fallback ??= result
+    }
+  }
+  return fallback
 }
 
 /**
- * Remplace les couvertures Open Library par une meilleure : Open Library fournit parfois la page
- * de titre du livre (presque blanche) au lieu de la couverture. On essaie Amazon, puis la BnF.
- * Un album sans autre couverture garde celle d'Open Library ; un décalage tournant répartit la
- * vérification sur plusieurs nuits.
+ * Améliore les couvertures du catalogue, en essayant dans l'ordre Amazon, la BnF puis deux
+ * libraires (Decitre, AbeBooks) :
+ *   - « upgrade » remplace les couvertures Open Library, qui fournit parfois la page de titre du
+ *     livre (presque blanche) au lieu de la couverture ;
+ *   - « fill » cherche une couverture aux albums qui n'en ont aucune.
+ * Un album sans meilleure couverture garde l'actuelle ; une couverture verrouillée (choix manuel)
+ * n'est jamais touchée ; un décalage tournant répartit la vérification sur plusieurs nuits.
  */
-async function upgradeCovers(db) {
-  const { count, error: countError } = await db
-    .from('editions')
-    .select('isbn', { count: 'exact', head: true })
-    .like('cover_url', `${OPEN_LIBRARY_PREFIX}%`)
-    .eq('cover_locked', false)
+async function improveCovers(db, mode) {
+  const label = mode === 'upgrade' ? 'Open Library' : 'sans couverture'
+  const guard = (query) =>
+    (mode === 'upgrade'
+      ? query.like('cover_url', `${OPEN_LIBRARY_PREFIX}%`)
+      : query.is('cover_url', null)
+    )
+      .eq('cover_locked', false)
+      .eq('review_status', 'approved')
+      // Albums de test de rls-check : leur couverture ne doit changer que par les contrôles
+      .not('isbn', 'like', '97899999999%')
+
+  const { count, error: countError } = await guard(
+    db.from('editions').select('isbn', { count: 'exact', head: true }),
+  )
   if (countError) throw countError
-  if (!count) return console.log('Couvertures : aucune à vérifier.')
+  if (!count) return console.log(`Couvertures (${label}) : aucune à vérifier.`)
   const day = Math.floor(Date.now() / 86_400_000)
   const from = count > COVER_BATCH ? (day * COVER_BATCH) % count : 0
-  const { data: rows, error } = await db
-    .from('editions')
-    .select('isbn')
-    .like('cover_url', `${OPEN_LIBRARY_PREFIX}%`)
-    .eq('cover_locked', false)
+  const { data: rows, error } = await guard(db.from('editions').select('isbn'))
     .order('isbn')
     .range(from, from + COVER_BATCH - 1)
   if (error) throw error
 
   const replace = async (isbn, url) => {
     if (dryRun) return
-    const { error: updateError } = await db
-      .from('editions')
-      .update({ cover_url: url })
-      .eq('isbn', isbn)
-      .like('cover_url', `${OPEN_LIBRARY_PREFIX}%`)
-      .eq('cover_locked', false)
+    const { error: updateError } = await guard(
+      db.from('editions').update({ cover_url: url }).eq('isbn', isbn),
+    )
     if (updateError) throw updateError
   }
-  const upgraded = { amazon: 0, bnf: 0 }
-  const needBnf = []
+  const found = { amazon: 0, bnf: 0, libraires: 0 }
+  const fail = (what, e) => console.error(`- couverture ${what} : échec (${e.message ?? e})`)
+
   // 1. Amazon : une vérification par album
+  const needBnf = []
   await mapLimit(rows, 5, async ({ isbn }) => {
     try {
       if (await amazonCoverExists(isbn)) {
         await replace(isbn, amazonCoverUrl(isbn))
-        upgraded.amazon++
+        found.amazon++
       } else needBnf.push(isbn)
     } catch (e) {
-      console.error(`- couverture ${isbn} : échec (${e.message ?? e})`)
+      fail(isbn, e)
     }
   })
+
   // 2. BnF pour les autres : notices cherchées par lots de 20, puis image vérifiée
+  const needRetailers = []
   for (let i = 0; i < needBnf.length; i += 20) {
+    const batch = needBnf.slice(i, i + 20)
+    let urls = new Map()
     try {
-      const urls = await bnfCoverUrls(needBnf.slice(i, i + 20))
-      await mapLimit([...urls], 4, async ([isbn, url]) => {
-        try {
-          if (!(await bnfCoverExists(url))) return
-          await replace(isbn, url)
-          upgraded.bnf++
-        } catch (e) {
-          console.error(`- couverture ${isbn} : échec (${e.message ?? e})`)
-        }
-      })
+      urls = await bnfCoverUrls(batch)
     } catch (e) {
-      console.error(`- couvertures BnF : échec (${e.message ?? e})`)
+      fail('BnF', e)
     }
+    await mapLimit(batch, 4, async (isbn) => {
+      try {
+        const url = urls.get(isbn)
+        if (url && (await bnfCoverExists(url))) {
+          await replace(isbn, url)
+          found.bnf++
+        } else needRetailers.push(isbn)
+      } catch (e) {
+        fail(isbn, e)
+      }
+    })
   }
+
+  // 3. Libraires pour ce qui reste
+  await mapLimit(needRetailers, 4, async (isbn) => {
+    try {
+      const url = await findRetailerCover(isbn)
+      if (!url) return
+      await replace(isbn, url)
+      found.libraires++
+    } catch (e) {
+      fail(isbn, e)
+    }
+  })
+
   console.log(
-    `Couvertures : ${upgraded.amazon} remplacée(s) par Amazon, ${upgraded.bnf} par la BnF, ` +
-      `sur ${rows.length} vérifiée(s) (${count} Open Library).`,
+    `Couvertures (${label}) : ${found.amazon} par Amazon, ${found.bnf} par la BnF, ` +
+      `${found.libraires} par les libraires, sur ${rows.length} vérifiée(s) (${count} au total).`,
   )
 }
 
@@ -170,7 +222,7 @@ async function run() {
 
   const { data: seriesList, error } = await db
     .from('series')
-    .select('id, name, total_volumes')
+    .select('id, name, total_volumes, status_source')
     .eq('total_source', 'auto')
     .order('total_checked_at', { ascending: true, nullsFirst: true })
     .limit(limit)
@@ -200,7 +252,10 @@ async function run() {
       if (!dryRun) {
         const update = { total_checked_at: new Date().toISOString() }
         if (newTotal !== undefined) update.total_volumes = newTotal
-        if (result.reliable && result.status) update.publication_status = result.status
+        // Un statut fixé à la main par un modérateur n'est jamais modifié
+        if (result.reliable && result.status && series.status_source === 'auto') {
+          update.publication_status = result.status
+        }
         const { error: updateError } = await db.from('series').update(update).eq('id', series.id)
         if (updateError) throw updateError
 
@@ -234,7 +289,8 @@ async function run() {
   console.log(`Terminé : ${done} réussie(s), ${failed} en échec.`)
   if (!skipCovers) {
     try {
-      await upgradeCovers(db)
+      await improveCovers(db, 'upgrade')
+      await improveCovers(db, 'fill')
     } catch (e) {
       console.error(`Couvertures : échec (${e.message ?? e})`)
     }

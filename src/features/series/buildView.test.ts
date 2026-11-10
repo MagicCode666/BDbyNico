@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildSeriesView, missingVolumes, type CatalogueEdition, type UserItem } from './buildView'
+import { completionLabel } from './status'
 
 const edition = (
   volume: number | null,
@@ -124,5 +125,217 @@ describe('buildSeriesView', () => {
     const view = buildSeriesView({ ...base, editions: [bare, withCover], items: [], total: 2 })
     const slot = view.slots[1]
     expect(slot.kind === 'missing' && slot.edition.coverUrl).toBe('https://x/y.jpg')
+  })
+})
+
+describe('tome 0 (prologue)', () => {
+  const e0 = edition(0)
+  const e1 = edition(1)
+  const e2 = edition(2)
+
+  it("donne une case au tome 0 quand l'utilisateur le possède", () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e0, e1, e2],
+      items: [item(e0), item(e1), item(e2)],
+      ignored: [],
+    })
+    expect(view.slots.map((s) => s.volume)).toEqual([0, 1, 2])
+    expect(view.ownedCount).toBe(3)
+    expect(view.targetCount).toBe(3)
+    expect(view.complete).toBe(true)
+    expect(view.hasVolumeZero).toBe(true)
+  })
+
+  it("compte dans la série un tome 0 connu du catalogue, même sans l'avoir", () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e0, e1, e2],
+      items: [item(e1), item(e2)],
+      ignored: [],
+    })
+    expect(view.slots.map((s) => s.volume)).toEqual([0, 1, 2])
+    expect(view.slots[0].kind).toBe('missing')
+    expect(view.targetCount).toBe(3)
+    expect(view.ownedCount).toBe(2)
+    expect(view.complete).toBe(false)
+    expect(view.unnumbered).toHaveLength(0)
+  })
+
+  it('un tome 0 en envie est une case « envie » qui compte aussi', () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e0, e1, e2],
+      items: [item(e0, 'wanted'), item(e1), item(e2)],
+      ignored: [],
+    })
+    expect(view.slots[0].kind).toBe('wanted')
+    expect(view.targetCount).toBe(3)
+    expect(view.complete).toBe(false)
+  })
+
+  it('on peut exclure le tome 0 de sa liste : la série redevient complète pour soi', () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e0, e1, e2],
+      items: [item(e1), item(e2)],
+      ignored: [0],
+    })
+    expect(view.targetCount).toBe(2)
+    expect(view.complete).toBe(true)
+  })
+
+  it('suffit que la série mémorise un tome 0, même sans son édition ici', () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e1, e2],
+      items: [item(e1), item(e2)],
+      ignored: [],
+      startsAtZero: true,
+    })
+    expect(view.slots.map((s) => s.kind)).toEqual(['unknown', 'owned', 'owned'])
+    expect(view.hasVolumeZero).toBe(true)
+  })
+
+  it('sans tome 0, la série commence au tome 1', () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e1, e2],
+      items: [item(e1)],
+      ignored: [],
+    })
+    expect(view.slots.map((s) => s.volume)).toEqual([1, 2])
+    expect(view.hasVolumeZero).toBe(false)
+  })
+
+  it('un tome 0 possédé ne fait pas dépasser le total', () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e0, e1, e2],
+      items: [item(e0), item(e1)],
+      ignored: [],
+    })
+    expect(view.total).toBe(2)
+    expect(view.missing).toEqual([2])
+  })
+})
+
+describe('completionLabel', () => {
+  it('ne dit « Complète » que pour une série terminée', () => {
+    expect(completionLabel(true, 'finished')).toBe('Complète')
+  })
+
+  it('dit « À jour » pour une série en cours ou au statut inconnu', () => {
+    expect(completionLabel(true, 'ongoing')).toBe('À jour')
+    expect(completionLabel(true, null)).toBe('À jour')
+    expect(completionLabel(true, undefined)).toBe('À jour')
+  })
+
+  it("n'affiche rien tant que des tomes manquent", () => {
+    expect(completionLabel(false, 'finished')).toBeNull()
+  })
+})
+
+describe('intégrales et hors-séries', () => {
+  const e1 = edition(1)
+  const e2 = edition(2)
+  const e3 = edition(3)
+  const integral = edition(null, {
+    isbn: 'integrale-1-3',
+    title: 'La trilogie',
+    kind: 'integral',
+    volumeFrom: 1,
+    volumeTo: 3,
+  })
+  const partial = edition(null, {
+    isbn: 'integrale-4-6',
+    title: 'Deuxième cycle',
+    kind: 'integral',
+    volumeFrom: 4,
+    volumeTo: 6,
+  })
+  const special = edition(null, { isbn: 'hs', title: 'Hors-série', kind: 'special' })
+
+  it("n'accorde aucune case à une intégrale : elle est listée à part, avec son état", () => {
+    const view = buildSeriesView({
+      total: 3,
+      override: null,
+      editions: [e1, e2, e3, integral],
+      items: [item(integral)],
+      ignored: [],
+    })
+    expect(view.slots.map((s) => s.kind)).toEqual(['missing', 'missing', 'missing'])
+    expect(view.ownedCount).toBe(0)
+    expect(view.integrals).toHaveLength(1)
+    expect(view.integrals[0].item?.status).toBe('owned')
+    expect(view.unnumbered).toHaveLength(0)
+  })
+
+  it("possède l'intégrale, exclut les trois tomes : la série est complète pour soi", () => {
+    const view = buildSeriesView({
+      total: 3,
+      override: null,
+      editions: [e1, e2, e3, integral],
+      items: [item(integral)],
+      ignored: [1, 2, 3],
+    })
+    expect(view.targetCount).toBe(0)
+    expect(view.complete).toBe(true)
+  })
+
+  it('sans intégrale ni tome, tout exclure ne rend pas la série complète', () => {
+    const view = buildSeriesView({
+      total: 3,
+      override: null,
+      editions: [e1, e2, e3, integral],
+      items: [],
+      ignored: [1, 2, 3],
+    })
+    expect(view.complete).toBe(false)
+  })
+
+  it("liste plusieurs intégrales partielles dans l'ordre des tomes repris", () => {
+    const view = buildSeriesView({
+      total: 6,
+      override: null,
+      editions: [e1, e2, e3, partial, special, integral],
+      items: [item(partial), item(integral, 'wanted')],
+      ignored: [],
+    })
+    expect(view.integrals.map((entry) => entry.edition.title)).toEqual([
+      'Hors-série',
+      'La trilogie',
+      'Deuxième cycle',
+    ])
+    expect(view.integrals.map((entry) => entry.item?.status ?? null)).toEqual([
+      null,
+      'wanted',
+      'owned',
+    ])
+  })
+
+  it("le numéro d'une intégrale numérotée n'élargit pas le total de la série", () => {
+    const numbered = edition(23, {
+      isbn: 'integrale-23',
+      title: 'Intégrale n° 23',
+      kind: 'integral',
+    })
+    const view = buildSeriesView({
+      total: 3,
+      override: null,
+      editions: [e1, e2, e3, numbered],
+      items: [item(numbered)],
+      ignored: [],
+    })
+    expect(view.total).toBe(3)
+    expect(view.slots).toHaveLength(3)
+    expect(view.integrals).toHaveLength(1)
   })
 })

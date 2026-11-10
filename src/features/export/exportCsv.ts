@@ -9,6 +9,9 @@ export const EXPORT_COLUMNS = [
   "Titre de l'album",
   'EAN',
   'Tome',
+  'Type',
+  'Intégrale : tome de',
+  'Intégrale : tome à',
   'Date de publication',
   'Editeur',
   'Auteurs',
@@ -24,6 +27,13 @@ export const EXPORT_COLUMNS = [
   'État',
   'Notes',
 ] as const
+
+/** Valeurs du champ « Type », celles de Bubble (relues telles quelles à l'import). */
+const TYPE_LABELS = {
+  album: 'album simple',
+  integral: 'intégrale complète',
+  special: 'hors série',
+} as const
 
 const CHECK = '✓'
 const DELIMITER = ';'
@@ -45,6 +55,9 @@ function toRow(entry: Entry): string[] {
     edition.title,
     edition.isbn,
     edition.volume?.toString() ?? '',
+    TYPE_LABELS[edition.kind ?? 'album'],
+    edition.kind === 'integral' ? (edition.volumeFrom?.toString() ?? '') : '',
+    edition.kind === 'integral' ? (edition.volumeTo?.toString() ?? '') : '',
     edition.publishedOn ?? '',
     edition.publisher ?? '',
     edition.authors.join(','),

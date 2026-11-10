@@ -3,7 +3,8 @@ import { supabase } from '../../lib/supabase'
 export type Role = 'user' | 'moderator' | 'admin'
 export type Contribution = 'full' | 'collection_only'
 export type ChangeStatus = 'applied' | 'pending' | 'rejected' | 'reverted'
-export type ChangeKind = 'create' | 'cover'
+export type ChangeKind =
+  'create' | 'cover' | 'edition_kind' | 'series_name' | 'series_total' | 'series_status'
 export type ChangeOrigin = 'user' | 'import' | 'job' | 'admin'
 
 export interface Access {
@@ -47,7 +48,8 @@ export type ReportResult = 'applied' | 'pending' | 'unchanged'
 export async function reportCover(isbn: string, coverUrl: string | null): Promise<ReportResult> {
   const { data, error } = await supabase.rpc('report_cover', {
     p_isbn: isbn,
-    p_cover_url: coverUrl,
+    // La fonction accepte null (« aucune couverture ») : les types générés ne le disent pas
+    p_cover_url: coverUrl as string,
   })
   if (error) throw error
   return data === 'pending' || data === 'unchanged' ? data : 'applied'
@@ -60,7 +62,9 @@ export interface Change {
   pseudo: string | null
   origin: ChangeOrigin
   kind: ChangeKind
-  isbn: string
+  /** null pour un changement de série */
+  isbn: string | null
+  seriesId: string | null
   title: string | null
   seriesName: string | null
   volume: number | null
@@ -100,6 +104,7 @@ export async function listChanges(filters: ChangeFilters = {}): Promise<Change[]
     origin: row.origin as ChangeOrigin,
     kind: row.kind as ChangeKind,
     isbn: row.isbn,
+    seriesId: row.series_id,
     title: row.title,
     seriesName: row.series_name,
     volume: row.volume,
@@ -172,10 +177,87 @@ export function governanceErrorMessage(error: unknown, fallback: string): string
   const message = error instanceof Error ? error.message : (error as { message?: string })?.message
   const known = [
     'a changé depuis',
+    'Une série porte déjà ce nom',
+    'Nom de série invalide',
+    'Le total doit être',
     'possèdent cet album',
     'Limite quotidienne',
     'Seuls les possesseurs',
+    'Plage de tomes invalide',
     'déjà traitée',
   ]
   return message && known.some((part) => message.includes(part)) ? message : fallback
+}
+
+export interface AdminSeries {
+  id: string
+  name: string
+  totalVolumes: number | null
+  /** « manual » : total fixé par un modérateur, le job n'y touche plus. */
+  totalSource: 'auto' | 'manual'
+  publicationStatus: 'ongoing' | 'finished' | null
+  statusSource: 'auto' | 'manual'
+  editionCount: number
+}
+
+export async function listSeriesAdmin(query: string): Promise<AdminSeries[]> {
+  const { data, error } = await supabase.rpc('list_series_admin', { p_query: query, p_limit: 30 })
+  if (error) throw error
+  return data.map((row) => ({
+    id: row.id,
+    name: row.name,
+    totalVolumes: row.total_volumes,
+    totalSource: row.total_source === 'manual' ? 'manual' : 'auto',
+    publicationStatus:
+      row.publication_status === 'ongoing' || row.publication_status === 'finished'
+        ? row.publication_status
+        : null,
+    statusSource: row.status_source === 'manual' ? 'manual' : 'auto',
+    editionCount: Number(row.edition_count),
+  }))
+}
+
+export async function renameSeries(seriesId: string, name: string): Promise<void> {
+  const { error } = await supabase.rpc('rename_series', { p_series: seriesId, p_name: name })
+  if (error) throw error
+}
+
+/** Fixe le total partagé ; null le rend au job automatique. */
+export async function setSeriesTotal(seriesId: string, total: number | null): Promise<void> {
+  const { error } = await supabase.rpc('set_series_total', {
+    p_series: seriesId,
+    // La fonction accepte null (retour au job) : les types générés ne le disent pas
+    p_total: total as number,
+  })
+  if (error) throw error
+}
+
+/** Fixe le statut partagé ; null le rend au job automatique. */
+export async function setSeriesStatus(
+  seriesId: string,
+  status: 'ongoing' | 'finished' | null,
+): Promise<void> {
+  const { error } = await supabase.rpc('set_series_status', {
+    p_series: seriesId,
+    p_status: status as string,
+  })
+  if (error) throw error
+}
+
+/** Change le type d'un album (tome, intégrale avec sa plage de tomes, hors-série). */
+export async function setEditionKind(
+  isbn: string,
+  kind: 'album' | 'integral' | 'special',
+  from: number | null,
+  to: number | null,
+): Promise<ReportResult> {
+  const { data, error } = await supabase.rpc('set_edition_kind', {
+    p_isbn: isbn,
+    p_kind: kind,
+    // La fonction accepte null (pas de plage) : les types générés ne le disent pas
+    p_from: from as number,
+    p_to: to as number,
+  })
+  if (error) throw error
+  return data === 'pending' || data === 'unchanged' ? data : 'applied'
 }

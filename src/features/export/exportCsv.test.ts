@@ -135,3 +135,41 @@ describe('export puis réimport (sans perte)', () => {
     })
   })
 })
+
+describe('export puis réimport des intégrales et hors-séries', () => {
+  it('conserve le type et la plage de tomes', () => {
+    const original = [
+      entry(
+        {},
+        {
+          title: 'La trilogie du mal',
+          volume: null,
+          isbn: '9782822225632',
+          kind: 'integral',
+          volumeFrom: 1,
+          volumeTo: 3,
+        },
+      ),
+      entry(
+        {},
+        { title: 'Intégrale complète', volume: null, isbn: '9782756024189', kind: 'integral' },
+      ),
+      entry({}, { title: 'Hors-série', volume: null, isbn: '9782864972129', kind: 'special' }),
+      entry({}, { title: 'Tome ordinaire', volume: 2, isbn: '9782800116303' }),
+    ]
+    const csv = entriesToCsv(original)
+    expect(csv).toContain('"intégrale complète";"1";"3"')
+    expect(csv).toContain('"hors série";"";""')
+    expect(csv).toContain('"album simple";"";""')
+
+    const byIsbn = Object.fromEntries(parseBubbleCsv(csv).rows.map((r) => [r.isbn, r]))
+    expect(byIsbn['9782822225632']).toMatchObject({ kind: 'integral', volumeFrom: 1, volumeTo: 3 })
+    expect(byIsbn['9782756024189']).toMatchObject({
+      kind: 'integral',
+      volumeFrom: null,
+      volumeTo: null,
+    })
+    expect(byIsbn['9782864972129']).toMatchObject({ kind: 'special', volumeFrom: null })
+    expect(byIsbn['9782800116303']).toMatchObject({ kind: 'album', volume: 2 })
+  })
+})
