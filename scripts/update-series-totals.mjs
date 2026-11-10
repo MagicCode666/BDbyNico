@@ -9,7 +9,7 @@
 //                                                         le résultat (aucune clé, aucune écriture)
 import { createClient } from '@supabase/supabase-js'
 
-import { computeSeries, fetchNotices } from './lib/bnf-series.mjs'
+import { computeSeries, fetchNotices, mapLimit } from './lib/bnf-series.mjs'
 
 const args = process.argv.slice(2)
 const option = (flag) => {
@@ -18,6 +18,8 @@ const option = (flag) => {
 }
 const dryRun = args.includes('--dry-run')
 const limit = Number(option('--limit') ?? 100)
+// Séries traitées en parallèle (la BnF est lente : ~3 s par requête)
+const CONCURRENCY = 4
 const singleName = option('--name')
 
 async function inspectOne(name) {
@@ -59,7 +61,7 @@ async function run() {
 
   let done = 0
   let failed = 0
-  for (const series of seriesList) {
+  await mapLimit(seriesList, CONCURRENCY, async (series) => {
     try {
       const notices = await fetchNotices(series.name)
       const result = computeSeries(notices, series.name)
@@ -105,7 +107,7 @@ async function run() {
       failed++
       console.error(`- ${series.name} : échec (${e.message ?? e})`)
     }
-  }
+  })
   console.log(`Terminé : ${done} réussie(s), ${failed} en échec.`)
   if (seriesList.length > 0 && done === 0) process.exit(1)
 }
