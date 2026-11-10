@@ -24,6 +24,9 @@ export async function findAlbumInfo(isbn: string): Promise<LookupResult | null> 
         authors: existing.authors,
         publisher: existing.publisher ?? undefined,
         publishedOn: existing.publishedOn ?? undefined,
+        kind: existing.kind,
+        volumeFrom: existing.volumeFrom,
+        volumeTo: existing.volumeTo,
         coverUrl:
           existing.coverUrl ??
           (await findAmazonCover(isbn)) ??

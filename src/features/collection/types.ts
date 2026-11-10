@@ -1,4 +1,5 @@
 import type { PublicationStatus } from '../series/status'
+import type { AlbumKind } from './kinds'
 
 export type Status = 'owned' | 'wanted'
 
@@ -33,6 +34,11 @@ export interface Edition {
   series: SeriesInfo | null
   /** Couverture choisie à la main : la recherche automatique n'y touche plus. */
   coverLocked?: boolean
+  /** Album ordinaire, intégrale ou hors-série (absent : album). */
+  kind?: AlbumKind
+  /** Intégrale : tomes repris (absents : toute la série). */
+  volumeFrom?: number | null
+  volumeTo?: number | null
   /** En attente de validation par un modérateur (visible de son auteur seulement). */
   pending?: boolean
 }

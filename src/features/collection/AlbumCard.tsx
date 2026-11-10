@@ -1,3 +1,4 @@
+import { shortKindLabel } from './kinds'
 import { Link } from 'react-router-dom'
 
 import type { Entry } from './types'
@@ -64,7 +65,11 @@ export function AlbumThumb({ entry }: { entry: Entry }) {
         )}
       </div>
       <span className="text-center text-[10px] text-slate-500">
-        {edition.volume !== null ? `T${edition.volume}` : '·'}
+        {edition.kind === 'integral' || edition.kind === 'special'
+          ? shortKindLabel(edition.kind, edition.volumeFrom, edition.volumeTo)
+          : edition.volume !== null
+            ? `T${edition.volume}`
+            : '·'}
         {entry.read && ' · lu'}
       </span>
     </Link>

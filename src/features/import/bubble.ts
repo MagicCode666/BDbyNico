@@ -2,6 +2,7 @@ import Papa from 'papaparse'
 
 import { normalizeIsbn } from '../../lib/isbn'
 import { normalizeText } from '../collection/utils'
+import type { AlbumKind } from '../collection/kinds'
 import type { Dedication } from '../collection/types'
 import type { ImportIssue, ImportPlan, ImportRow } from './types'
 
@@ -82,6 +83,31 @@ function parseAuthors(text: string): string[] {
   return [...new Set(names)]
 }
 
+/**
+ * Type d'un album : le champ « Type » de Bubble (« intégrale complète », « hors série »,
+ * « album simple »), sinon un titre ou un nom de série qui dit clairement « intégrale » ou
+ * « coffret ». Nos propres exports ajoutent la plage de tomes reprise par une intégrale.
+ */
+export function parseKind(
+  typeText: string,
+  albumTitle: string,
+  seriesTitle: string,
+  fromText = '',
+  toText = '',
+): { kind: AlbumKind; volumeFrom: number | null; volumeTo: number | null } {
+  const type = normalizeText(typeText.trim())
+  let kind: AlbumKind = 'album'
+  if (/int.?grale|coffret/.test(type)) kind = 'integral'
+  else if (/hors/.test(type)) kind = 'special'
+  else if (type === '' && /int[ée]grale|coffret/i.test(`${albumTitle} ${seriesTitle}`)) {
+    kind = 'integral'
+  }
+  const from = /^\d{1,3}$/.test(fromText.trim()) ? Number(fromText) : null
+  const to = /^\d{1,3}$/.test(toText.trim()) ? Number(toText) : null
+  const hasRange = kind === 'integral' && from !== null && to !== null && from <= to
+  return { kind, volumeFrom: hasRange ? from : null, volumeTo: hasRange ? to : null }
+}
+
 /** Lit un export CSV de Bubble et en tire la liste des albums à importer. */
 export function parseBubbleCsv(text: string): ImportPlan {
   let parsed = parseText(text, ';')
@@ -130,6 +156,14 @@ export function parseBubbleCsv(text: string): ImportPlan {
       isbn
     if (titleMissing) warnings.push({ line, message: 'Titre absent : à compléter' })
 
+    const { kind, volumeFrom, volumeTo } = parseKind(
+      cell(record, 'Type'),
+      albumTitle,
+      seriesTitle,
+      cell(record, 'Intégrale : tome de'),
+      cell(record, 'Intégrale : tome à'),
+    )
+
     // Type précis dans nos exports ; Bubble ne donne qu'une case « Dédicacé » : « signature »
     const dedicationType = cell(record, 'Type de dédicace').toLowerCase()
     const dedication: Dedication | null =
@@ -145,6 +179,9 @@ export function parseBubbleCsv(text: string): ImportPlan {
       titleMissing,
       seriesName,
       volume,
+      kind,
+      volumeFrom,
+      volumeTo,
       authors: parseAuthors(cell(record, 'Auteurs')),
       publisher: cell(record, 'Editeur') || null,
       publishedOn: parseDate(cell(record, 'Date de publication')),

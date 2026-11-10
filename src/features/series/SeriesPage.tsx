@@ -15,6 +15,7 @@ import {
   type SeriesData,
 } from './api'
 import { buildSeriesView, type Slot } from './buildView'
+import IntegralsSection from './IntegralsSection'
 import {
   completionLabel,
   effectiveStatus,
@@ -98,6 +99,15 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
           ignored: [...settings.ignored, volume],
         }),
       "Impossible d'ignorer ce tome.",
+    )
+  const ignoreMany = (volumes: number[]) =>
+    run(
+      () =>
+        saveSeriesSettings(userId!, series.id, {
+          ...settings,
+          ignored: [...settings.ignored, ...volumes],
+        }),
+      "Impossible d'exclure ces tomes.",
     )
   const restore = (volume: number) =>
     run(
@@ -251,6 +261,16 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
           />
         ))}
       </section>
+
+      <IntegralsSection
+        integrals={view.integrals}
+        total={view.total}
+        ignored={settings.ignored}
+        ownedVolumes={view.slots.filter((slot) => slot.kind === 'owned').map((slot) => slot.volume)}
+        busy={busy}
+        onAdd={addEdition}
+        onIgnoreMany={ignoreMany}
+      />
 
       {view.unnumbered.length > 0 && (
         <section>

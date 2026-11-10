@@ -18,7 +18,7 @@ import {
   type ChangeStatus,
   type Contribution,
 } from './api'
-import { describeSeriesChange } from './describe'
+import { describeChange } from './describe'
 import SeriesTab from './SeriesTab'
 import { useAccess } from './useAccess'
 
@@ -39,6 +39,7 @@ const ORIGIN_LABELS: Record<ChangeOrigin, string> = {
 const KIND_LABELS = {
   create: 'Création',
   cover: 'Couverture',
+  edition_kind: "Type d'album",
   series_name: 'Série renommée',
   series_total: 'Total de série',
   series_status: 'Statut de série',
@@ -297,9 +298,7 @@ function ChangeList({ mode }: { mode: 'pending' | 'journal' }) {
                 {change.revertsId && ` · annule le changement n°${change.revertsId}`}
                 {change.isbn && ` · ISBN ${change.isbn}`}
               </p>
-              {describeSeriesChange(change) && (
-                <p className="text-sm">{describeSeriesChange(change)}</p>
-              )}
+              {describeChange(change) && <p className="text-sm">{describeChange(change)}</p>}
               {change.kind === 'cover' && <CoverPair change={change} />}
               {change.kind === 'create' && change.status === 'pending' && (
                 <p className="text-xs text-slate-600">

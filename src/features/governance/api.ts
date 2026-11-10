@@ -3,7 +3,8 @@ import { supabase } from '../../lib/supabase'
 export type Role = 'user' | 'moderator' | 'admin'
 export type Contribution = 'full' | 'collection_only'
 export type ChangeStatus = 'applied' | 'pending' | 'rejected' | 'reverted'
-export type ChangeKind = 'create' | 'cover' | 'series_name' | 'series_total' | 'series_status'
+export type ChangeKind =
+  'create' | 'cover' | 'edition_kind' | 'series_name' | 'series_total' | 'series_status'
 export type ChangeOrigin = 'user' | 'import' | 'job' | 'admin'
 
 export interface Access {
@@ -182,6 +183,7 @@ export function governanceErrorMessage(error: unknown, fallback: string): string
     'possèdent cet album',
     'Limite quotidienne',
     'Seuls les possesseurs',
+    'Plage de tomes invalide',
     'déjà traitée',
   ]
   return message && known.some((part) => message.includes(part)) ? message : fallback
@@ -240,4 +242,22 @@ export async function setSeriesStatus(
     p_status: status as string,
   })
   if (error) throw error
+}
+
+/** Change le type d'un album (tome, intégrale avec sa plage de tomes, hors-série). */
+export async function setEditionKind(
+  isbn: string,
+  kind: 'album' | 'integral' | 'special',
+  from: number | null,
+  to: number | null,
+): Promise<ReportResult> {
+  const { data, error } = await supabase.rpc('set_edition_kind', {
+    p_isbn: isbn,
+    p_kind: kind,
+    // La fonction accepte null (pas de plage) : les types générés ne le disent pas
+    p_from: from as number,
+    p_to: to as number,
+  })
+  if (error) throw error
+  return data === 'pending' || data === 'unchanged' ? data : 'applied'
 }

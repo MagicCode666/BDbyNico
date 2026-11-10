@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase'
 import { toPublicationStatus } from '../series/status'
+import { toAlbumKind } from './kinds'
 import type { Dedication, Edition, Entry, SeriesInfo, Status } from './types'
 
 const SELECT = `
@@ -7,7 +8,7 @@ const SELECT = `
   first_edition,
   editions (
     isbn, title, volume, authors, publisher, published_on, cover_url,
-    review_status, cover_locked,
+    review_status, cover_locked, kind, volume_from, volume_to,
     series ( id, name, total_volumes, publication_status )
   )
 `
@@ -29,6 +30,9 @@ interface RawEdition {
   cover_url: string | null
   review_status?: string
   cover_locked?: boolean
+  kind?: string
+  volume_from?: number | null
+  volume_to?: number | null
   series: RawSeries | null
 }
 
@@ -73,6 +77,9 @@ function toEdition(raw: RawEdition): Edition {
     coverUrl: raw.cover_url,
     series: toSeries(raw.series),
     coverLocked: raw.cover_locked ?? false,
+    kind: toAlbumKind(raw.kind),
+    volumeFrom: raw.volume_from ?? null,
+    volumeTo: raw.volume_to ?? null,
     pending: raw.review_status === 'pending',
   }
 }
@@ -116,7 +123,7 @@ export async function getCatalogueEdition(isbn: string): Promise<Edition | null>
   const { data, error } = await supabase
     .from('editions')
     .select(
-      'isbn, title, volume, authors, publisher, published_on, cover_url, cover_locked, review_status, series ( id, name, total_volumes )',
+      'isbn, title, volume, authors, publisher, published_on, cover_url, cover_locked, review_status, kind, volume_from, volume_to, series ( id, name, total_volumes )',
     )
     .eq('isbn', isbn)
     .maybeSingle()

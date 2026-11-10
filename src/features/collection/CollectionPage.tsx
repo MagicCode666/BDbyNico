@@ -5,9 +5,10 @@ import FormMessage from '../../components/FormMessage'
 import { useScrollRestoration } from '../../lib/useScrollRestoration'
 import PageLayout from '../../components/PageLayout'
 import { listSeriesSettings } from '../series/api'
-import { missingVolumes } from '../series/buildView'
+import { seriesProgress } from '../series/progress'
 import { useMissingCovers } from '../series/useMissingCovers'
 import { AlbumThumb } from './AlbumCard'
+import { isOutsideGrid } from './kinds'
 import { listCollection } from './api'
 import { STATUS_LABELS, type ReadFilter, type Status } from './types'
 import { useAsync } from './useAsync'
@@ -15,6 +16,12 @@ import { completionLabel, effectiveStatus, PUBLICATION_LABELS } from '../series/
 import { effectiveTotal, filterEntries, groupBySeries, progressLabel } from './utils'
 
 const STATUSES: Status[] = ['owned', 'wanted']
+
+interface OwnedInSeries {
+  count: number
+  volumes: number[]
+  ownsIntegral: boolean
+}
 
 const FILTERS_KEY = 'bdbynico:collection-filters'
 
@@ -81,13 +88,18 @@ export default function CollectionPage() {
   const { data: seriesSettings } = useAsync(listSeriesSettings)
   // Progression par série : tous les albums possédés, indépendamment des filtres
   const ownedBySeries = useMemo(() => {
-    const map = new Map<string, { count: number; volumes: number[] }>()
+    const map = new Map<string, OwnedInSeries>()
     for (const e of entries) {
       if (e.status !== 'owned') continue
       const key = e.edition.series?.id ?? '_'
-      const current = map.get(key) ?? { count: 0, volumes: [] }
-      current.count++
-      if (e.edition.volume !== null) current.volumes.push(e.edition.volume)
+      const current = map.get(key) ?? { count: 0, volumes: [], ownsIntegral: false }
+      // Une intégrale ou un hors-série est un objet distinct des tomes : il ne compte pas comme tome
+      if (isOutsideGrid(e.edition.kind)) {
+        current.ownsIntegral = true
+      } else {
+        current.count++
+        if (e.edition.volume !== null) current.volumes.push(e.edition.volume)
+      }
       map.set(key, current)
     }
     return map
@@ -179,19 +191,25 @@ export default function CollectionPage() {
       <div className="flex flex-col gap-3">
         {groups.map((group) => {
           const settings = seriesSettings?.get(group.key)
-          const owned = ownedBySeries.get(group.key) ?? { count: 0, volumes: [] }
+          const owned = ownedBySeries.get(group.key) ?? {
+            count: 0,
+            volumes: [],
+            ownsIntegral: false,
+          }
           // Jamais plus de tomes possédés que de tomes existants
           const total = effectiveTotal(settings?.totalOverride ?? group.totalVolumes, owned.volumes)
-          const ownedNumbered = new Set(owned.volumes).size
-          // Un tome 0 (prologue) s'ajoute au total : 7 / 7 pour les tomes 0 à 6
-          const shownTotal = total ? total + (owned.volumes.includes(0) ? 1 : 0) : null
-          const shownOwned = total ? ownedNumbered : owned.count
+          // Même calcul que la page de la série : tomes exclus retirés de l'objectif
+          const progress = seriesProgress({
+            total,
+            ownedVolumes: owned.volumes,
+            ignored: settings?.ignored ?? [],
+            ownsIntegral: owned.ownsIntegral,
+          })
+          const shownTotal = total ? progress.target : null
+          const shownOwned = total ? progress.owned : owned.count
           const publication = effectiveStatus(settings?.statusOverride, group.publicationStatus)
           const showProgress = group.name !== null && status === 'owned'
-          const complete =
-            showProgress &&
-            !!total &&
-            missingVolumes(total, owned.volumes, settings?.ignored ?? []).length === 0
+          const complete = showProgress && !!total && progress.complete
           return (
             <section key={group.key} className="rounded border border-slate-200 p-3">
               <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3">
@@ -209,7 +227,9 @@ export default function CollectionPage() {
                 </h2>
                 {showProgress && (
                   <span className="flex items-center gap-2 text-sm text-slate-600">
-                    {progressLabel({ ...group, totalVolumes: shownTotal }, shownOwned)}
+                    {total && progress.target === 0
+                      ? 'Tomes unitaires exclus'
+                      : progressLabel({ ...group, totalVolumes: shownTotal }, shownOwned)}
                     {publication && (
                       <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
                         {PUBLICATION_LABELS[publication]}

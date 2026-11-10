@@ -131,6 +131,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           isbn: string
+          kind: string
           published_on: string | null
           publisher: string | null
           review_status: string
@@ -138,6 +139,8 @@ export type Database = {
           source: string | null
           title: string
           volume: number | null
+          volume_from: number | null
+          volume_to: number | null
         }
         Insert: {
           authors?: string[]
@@ -146,6 +149,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           isbn: string
+          kind?: string
           published_on?: string | null
           publisher?: string | null
           review_status?: string
@@ -153,6 +157,8 @@ export type Database = {
           source?: string | null
           title: string
           volume?: number | null
+          volume_from?: number | null
+          volume_to?: number | null
         }
         Update: {
           authors?: string[]
@@ -161,6 +167,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           isbn?: string
+          kind?: string
           published_on?: string | null
           publisher?: string | null
           review_status?: string
@@ -168,6 +175,8 @@ export type Database = {
           source?: string | null
           title?: string
           volume?: number | null
+          volume_from?: number | null
+          volume_to?: number | null
         }
         Relationships: [
           {
@@ -399,6 +408,10 @@ export type Database = {
         }[]
       }
       rename_series: { Args: { p_name: string; p_series: string }; Returns: undefined }
+      set_edition_kind: {
+        Args: { p_from?: number; p_isbn: string; p_kind: string; p_to?: number }
+        Returns: string
+      }
       set_series_status: {
         Args: { p_series: string; p_status: string }
         Returns: undefined

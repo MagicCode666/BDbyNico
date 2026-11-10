@@ -1,3 +1,4 @@
+import { isOutsideGrid, type AlbumKind } from '../collection/kinds'
 import type { Status } from '../collection/types'
 
 /** Un album du catalogue partagé qui appartient à la série. */
@@ -8,6 +9,11 @@ export interface CatalogueEdition {
   coverUrl: string | null
   authors: string[]
   coverLocked?: boolean
+  /** Intégrales, coffrets et hors-séries n'ont pas de case dans la grille des tomes. */
+  kind?: AlbumKind
+  /** Intégrale : tomes repris (absents : toute la série). */
+  volumeFrom?: number | null
+  volumeTo?: number | null
 }
 
 /** Une ligne de la collection de l'utilisateur. */
@@ -39,6 +45,8 @@ export interface SeriesView {
   complete: boolean
   /** Albums de la série sans numéro de tome. */
   unnumbered: { edition: CatalogueEdition; item: UserItem | null }[]
+  /** Intégrales, coffrets et hors-séries : objets distincts des tomes, hors de la grille. */
+  integrals: { edition: CatalogueEdition; item: UserItem | null }[]
 }
 
 export interface SeriesViewInput {
@@ -78,9 +86,22 @@ export function buildSeriesView(input: SeriesViewInput): SeriesView {
   // État de chaque tome possédé ou souhaité (« possédé » l'emporte sur « envie »)
   const byVolume = new Map<number, { edition: CatalogueEdition; item: UserItem }>()
   const unnumbered: SeriesView['unnumbered'] = []
+  // Une intégrale est un objet distinct des tomes qu'elle reprend : elle n'occupe aucune case
+  const integrals: SeriesView['integrals'] = input.editions
+    .filter((edition) => isOutsideGrid(edition.kind))
+    .map((edition) => ({
+      edition,
+      item: input.items.find((item) => item.isbn === edition.isbn) ?? null,
+    }))
+    .sort(
+      (a, b) =>
+        (a.edition.volumeFrom ?? -1) - (b.edition.volumeFrom ?? -1) ||
+        a.edition.title.localeCompare(b.edition.title, 'fr'),
+    )
+  const gridEditions = input.editions.filter((edition) => !isOutsideGrid(edition.kind))
   for (const item of input.items) {
     const edition = editionByIsbn.get(item.isbn)
-    if (!edition) continue
+    if (!edition || isOutsideGrid(edition.kind)) continue
     if (edition.volume === null) {
       unnumbered.push({ edition, item })
       continue
@@ -91,7 +112,7 @@ export function buildSeriesView(input: SeriesViewInput): SeriesView {
     }
   }
   // Albums sans numéro, et tome 0 que l'utilisateur n'a pas : proposés dans la liste « sans numéro »
-  for (const edition of input.editions) {
+  for (const edition of gridEditions) {
     const hasNoSlot = edition.volume === null || (edition.volume === 0 && !byVolume.has(0))
     if (hasNoSlot && !unnumbered.some((u) => u.edition.isbn === edition.isbn)) {
       unnumbered.push({ edition, item: null })
@@ -100,7 +121,7 @@ export function buildSeriesView(input: SeriesViewInput): SeriesView {
 
   // Pour un tome manquant : une édition du catalogue, de préférence avec couverture
   const candidates = new Map<number, CatalogueEdition>()
-  for (const edition of input.editions) {
+  for (const edition of gridEditions) {
     if (edition.volume === null || edition.volume === 0) continue
     const current = candidates.get(edition.volume)
     if (!current || (!current.coverUrl && edition.coverUrl)) candidates.set(edition.volume, edition)
@@ -140,7 +161,13 @@ export function buildSeriesView(input: SeriesViewInput): SeriesView {
     missing: slots
       .filter((s) => s.kind === 'missing' || s.kind === 'unknown' || s.kind === 'wanted')
       .map((s) => s.volume),
-    complete: total > 0 && ownedCount === targetCount,
+    // Une série n'est complète que si l'on possède quelque chose : tomes ou intégrale
+    // (les tomes que couvre une intégrale se retirent de sa liste, réglage personnel)
+    complete:
+      total > 0 &&
+      ownedCount === targetCount &&
+      (ownedCount > 0 || integrals.some((entry) => entry.item?.status === 'owned')),
     unnumbered,
+    integrals,
   }
 }

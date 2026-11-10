@@ -54,7 +54,23 @@ describe('parseBnfResponse', () => {
       authors: ['André Franquin', 'Franquin'],
       publisher: 'Dupuis',
       publishedOn: '1989-01-01',
+      kind: 'album',
     })
+  })
+
+  it("devine une intégrale d'après la note « Réunit » de la BnF", () => {
+    const xml = bnfXml(
+      [
+        field('200', [['a', 'La trilogie du mal']]),
+        field('300', [['a', 'Réunit : "Le bourreau de Portland" ; "L\'âme du mal"']]),
+      ].join(''),
+    )
+    expect(parseBnfResponse(xml)?.kind).toBe('integral')
+  })
+
+  it("devine une intégrale d'après son titre, sans note", () => {
+    const xml = bnfXml(field('200', [['a', 'Alix - Intégrale']]))
+    expect(parseBnfResponse(xml)?.kind).toBe('integral')
   })
 
   it('gère une notice sans série ni tome', () => {

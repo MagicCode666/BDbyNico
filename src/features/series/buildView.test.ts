@@ -188,3 +188,100 @@ describe('completionLabel', () => {
     expect(completionLabel(false, 'finished')).toBeNull()
   })
 })
+
+describe('intégrales et hors-séries', () => {
+  const e1 = edition(1)
+  const e2 = edition(2)
+  const e3 = edition(3)
+  const integral = edition(null, {
+    isbn: 'integrale-1-3',
+    title: 'La trilogie',
+    kind: 'integral',
+    volumeFrom: 1,
+    volumeTo: 3,
+  })
+  const partial = edition(null, {
+    isbn: 'integrale-4-6',
+    title: 'Deuxième cycle',
+    kind: 'integral',
+    volumeFrom: 4,
+    volumeTo: 6,
+  })
+  const special = edition(null, { isbn: 'hs', title: 'Hors-série', kind: 'special' })
+
+  it("n'accorde aucune case à une intégrale : elle est listée à part, avec son état", () => {
+    const view = buildSeriesView({
+      total: 3,
+      override: null,
+      editions: [e1, e2, e3, integral],
+      items: [item(integral)],
+      ignored: [],
+    })
+    expect(view.slots.map((s) => s.kind)).toEqual(['missing', 'missing', 'missing'])
+    expect(view.ownedCount).toBe(0)
+    expect(view.integrals).toHaveLength(1)
+    expect(view.integrals[0].item?.status).toBe('owned')
+    expect(view.unnumbered).toHaveLength(0)
+  })
+
+  it("possède l'intégrale, exclut les trois tomes : la série est complète pour soi", () => {
+    const view = buildSeriesView({
+      total: 3,
+      override: null,
+      editions: [e1, e2, e3, integral],
+      items: [item(integral)],
+      ignored: [1, 2, 3],
+    })
+    expect(view.targetCount).toBe(0)
+    expect(view.complete).toBe(true)
+  })
+
+  it('sans intégrale ni tome, tout exclure ne rend pas la série complète', () => {
+    const view = buildSeriesView({
+      total: 3,
+      override: null,
+      editions: [e1, e2, e3, integral],
+      items: [],
+      ignored: [1, 2, 3],
+    })
+    expect(view.complete).toBe(false)
+  })
+
+  it("liste plusieurs intégrales partielles dans l'ordre des tomes repris", () => {
+    const view = buildSeriesView({
+      total: 6,
+      override: null,
+      editions: [e1, e2, e3, partial, special, integral],
+      items: [item(partial), item(integral, 'wanted')],
+      ignored: [],
+    })
+    expect(view.integrals.map((entry) => entry.edition.title)).toEqual([
+      'Hors-série',
+      'La trilogie',
+      'Deuxième cycle',
+    ])
+    expect(view.integrals.map((entry) => entry.item?.status ?? null)).toEqual([
+      null,
+      'wanted',
+      'owned',
+    ])
+  })
+
+  it("le numéro d'une intégrale numérotée n'élargit pas le total de la série", () => {
+    const numbered = edition(23, {
+      isbn: 'integrale-23',
+      title: 'Intégrale n° 23',
+      kind: 'integral',
+    })
+    const view = buildSeriesView({
+      total: 3,
+      override: null,
+      editions: [e1, e2, e3, numbered],
+      items: [item(numbered)],
+      ignored: [],
+    })
+    expect(view.total).toBe(3)
+    expect(view.slots).toHaveLength(3)
+    expect(view.integrals).toHaveLength(1)
+  })
+})

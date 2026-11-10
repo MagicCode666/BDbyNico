@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { ImportFormatError, parseBubbleCsv, parseVolume } from './bubble'
+import { ImportFormatError, parseBubbleCsv, parseKind, parseVolume } from './bubble'
 import { toEditionPayload } from './payload'
 
 const HEADER = [
@@ -25,6 +25,7 @@ const HEADER = [
 const q = (value: string) => `"${value}"`
 
 interface Line {
+  type?: string
   serie?: string
   album?: string
   ean?: string
@@ -43,7 +44,7 @@ interface Line {
 function line(l: Line): string {
   return [
     l.serie ?? 'Série',
-    '',
+    l.type ?? '',
     '',
     'BD',
     l.album ?? 'Album',
@@ -107,6 +108,9 @@ describe('parseBubbleCsv', () => {
       titleMissing: false,
       seriesName: 'Tintin',
       volume: 18,
+      kind: 'album',
+      volumeFrom: null,
+      volumeTo: null,
       authors: ['Hergé', 'Un Autre'],
       publisher: 'Casterman',
       publishedOn: '2010-09-01',
@@ -276,9 +280,55 @@ describe('toEditionPayload', () => {
       title: 'Tournesol',
       series: 'Tintin',
       volume: 18,
+      kind: 'album',
+      volume_from: null,
+      volume_to: null,
       authors: ['Hergé'],
       publisher: 'Casterman',
       published_on: '2010-09-01',
     })
+  })
+})
+
+describe("type d'album (intégrale, hors-série)", () => {
+  it('lit le champ « Type » de Bubble', () => {
+    expect(parseKind('intégrale complète', 'La trilogie', 'Série').kind).toBe('integral')
+    expect(parseKind('hors série', 'Album', 'Série').kind).toBe('special')
+    expect(parseKind('album simple', 'Album', 'Série').kind).toBe('album')
+    expect(parseKind('', 'Album', 'Série').kind).toBe('album')
+  })
+
+  it('reconnaît une intégrale à son titre ou à son nom de série quand le type est vide', () => {
+    expect(parseKind('', 'Intégrale T1 à T3', 'Série').kind).toBe('integral')
+    expect(parseKind('', 'Album', 'Légendes des Contrées Oubliées - Intégrale').kind).toBe(
+      'integral',
+    )
+    expect(parseKind('', 'Coffret Blake et Mortimer', 'Blake').kind).toBe('integral')
+    // un type explicite l'emporte sur le titre
+    expect(parseKind('album simple', 'Intégrale', 'Série').kind).toBe('album')
+  })
+
+  it('lit la plage de tomes reprise par une intégrale, seulement si elle est cohérente', () => {
+    expect(parseKind('intégrale complète', 'x', 'y', '1', '3')).toEqual({
+      kind: 'integral',
+      volumeFrom: 1,
+      volumeTo: 3,
+    })
+    expect(parseKind('intégrale complète', 'x', 'y', '3', '1').volumeFrom).toBeNull()
+    expect(parseKind('intégrale complète', 'x', 'y', '2', '').volumeFrom).toBeNull()
+    expect(parseKind('album simple', 'x', 'y', '1', '3').volumeFrom).toBeNull()
+  })
+
+  it('importe le type et le transmet au serveur', () => {
+    const plan = parseBubbleCsv(
+      csv(
+        { serie: 'Roman de Malemort', type: 'intégrale complète', ean: '9782723460194', tome: '1' },
+        { serie: 'Astérix - Albums illustrés', type: 'hors série', ean: '9782864972129' },
+        { serie: 'Alix', type: 'album simple', ean: '9782203001176', tome: '5' },
+      ),
+    )
+    expect(plan.rows.map((r) => r.kind)).toEqual(['integral', 'special', 'album'])
+    expect(toEditionPayload(plan.rows[0])).toMatchObject({ kind: 'integral', volume_from: null })
+    expect(toEditionPayload(plan.rows[1])).toMatchObject({ kind: 'special' })
   })
 })

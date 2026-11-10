@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase'
+import { toAlbumKind } from '../collection/kinds'
 import type { Status } from '../collection/types'
 import type { CatalogueEdition, UserItem } from './buildView'
 import { toPublicationStatus, type PublicationStatus } from './status'
@@ -36,7 +37,7 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
 
   const { data: editionRows, error: editionsError } = await supabase
     .from('editions')
-    .select('isbn, title, volume, cover_url, cover_locked, authors')
+    .select('isbn, title, volume, cover_url, cover_locked, authors, kind, volume_from, volume_to')
     .eq('series_id', seriesId)
     .order('volume', { ascending: true, nullsFirst: false })
   if (editionsError) throw editionsError
@@ -48,6 +49,9 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
     coverUrl: row.cover_url,
     coverLocked: row.cover_locked,
     authors: row.authors,
+    kind: toAlbumKind(row.kind),
+    volumeFrom: row.volume_from,
+    volumeTo: row.volume_to,
   }))
 
   let items: UserItem[] = []
