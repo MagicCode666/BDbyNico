@@ -12,7 +12,7 @@ export type Database = {
         Row: {
           created_at: string
           id: number
-          isbn: string
+          isbn: string | null
           kind: string
           new_value: string | null
           old_value: string | null
@@ -20,13 +20,14 @@ export type Database = {
           reverts_id: number | null
           reviewed_at: string | null
           reviewed_by: string | null
+          series_id: string | null
           status: string
           user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: never
-          isbn: string
+          isbn?: string | null
           kind: string
           new_value?: string | null
           old_value?: string | null
@@ -34,13 +35,14 @@ export type Database = {
           reverts_id?: number | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          series_id?: string | null
           status?: string
           user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: never
-          isbn?: string
+          isbn?: string | null
           kind?: string
           new_value?: string | null
           old_value?: string | null
@@ -48,6 +50,7 @@ export type Database = {
           reverts_id?: number | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          series_id?: string | null
           status?: string
           user_id?: string | null
         }
@@ -213,6 +216,7 @@ export type Database = {
           name: string
           name_key: string
           publication_status: string | null
+          status_source: string
           total_checked_at: string | null
           total_source: string
           total_volumes: number | null
@@ -223,6 +227,7 @@ export type Database = {
           name: string
           name_key: string
           publication_status?: string | null
+          status_source?: string
           total_checked_at?: string | null
           total_source?: string
           total_volumes?: number | null
@@ -233,6 +238,7 @@ export type Database = {
           name?: string
           name_key?: string
           publication_status?: string | null
+          status_source?: string
           total_checked_at?: string | null
           total_source?: string
           total_volumes?: number | null
@@ -358,6 +364,7 @@ export type Database = {
           reverts_id: number
           reviewed_at: string
           reviewed_pseudo: string
+          series_id: string
           series_name: string
           status: string
           title: string
@@ -379,6 +386,27 @@ export type Database = {
         }[]
       }
       regenerate_share_token: { Args: never; Returns: string }
+      list_series_admin: {
+        Args: { p_limit?: number; p_query?: string }
+        Returns: {
+          edition_count: number
+          id: string
+          name: string
+          publication_status: string
+          status_source: string
+          total_source: string
+          total_volumes: number
+        }[]
+      }
+      rename_series: { Args: { p_name: string; p_series: string }; Returns: undefined }
+      set_series_status: {
+        Args: { p_series: string; p_status: string }
+        Returns: undefined
+      }
+      set_series_total: {
+        Args: { p_series: string; p_total: number }
+        Returns: undefined
+      }
       report_cover: {
         Args: { p_cover_url: string; p_isbn: string }
         Returns: string

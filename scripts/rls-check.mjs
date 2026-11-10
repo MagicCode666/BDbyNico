@@ -489,6 +489,28 @@ r = await A.client.rpc('set_contribution_level', { p_user: B.id, p_level: 'colle
 check('Un utilisateur ordinaire ne peut pas restreindre un autre utilisateur', !!r.error, show(r))
 r = await B.client.from('profiles').select('contribution').eq('id', B.id).single()
 check('Le niveau de B est resté « full »', r.data?.contribution === 'full', show(r))
+r = await A.client.rpc('rename_series', { p_series: seriesId, p_name: 'Nom pirate' })
+check('Un utilisateur ordinaire ne peut pas renommer une série', !!r.error, show(r))
+r = await A.client.rpc('set_series_total', { p_series: seriesId, p_total: 99 })
+check('Un utilisateur ordinaire ne peut pas fixer le total partagé', !!r.error, show(r))
+r = await A.client.rpc('set_series_status', { p_series: seriesId, p_status: 'finished' })
+check('Un utilisateur ordinaire ne peut pas fixer le statut partagé', !!r.error, show(r))
+r = await A.client.rpc('list_series_admin', { p_query: 'test' })
+check('Un utilisateur ordinaire ne peut pas lister les séries (administration)', !!r.error, show(r))
+r = await anon.rpc('rename_series', { p_series: seriesId, p_name: 'Nom pirate' })
+check('Un anonyme ne peut pas renommer une série', !!r.error, show(r))
+r = await A.client
+  .from('series')
+  .select('name, total_source, status_source')
+  .eq('id', seriesId)
+  .single()
+check(
+  'La série est intacte (nom, total et statut non modifiés)',
+  r.data?.name === 'Série de test RLS' &&
+    r.data?.total_source === 'auto' &&
+    r.data?.status_source === 'auto',
+  show(r),
+)
 console.log(
   '  (les parcours « collection seule », validation et annulation sont testés par supabase/tests/gouvernance.sql)',
 )

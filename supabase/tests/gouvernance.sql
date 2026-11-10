@@ -45,6 +45,9 @@ declare
   v text;
   c bigint;
   rec record;
+  s_a uuid;
+  s_b uuid;
+  ch bigint;
 begin
   ol_c := format('https://covers.openlibrary.org/b/isbn/%s-L.jpg', i_c);
   ol_r := format('https://covers.openlibrary.org/b/isbn/%s-L.jpg', i_r);
@@ -353,6 +356,138 @@ begin
      or public.is_allowed_cover_url(i_c, format('https://pictures.abebooks.com/isbn/%s-fr-300.jpg', i_r))
      or public.is_allowed_cover_url(i_c, format('https://exemple.invalid/isbn/%s-fr-300.jpg', i_c)) then
     raise exception 'ECHEC : une adresse de libraire pour un autre ISBN ou un autre site est acceptée'; end if;
+  n := n + 1;
+
+  -- 8e. Outils de série pour les modérateurs : droits, renommage, total, statut, annulation ---------
+  select series_id into s_a from public.editions where isbn = i_c;
+  perform pg_temp._t_as(ctr);
+  perform public.add_edition(pg_temp._t_isbn('978990000005'), 'Album série B', 'Série B gouvernance', 1);
+  reset role;
+  select series_id into s_b from public.editions where isbn = pg_temp._t_isbn('978990000005');
+
+  -- un utilisateur ordinaire ne peut rien faire sur les séries
+  foreach v in array array['rename', 'total', 'status', 'list'] loop
+    begin
+      perform pg_temp._t_as(ctr);
+      if v = 'rename' then perform public.rename_series(s_a, 'Pirate');
+      elsif v = 'total' then perform public.set_series_total(s_a, 99);
+      elsif v = 'status' then perform public.set_series_status(s_a, 'finished');
+      else perform * from public.list_series_admin('serie'); end if;
+      reset role;
+      raise exception 'ECHEC : un utilisateur ordinaire a pu appeler % sur les séries', v;
+    exception when insufficient_privilege then
+      reset role; n := n + 1;
+    end;
+  end loop;
+
+  -- renommage : nom nettoyé, journalisé, collision refusée
+  perform pg_temp._t_as(mdr);
+  perform public.rename_series(s_a, '  Nom corrigé par modérateur ');
+  reset role;
+  if (select name from public.series where id = s_a) <> 'Nom corrigé par modérateur' then
+    raise exception 'ECHEC : la série n''a pas été renommée'; end if;
+  n := n + 1;
+  select id into ch from public.catalogue_changes
+    where series_id = s_a and kind = 'series_name' and status = 'applied' and user_id = mdr;
+  if ch is null then raise exception 'ECHEC : le renommage n''est pas journalisé'; end if;
+  n := n + 1;
+  begin
+    perform pg_temp._t_as(mdr);
+    perform public.rename_series(s_b, 'NOM CORRIGE PAR MODERATEUR');
+    reset role;
+    raise exception 'ECHEC : un nom déjà pris (casse et accents ignorés) a été accepté';
+  exception when unique_violation then
+    reset role; n := n + 1;
+  end;
+
+  -- annulation du renommage
+  perform pg_temp._t_as(mdr);
+  perform public.revert_change(ch);
+  reset role;
+  if (select name from public.series where id = s_a) <> 'Série test gouvernance' then
+    raise exception 'ECHEC : l''annulation du renommage n''a pas rétabli le nom'; end if;
+  n := n + 1;
+  if not exists (select 1 from public.catalogue_changes where reverts_id = ch and kind = 'series_name') then
+    raise exception 'ECHEC : l''annulation du renommage n''est pas journalisée'; end if;
+  n := n + 1;
+
+  -- total partagé : valeur manuelle puis retour au job
+  perform pg_temp._t_as(mdr);
+  perform public.set_series_total(s_a, 9);
+  reset role;
+  if (select total_volumes || ':' || total_source from public.series where id = s_a) <> '9:manual' then
+    raise exception 'ECHEC : le total manuel n''est pas enregistré'; end if;
+  n := n + 1;
+  begin
+    perform pg_temp._t_as(mdr);
+    perform public.set_series_total(s_a, 1000);
+    reset role;
+    raise exception 'ECHEC : un total de 1000 a été accepté';
+  exception when invalid_parameter_value then
+    reset role; n := n + 1;
+  end;
+  perform pg_temp._t_as(mdr);
+  perform public.set_series_total(s_a, null);
+  reset role;
+  if (select total_volumes || ':' || total_source from public.series where id = s_a) <> '9:auto' then
+    raise exception 'ECHEC : le retour au job a modifié le total ou la source'; end if;
+  n := n + 1;
+
+  -- statut partagé : fixé à la main, rendu au job, annulations dans l'ordre
+  perform pg_temp._t_as(mdr);
+  perform public.set_series_status(s_a, 'finished');
+  reset role;
+  if (select publication_status || ':' || status_source from public.series where id = s_a) <> 'finished:manual' then
+    raise exception 'ECHEC : le statut manuel n''est pas enregistré'; end if;
+  n := n + 1;
+  begin
+    perform pg_temp._t_as(mdr);
+    perform public.set_series_status(s_a, 'invalide');
+    reset role;
+    raise exception 'ECHEC : un statut invalide a été accepté';
+  exception when invalid_parameter_value then
+    reset role; n := n + 1;
+  end;
+  perform pg_temp._t_as(mdr);
+  perform public.set_series_status(s_a, null);
+  reset role;
+  if (select publication_status || ':' || status_source from public.series where id = s_a) <> 'finished:auto' then
+    raise exception 'ECHEC : le retour au job a modifié le statut ou la source'; end if;
+  n := n + 1;
+  select id into ch from public.catalogue_changes
+    where series_id = s_a and kind = 'series_status' and status = 'applied'
+      and new_value = 'auto:finished';
+  perform pg_temp._t_as(mdr);
+  perform public.revert_change(ch);
+  reset role;
+  if (select publication_status || ':' || status_source from public.series where id = s_a) <> 'finished:manual' then
+    raise exception 'ECHEC : l''annulation n''a pas rétabli le statut manuel'; end if;
+  n := n + 1;
+  -- le total a été modifié par un autre changement : l'annulation d'un changement périmé est refusée
+  select id into ch from public.catalogue_changes
+    where series_id = s_a and kind = 'series_total' and new_value = 'manual:9';
+  begin
+    perform pg_temp._t_as(mdr);
+    perform public.revert_change(ch);
+    reset role;
+    raise exception 'ECHEC : annulation acceptée alors que le total avait changé depuis';
+  exception when others then
+    reset role;
+    if sqlerrm like 'ECHEC%' then raise; end if;
+    n := n + 1;
+  end;
+
+  -- journal et recherche de séries pour l'administration
+  perform pg_temp._t_as(mdr);
+  select count(*) into c from public.list_catalogue_changes(p_status => 'applied')
+    where kind like 'series\_%' and series_id is not null and series_name is not null;
+  reset role;
+  if c < 3 then raise exception 'ECHEC : le journal n''affiche pas les changements de série'; end if;
+  n := n + 1;
+  perform pg_temp._t_as(mdr);
+  select count(*) into c from public.list_series_admin('serie b GOUVERNANCE');
+  reset role;
+  if c <> 1 then raise exception 'ECHEC : la recherche de séries (casse et accents ignorés) est fausse (%)', c; end if;
   n := n + 1;
 
   -- 9. Le job (sans utilisateur) remplace une couverture : journalisé « job », annulable --------

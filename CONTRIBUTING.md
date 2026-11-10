@@ -52,6 +52,10 @@ Le catalogue (albums, séries, couvertures) est partagé : chaque changement est
   ses corrections de couverture sont mis en attente jusqu'à validation. L'administrateur le règle
   dans `/admin`, onglet « Utilisateurs ».
 - **Couverture choisie à la main** (`editions.cover_locked`) : le job ne la remplace plus.
+- **Séries** : l'onglet « Séries » de `/admin` permet aux modérateurs de renommer une série, de
+  fixer son total partagé et son statut (en cours / terminée). Ces changements sont journalisés et
+  annulables ; un total (`total_source = 'manual'`) ou un statut (`status_source = 'manual'`) fixé à
+  la main n'est plus modifié par le job. « Rendre au job » rétablit l'automatique.
 - **Test des règles** : `npm test` rejoue toutes les migrations sur un Postgres embarqué (PGlite,
   sans secret) puis le scénario `supabase/tests/gouvernance.sql` (droits, journal, propositions,
   validation, annulation). Le même scénario peut tourner sur la vraie base (il s'annule lui-même) :

@@ -18,9 +18,11 @@ import {
   type ChangeStatus,
   type Contribution,
 } from './api'
+import { describeSeriesChange } from './describe'
+import SeriesTab from './SeriesTab'
 import { useAccess } from './useAccess'
 
-type Tab = 'pending' | 'journal' | 'users'
+type Tab = 'pending' | 'journal' | 'series' | 'users'
 
 const STATUS_LABELS: Record<ChangeStatus, string> = {
   applied: 'Appliqué',
@@ -34,7 +36,13 @@ const ORIGIN_LABELS: Record<ChangeOrigin, string> = {
   job: 'Job automatique',
   admin: 'Modérateur',
 }
-const KIND_LABELS = { create: 'Création', cover: 'Couverture' } as const
+const KIND_LABELS = {
+  create: 'Création',
+  cover: 'Couverture',
+  series_name: 'Série renommée',
+  series_total: 'Total de série',
+  series_status: 'Statut de série',
+} as const
 const CONTRIBUTION_LABELS: Record<Contribution, string> = {
   full: 'Contributeur',
   collection_only: 'Collection seule',
@@ -72,6 +80,7 @@ export default function AdminPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'pending', label: 'À valider' },
     { id: 'journal', label: 'Journal' },
+    { id: 'series', label: 'Séries' },
     ...(access.isAdmin ? [{ id: 'users' as const, label: 'Utilisateurs' }] : []),
   ]
 
@@ -93,10 +102,17 @@ export default function AdminPage() {
       </div>
       {tab === 'pending' && <ChangeList mode="pending" />}
       {tab === 'journal' && <ChangeList mode="journal" />}
+      {tab === 'series' && <SeriesTab />}
       {tab === 'users' && access.isAdmin && <UsersTab />}
     </PageLayout>
   )
 }
+
+const isSeriesChange = (change: Change) => change.kind.startsWith('series_')
+
+/** On n'annule un changement que si l'album ou la série existe encore. */
+const canRevert = (change: Change) =>
+  isSeriesChange(change) ? change.seriesName !== null : change.title !== null
 
 function CoverPair({ change }: { change: Change }) {
   const label = change.title ?? change.isbn
@@ -257,9 +273,15 @@ function ChangeList({ mode }: { mode: 'pending' | 'journal' }) {
               <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
                 <span className="font-medium">
                   {KIND_LABELS[change.kind]} ·{' '}
-                  {change.title ?? <span className="text-slate-500">album supprimé</span>}
-                  {change.seriesName &&
-                    ` (${change.seriesName}${change.volume !== null ? ` T${change.volume}` : ''})`}
+                  {isSeriesChange(change) ? (
+                    (change.seriesName ?? <span className="text-slate-500">série supprimée</span>)
+                  ) : (
+                    <>
+                      {change.title ?? <span className="text-slate-500">album supprimé</span>}
+                      {change.seriesName &&
+                        ` (${change.seriesName}${change.volume !== null ? ` T${change.volume}` : ''})`}
+                    </>
+                  )}
                 </span>
                 <span className="text-xs text-slate-500">
                   {dateFormat.format(new Date(change.createdAt))}
@@ -272,9 +294,12 @@ function ChangeList({ mode }: { mode: 'pending' | 'journal' }) {
                   ` (${ORIGIN_LABELS[change.origin]})`}{' '}
                 · {STATUS_LABELS[change.status]}
                 {change.reviewedPseudo && ` par ${change.reviewedPseudo}`}
-                {change.revertsId && ` · annule le changement n°${change.revertsId}`} · ISBN{' '}
-                {change.isbn}
+                {change.revertsId && ` · annule le changement n°${change.revertsId}`}
+                {change.isbn && ` · ISBN ${change.isbn}`}
               </p>
+              {describeSeriesChange(change) && (
+                <p className="text-sm">{describeSeriesChange(change)}</p>
+              )}
               {change.kind === 'cover' && <CoverPair change={change} />}
               {change.kind === 'create' && change.status === 'pending' && (
                 <p className="text-xs text-slate-600">
@@ -307,7 +332,7 @@ function ChangeList({ mode }: { mode: 'pending' | 'journal' }) {
                     </button>
                   </>
                 )}
-                {change.status === 'applied' && change.title !== null && (
+                {change.status === 'applied' && canRevert(change) && (
                   <button
                     type="button"
                     disabled={busy}
