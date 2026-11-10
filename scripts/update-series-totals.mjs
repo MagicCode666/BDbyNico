@@ -173,6 +173,8 @@ async function improveCovers(db, mode) {
   // 2. BnF pour les autres : notices cherchées par lots de 20, puis image vérifiée
   const needRetailers = []
   for (let i = 0; i < needBnf.length; i += 20) {
+    // Pause entre deux lots : la BnF coupe la connexion quand on la sollicite trop vite
+    if (i > 0) await new Promise((resolve) => setTimeout(resolve, 1000))
     const batch = needBnf.slice(i, i + 20)
     let urls = new Map()
     try {
@@ -180,7 +182,7 @@ async function improveCovers(db, mode) {
     } catch (e) {
       fail('BnF', e)
     }
-    await mapLimit(batch, 4, async (isbn) => {
+    await mapLimit(batch, 2, async (isbn) => {
       try {
         const url = urls.get(isbn)
         if (url && (await bnfCoverExists(url))) {
@@ -194,7 +196,7 @@ async function improveCovers(db, mode) {
   }
 
   // 3. Libraires pour ce qui reste
-  await mapLimit(needRetailers, 4, async (isbn) => {
+  await mapLimit(needRetailers, 3, async (isbn) => {
     try {
       const url = await findRetailerCover(isbn)
       if (!url) return

@@ -2,6 +2,27 @@
 // Open Library fournit parfois la page de titre du livre (presque blanche) au lieu de la couverture.
 import { isbn13To10, normalizeIsbn } from '../../src/lib/isbn.ts'
 
+/**
+ * Les serveurs d'images (BnF, Amazon) coupent parfois la connexion quand on enchaîne les requêtes
+ * (ECONNRESET, « fetch failed ») : on réessaie avec une pause croissante avant d'abandonner.
+ * Une réponse HTTP 429 ou 5xx est aussi réessayée ; toute autre réponse est rendue telle quelle.
+ */
+export async function fetchWithRetry(fetchFn, url, options, { attempts = 3, delayMs = 1000 } = {}) {
+  let lastError
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const response = await fetchFn(url, options)
+      const transient = response.status === 429 || response.status >= 500
+      if (!transient || attempt === attempts) return response
+    } catch (error) {
+      lastError = error
+      if (attempt === attempts) throw lastError
+    }
+    await new Promise((resolve) => setTimeout(resolve, delayMs * attempt))
+  }
+  throw lastError
+}
+
 export const OPEN_LIBRARY_PREFIX = 'https://covers.openlibrary.org/'
 /** En dessous de cette taille, Amazon a renvoyé son image vide d'un pixel (une quarantaine d'octets). */
 const MIN_COVER_BYTES = 1000
@@ -15,12 +36,15 @@ export function amazonCoverUrl(isbn13) {
 }
 
 /** Vérifie sur la petite version de l'image (quelques Ko) qu'Amazon a bien une couverture. */
-export async function amazonCoverExists(isbn13, { fetchFn = fetch } = {}) {
+export async function amazonCoverExists(isbn13, { fetchFn = fetch, retry } = {}) {
   const url = amazonCoverUrl(isbn13)
   if (!url) return false
-  const response = await fetchFn(url.replace('LZZZZZZZ', 'MZZZZZZZ'), {
-    signal: AbortSignal.timeout(15000),
-  })
+  const response = await fetchWithRetry(
+    fetchFn,
+    url.replace('LZZZZZZZ', 'MZZZZZZZ'),
+    { signal: AbortSignal.timeout(15000) },
+    retry,
+  )
   if (!response.ok) return false
   if (!(response.headers.get('content-type') ?? '').startsWith('image/')) return false
   return (await response.arrayBuffer()).byteLength > MIN_COVER_BYTES
@@ -38,7 +62,7 @@ export function bnfCoverUrl(ark) {
 }
 
 /** Associe à chaque ISBN-13 trouvé à la BnF l'adresse de la couverture de sa notice. */
-export async function bnfCoverUrls(isbns, { fetchFn = fetch } = {}) {
+export async function bnfCoverUrls(isbns, { fetchFn = fetch, retry } = {}) {
   const wanted = new Set(isbns)
   const terms = isbns.flatMap((isbn) => [isbn, isbn13To10(isbn)]).filter(Boolean)
   const params = new URLSearchParams({
@@ -48,7 +72,12 @@ export async function bnfCoverUrls(isbns, { fetchFn = fetch } = {}) {
     recordSchema: 'unimarcxchange',
     maximumRecords: '50',
   })
-  const response = await fetchFn(`${SRU_URL}?${params}`, { signal: AbortSignal.timeout(30000) })
+  const response = await fetchWithRetry(
+    fetchFn,
+    `${SRU_URL}?${params}`,
+    { signal: AbortSignal.timeout(30000) },
+    retry,
+  )
   if (!response.ok) throw new Error(`BnF : HTTP ${response.status}`)
   const xml = await response.text()
   const urls = new Map()
@@ -67,8 +96,8 @@ export async function bnfCoverUrls(isbns, { fetchFn = fetch } = {}) {
 }
 
 /** Vrai si le service a une vraie image (il répond par une erreur quand il n'en a pas). */
-export async function bnfCoverExists(url, { fetchFn = fetch } = {}) {
-  const response = await fetchFn(url, { signal: AbortSignal.timeout(20000) })
+export async function bnfCoverExists(url, { fetchFn = fetch, retry } = {}) {
+  const response = await fetchWithRetry(fetchFn, url, { signal: AbortSignal.timeout(20000) }, retry)
   if (!response.ok) return false
   if (!(response.headers.get('content-type') ?? '').startsWith('image/')) return false
   return (await response.arrayBuffer()).byteLength > MIN_BNF_COVER_BYTES
@@ -83,10 +112,10 @@ export const abebooksCoverUrl = (isbn13) =>
   `https://pictures.abebooks.com/isbn/${isbn13}-fr-300.jpg`
 
 /** Première couverture trouvée chez les libraires (Decitre, puis AbeBooks), ou undefined. */
-export async function findRetailerCover(isbn13, { fetchFn = fetch } = {}) {
+export async function findRetailerCover(isbn13, { fetchFn = fetch, retry } = {}) {
   for (const url of [decitreCoverUrl(isbn13), abebooksCoverUrl(isbn13)]) {
     // Ils répondent par une erreur (403, 404) quand ils n'ont pas l'image
-    if (await bnfCoverExists(url, { fetchFn })) return url
+    if (await bnfCoverExists(url, { fetchFn, retry })) return url
   }
   return undefined
 }

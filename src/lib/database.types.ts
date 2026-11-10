@@ -316,6 +316,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           isbn: string
+          kind: string
           published_on: string | null
           publisher: string | null
           review_status: string
@@ -323,6 +324,8 @@ export type Database = {
           source: string | null
           title: string
           volume: number | null
+          volume_from: number | null
+          volume_to: number | null
         }
         SetofOptions: {
           from: '*'
@@ -384,6 +387,18 @@ export type Database = {
           volume: number
         }[]
       }
+      list_series_admin: {
+        Args: { p_limit?: number; p_query?: string }
+        Returns: {
+          edition_count: number
+          id: string
+          name: string
+          publication_status: string
+          status_source: string
+          total_source: string
+          total_volumes: number
+        }[]
+      }
       list_users_admin: {
         Args: never
         Returns: {
@@ -397,30 +412,10 @@ export type Database = {
           role: string
         }[]
       }
+      refresh_series_zero: { Args: { p_series: string }; Returns: undefined }
       regenerate_share_token: { Args: never; Returns: string }
-      list_series_admin: {
-        Args: { p_limit?: number; p_query?: string }
-        Returns: {
-          edition_count: number
-          id: string
-          name: string
-          publication_status: string
-          status_source: string
-          total_source: string
-          total_volumes: number
-        }[]
-      }
-      rename_series: { Args: { p_name: string; p_series: string }; Returns: undefined }
-      set_edition_kind: {
-        Args: { p_from?: number; p_isbn: string; p_kind: string; p_to?: number }
-        Returns: string
-      }
-      set_series_status: {
-        Args: { p_series: string; p_status: string }
-        Returns: undefined
-      }
-      set_series_total: {
-        Args: { p_series: string; p_total: number }
+      rename_series: {
+        Args: { p_name: string; p_series: string }
         Returns: undefined
       }
       report_cover: {
@@ -438,6 +433,18 @@ export type Database = {
       }
       set_edition_cover: {
         Args: { p_cover_url: string; p_isbn: string }
+        Returns: undefined
+      }
+      set_edition_kind: {
+        Args: { p_from?: number; p_isbn: string; p_kind: string; p_to?: number }
+        Returns: string
+      }
+      set_series_status: {
+        Args: { p_series: string; p_status: string }
+        Returns: undefined
+      }
+      set_series_total: {
+        Args: { p_series: string; p_total: number }
         Returns: undefined
       }
     }
