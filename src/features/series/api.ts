@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase'
+import { toAlbumKind } from '../collection/kinds'
 import type { Status } from '../collection/types'
 import type { CatalogueEdition, UserItem } from './buildView'
 import { toPublicationStatus, type PublicationStatus } from './status'
@@ -16,6 +17,7 @@ export interface SeriesData {
     name: string
     totalVolumes: number | null
     publicationStatus: PublicationStatus | null
+    startsAtZero: boolean
   }
   editions: CatalogueEdition[]
   items: UserItem[]
@@ -28,7 +30,7 @@ const NO_SETTINGS: SeriesSettings = { ignored: [], totalOverride: null }
 export async function getSeriesData(seriesId: string): Promise<SeriesData | null> {
   const { data: series, error: seriesError } = await supabase
     .from('series')
-    .select('id, name, total_volumes, publication_status')
+    .select('id, name, total_volumes, publication_status, starts_at_zero')
     .eq('id', seriesId)
     .maybeSingle()
   if (seriesError) throw seriesError
@@ -36,7 +38,7 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
 
   const { data: editionRows, error: editionsError } = await supabase
     .from('editions')
-    .select('isbn, title, volume, cover_url, cover_locked, authors')
+    .select('isbn, title, volume, cover_url, cover_locked, authors, kind, volume_from, volume_to')
     .eq('series_id', seriesId)
     .order('volume', { ascending: true, nullsFirst: false })
   if (editionsError) throw editionsError
@@ -48,6 +50,9 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
     coverUrl: row.cover_url,
     coverLocked: row.cover_locked,
     authors: row.authors,
+    kind: toAlbumKind(row.kind),
+    volumeFrom: row.volume_from,
+    volumeTo: row.volume_to,
   }))
 
   let items: UserItem[] = []
@@ -81,6 +86,7 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
       name: series.name,
       totalVolumes: series.total_volumes,
       publicationStatus: toPublicationStatus(series.publication_status),
+      startsAtZero: series.starts_at_zero,
     },
     editions,
     items,

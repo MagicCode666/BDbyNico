@@ -20,6 +20,7 @@ export function mergeBookInfo(
         publisher: bnf.publisher ?? openLibrary.publisher,
         publishedOn: bnf.publishedOn ?? openLibrary.publishedOn,
         coverUrl: openLibrary.coverUrl,
+        kind: bnf.kind,
       },
     }
   }

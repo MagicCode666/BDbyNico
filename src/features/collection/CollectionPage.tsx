@@ -1,26 +1,62 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigationType } from 'react-router-dom'
 
 import FormMessage from '../../components/FormMessage'
+import { useScrollRestoration } from '../../lib/useScrollRestoration'
 import PageLayout from '../../components/PageLayout'
 import { listSeriesSettings } from '../series/api'
-import { missingVolumes } from '../series/buildView'
+import { seriesProgress } from '../series/progress'
 import { useMissingCovers } from '../series/useMissingCovers'
 import { AlbumThumb } from './AlbumCard'
+import { isOutsideGrid } from './kinds'
 import { listCollection } from './api'
 import { STATUS_LABELS, type ReadFilter, type Status } from './types'
 import { useAsync } from './useAsync'
-import { effectiveStatus, PUBLICATION_LABELS } from '../series/status'
+import { completionLabel, effectiveStatus, PUBLICATION_LABELS } from '../series/status'
 import { effectiveTotal, filterEntries, groupBySeries, progressLabel } from './utils'
 
 const STATUSES: Status[] = ['owned', 'wanted']
 
+interface OwnedInSeries {
+  count: number
+  volumes: number[]
+  ownsIntegral: boolean
+}
+
+const FILTERS_KEY = 'bdbynico:collection-filters'
+
+interface SavedFilters {
+  status: Status
+  query: string
+  read: ReadFilter
+  dedicatedOnly: boolean
+}
+
+function readSavedFilters(): Partial<SavedFilters> {
+  try {
+    return JSON.parse(sessionStorage.getItem(FILTERS_KEY) ?? '{}') as Partial<SavedFilters>
+  } catch {
+    return {}
+  }
+}
+
 export default function CollectionPage() {
   const { data, loading, error } = useAsync(listCollection)
-  const [status, setStatus] = useState<Status>('owned')
-  const [query, setQuery] = useState('')
-  const [read, setRead] = useState<ReadFilter>('all')
-  const [dedicatedOnly, setDedicatedOnly] = useState(false)
+  // Au retour en arrière, on retrouve les filtres et la position de la liste
+  const navigationType = useNavigationType()
+  const [saved] = useState(() => (navigationType === 'POP' ? readSavedFilters() : {}))
+  const [status, setStatus] = useState<Status>(saved.status ?? 'owned')
+  const [query, setQuery] = useState(saved.query ?? '')
+  const [read, setRead] = useState<ReadFilter>(saved.read ?? 'all')
+  const [dedicatedOnly, setDedicatedOnly] = useState(saved.dedicatedOnly ?? false)
+  useScrollRestoration('collection', !loading)
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(FILTERS_KEY, JSON.stringify({ status, query, read, dedicatedOnly }))
+    } catch {
+      // stockage indisponible : les filtres ne seront simplement pas restaurés
+    }
+  }, [status, query, read, dedicatedOnly])
 
   const entries = useMemo(() => data ?? [], [data])
   // Couvertures manquantes (après un import, par exemple) : cherchées au fil de l'eau, puis
@@ -52,13 +88,18 @@ export default function CollectionPage() {
   const { data: seriesSettings } = useAsync(listSeriesSettings)
   // Progression par série : tous les albums possédés, indépendamment des filtres
   const ownedBySeries = useMemo(() => {
-    const map = new Map<string, { count: number; volumes: number[] }>()
+    const map = new Map<string, OwnedInSeries>()
     for (const e of entries) {
       if (e.status !== 'owned') continue
       const key = e.edition.series?.id ?? '_'
-      const current = map.get(key) ?? { count: 0, volumes: [] }
-      current.count++
-      if (e.edition.volume !== null) current.volumes.push(e.edition.volume)
+      const current = map.get(key) ?? { count: 0, volumes: [], ownsIntegral: false }
+      // Une intégrale ou un hors-série est un objet distinct des tomes : il ne compte pas comme tome
+      if (isOutsideGrid(e.edition.kind)) {
+        current.ownsIntegral = true
+      } else {
+        current.count++
+        if (e.edition.volume !== null) current.volumes.push(e.edition.volume)
+      }
       map.set(key, current)
     }
     return map
@@ -150,16 +191,26 @@ export default function CollectionPage() {
       <div className="flex flex-col gap-3">
         {groups.map((group) => {
           const settings = seriesSettings?.get(group.key)
-          const owned = ownedBySeries.get(group.key) ?? { count: 0, volumes: [] }
+          const owned = ownedBySeries.get(group.key) ?? {
+            count: 0,
+            volumes: [],
+            ownsIntegral: false,
+          }
           // Jamais plus de tomes possédés que de tomes existants
           const total = effectiveTotal(settings?.totalOverride ?? group.totalVolumes, owned.volumes)
-          const ownedNumbered = new Set(owned.volumes).size
+          // Même calcul que la page de la série : tomes exclus retirés de l'objectif
+          const progress = seriesProgress({
+            total,
+            ownedVolumes: owned.volumes,
+            ignored: settings?.ignored ?? [],
+            ownsIntegral: owned.ownsIntegral,
+            hasVolumeZero: group.startsAtZero,
+          })
+          const shownTotal = total ? progress.target : null
+          const shownOwned = total ? progress.owned : owned.count
           const publication = effectiveStatus(settings?.statusOverride, group.publicationStatus)
           const showProgress = group.name !== null && status === 'owned'
-          const complete =
-            showProgress &&
-            !!total &&
-            missingVolumes(total, owned.volumes, settings?.ignored ?? []).length === 0
+          const complete = showProgress && !!total && progress.complete
           return (
             <section key={group.key} className="rounded border border-slate-200 p-3">
               <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3">
@@ -177,10 +228,9 @@ export default function CollectionPage() {
                 </h2>
                 {showProgress && (
                   <span className="flex items-center gap-2 text-sm text-slate-600">
-                    {progressLabel(
-                      { ...group, totalVolumes: total },
-                      total ? ownedNumbered : owned.count,
-                    )}
+                    {total && progress.target === 0
+                      ? 'Tomes unitaires exclus'
+                      : progressLabel({ ...group, totalVolumes: shownTotal }, shownOwned)}
                     {publication && (
                       <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
                         {PUBLICATION_LABELS[publication]}
@@ -188,23 +238,23 @@ export default function CollectionPage() {
                     )}
                     {complete && (
                       <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                        {publication === 'ongoing' ? 'À jour' : 'Complète'}
+                        {completionLabel(true, publication)}
                       </span>
                     )}
                   </span>
                 )}
               </div>
-              {showProgress && total ? (
+              {showProgress && shownTotal ? (
                 <div
                   role="progressbar"
                   aria-valuemin={0}
-                  aria-valuemax={total}
-                  aria-valuenow={Math.min(owned.count, total)}
+                  aria-valuemax={shownTotal}
+                  aria-valuenow={Math.min(shownOwned, shownTotal)}
                   className="mb-3 h-1.5 overflow-hidden rounded bg-slate-100"
                 >
                   <div
                     className="h-full bg-indigo-600"
-                    style={{ width: `${Math.min(100, (owned.count / total) * 100)}%` }}
+                    style={{ width: `${Math.min(100, (shownOwned / shownTotal) * 100)}%` }}
                   />
                 </div>
               ) : null}

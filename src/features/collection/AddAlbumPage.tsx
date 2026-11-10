@@ -7,7 +7,9 @@ import PageLayout from '../../components/PageLayout'
 import SubmitButton from '../../components/SubmitButton'
 import TextField from '../../components/TextField'
 import { normalizeIsbn } from '../../lib/isbn'
+import { setEditionKind } from '../governance/api'
 import { addAlbum, AlreadyInCollectionError } from './api'
+import { KIND_LABELS, toAlbumKind, type AlbumKind } from './kinds'
 import { findAlbumInfo, type LookupSource } from './lookup'
 import BarcodeScanner from './scan/BarcodeScanner'
 import { STATUS_LABELS, type Status } from './types'
@@ -46,6 +48,10 @@ export default function AddAlbumPage() {
   const [publishedOn, setPublishedOn] = useState('')
   const [coverUrl, setCoverUrl] = useState('')
   const [status, setStatus] = useState<Status>('owned')
+  // Intégrale ou hors-série : deviné par la recherche, que l'on confirme ici
+  const [kind, setKind] = useState<AlbumKind>('album')
+  const [rangeFrom, setRangeFrom] = useState('')
+  const [rangeTo, setRangeTo] = useState('')
   const [source, setSource] = useState<LookupSource | null>(null)
   const [lookup, setLookup] = useState<Lookup>({ kind: 'idle' })
   const [coverBroken, setCoverBroken] = useState(false)
@@ -75,6 +81,9 @@ export default function AddAlbumPage() {
       setPublisher(info.publisher ?? '')
       setPublishedOn(info.publishedOn ?? '')
       setCoverUrl(info.coverUrl ?? '')
+      setKind(toAlbumKind(info.kind))
+      setRangeFrom(info.volumeFrom?.toString() ?? '')
+      setRangeTo(info.volumeTo?.toString() ?? '')
       setCoverBroken(false)
       setSource(result.source)
       setLookup({ kind: 'found', source: result.source })
@@ -125,6 +134,27 @@ export default function AddAlbumPage() {
       return setError("L'adresse de la couverture doit commencer par http:// ou https://.")
     }
 
+    // Plage de tomes d'une intégrale : les deux numéros, ou aucun (toute la série)
+    let fromNumber: number | null = null
+    let toNumber: number | null = null
+    if (kind === 'integral' && (rangeFrom.trim() !== '' || rangeTo.trim() !== '')) {
+      fromNumber = Number(rangeFrom)
+      toNumber = Number(rangeTo)
+      if (
+        rangeFrom.trim() === '' ||
+        rangeTo.trim() === '' ||
+        !Number.isInteger(fromNumber) ||
+        !Number.isInteger(toNumber) ||
+        fromNumber < 0 ||
+        toNumber > 999 ||
+        fromNumber > toNumber
+      ) {
+        return setError(
+          'Indiquez le premier et le dernier tome repris (le premier ne dépasse pas le dernier), ou laissez les deux vides.',
+        )
+      }
+    }
+
     setBusy(true)
     setError(null)
     try {
@@ -143,6 +173,11 @@ export default function AddAlbumPage() {
         status,
         source: source ?? 'manual',
       })
+      // Le type se règle une fois l'album ajouté (réservé aux possesseurs) ; un échec n'empêche pas
+      // l'ajout : il se corrige depuis la fiche de l'album
+      if (kind !== 'album') {
+        await setEditionKind(normalizedIsbn, kind, fromNumber, toNumber).catch(() => undefined)
+      }
       navigate(`/collection/${normalizedIsbn}`, { replace: true })
     } catch (e) {
       setError(e instanceof AlreadyInCollectionError ? e.message : "Impossible d'ajouter l'album.")
@@ -270,6 +305,45 @@ export default function AddAlbumPage() {
             setCoverBroken(false)
           }}
         />
+        <div className="flex flex-col gap-1">
+          <label htmlFor="album-kind" className="text-sm font-medium">
+            Type d'album
+          </label>
+          <select
+            id="album-kind"
+            value={kind}
+            onChange={(e) => setKind(toAlbumKind(e.target.value))}
+            className="rounded border border-slate-300 px-3 py-2"
+          >
+            {(Object.keys(KIND_LABELS) as AlbumKind[]).map((value) => (
+              <option key={value} value={value}>
+                {KIND_LABELS[value]}
+              </option>
+            ))}
+          </select>
+          {kind === 'integral' && (
+            <div className="flex flex-wrap items-end gap-3">
+              <TextField
+                label="Premier tome repris"
+                name="range-from"
+                inputMode="numeric"
+                value={rangeFrom}
+                onChange={(e) => setRangeFrom(e.target.value)}
+              />
+              <TextField
+                label="Dernier tome repris"
+                name="range-to"
+                inputMode="numeric"
+                value={rangeTo}
+                onChange={(e) => setRangeTo(e.target.value)}
+              />
+              <p className="w-full text-xs text-slate-500">
+                Laissez les deux vides pour une intégrale de toute la série. Une intégrale est un
+                objet distinct des tomes qu'elle reprend.
+              </p>
+            </div>
+          )}
+        </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="status" className="text-sm font-medium">
             Statut

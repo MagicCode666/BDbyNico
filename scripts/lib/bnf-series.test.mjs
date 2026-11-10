@@ -8,9 +8,11 @@ import {
   decodeEntities,
   mapLimit,
   nameKey,
+  nameVariants,
   parseNotices,
   parseVolume,
   publicationStatus,
+  seriesNamesForIsbns,
   strippedName,
   topAuthors,
 } from './bnf-series.mjs'
@@ -283,5 +285,56 @@ describe('publicationStatus', () => {
   it('ignore une autre série ou l absence de notice densemble', () => {
     expect(publicationStatus(umbrella('Autre', '2003-'), 'XIII')).toBeUndefined()
     expect(publicationStatus([], 'XIII')).toBeUndefined()
+  })
+})
+
+describe('nameVariants', () => {
+  it('propose aussi le nom contenu dans une parenthèse « Série - sous-titre »', () => {
+    expect(
+      nameVariants(
+        'La Maison Des Fragances (Les Parfums Du Pouvoir - La saga de la Maison Capella)',
+      ),
+    ).toEqual(['La Maison Des Fragances', 'Les Parfums Du Pouvoir'])
+  })
+
+  it('ignore les précisions simples (éditeur, auteur) et les collections numérotées', () => {
+    expect(nameVariants('Lucky Luke (Dargaud)')).toEqual(['Lucky Luke'])
+    expect(nameVariants('Corto Maltese (Quenehen, Vives)')).toEqual(['Corto Maltese'])
+    expect(nameVariants('Gaston (40ème Anniversaire)')).toEqual(['Gaston (40ème Anniversaire)'])
+    expect(nameVariants('XIII')).toEqual(['XIII'])
+  })
+})
+
+describe('seriesNamesForIsbns', () => {
+  const record = (isbn, series) =>
+    `<srw:record><srw:recordData><mxc:record>` +
+    `<mxc:datafield tag="010" ind1=" " ind2=" "><mxc:subfield code="a">${isbn}</mxc:subfield></mxc:datafield>` +
+    `<mxc:datafield tag="225" ind1=" " ind2=" "><mxc:subfield code="a">${series}</mxc:subfield></mxc:datafield>` +
+    `</mxc:record></srw:recordData></srw:record>`
+
+  it('renvoie le nom BnF des albums connus, du plus fréquent au moins fréquent', async () => {
+    const xml = `<r>${record('9782016291184', 'Les parfums du pouvoir')}${record('9782016291078', 'Les parfums du pouvoir')}${record('9782203001015', 'Autre série')}</r>`
+    const fetchFn = async () => ({ ok: true, text: async () => xml })
+    expect(
+      await seriesNamesForIsbns(['9782016291184', '9782016291078', '9782203001015'], { fetchFn }),
+    ).toEqual(['Les parfums du pouvoir', 'Autre série'])
+  })
+
+  it('ignore les notices qui ne correspondent à aucun ISBN demandé', async () => {
+    const fetchFn = async () => ({
+      ok: true,
+      text: async () => `<r>${record('9782000000002', 'X')}</r>`,
+    })
+    expect(await seriesNamesForIsbns(['9782016291184'], { fetchFn })).toEqual([])
+  })
+
+  it('ne fait aucune requête sans ISBN', async () => {
+    let calls = 0
+    const fetchFn = async () => {
+      calls++
+      return { ok: true, text: async () => '' }
+    }
+    expect(await seriesNamesForIsbns([], { fetchFn })).toEqual([])
+    expect(calls).toBe(0)
   })
 })

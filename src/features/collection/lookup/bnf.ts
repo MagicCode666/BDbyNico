@@ -1,5 +1,6 @@
 import { isbn13To10 } from '../../../lib/isbn'
 import { imageExists } from './amazon'
+import { detectKind } from '../kinds'
 import { toIsoDate } from './dates'
 import type { BookInfo } from './types'
 
@@ -61,6 +62,14 @@ export function parseBnfResponse(xml: string): BookInfo | null {
     authors,
     publisher: first(field210, 'c'),
     publishedOn: toIsoDate(first(field210, 'd')),
+    // La BnF écrit « Réunit : … » dans une note générale pour un recueil
+    kind: detectKind(
+      title,
+      datafields(record, ['300'])
+        .map((field) => first(field, 'a'))
+        .filter(Boolean)
+        .join(' | '),
+    ),
   }
 }
 

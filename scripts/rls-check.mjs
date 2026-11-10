@@ -147,6 +147,21 @@ r = await B.client.rpc('set_edition_cover', {
   p_cover_url: `${bnfBase}&couverture=1`.replace('catalogue.bnf.fr', 'exemple.invalid'),
 })
 check('Une fausse adresse de la BnF (autre site) est refusée', !!r.error, show(r))
+r = await B.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: `https://products-images.di-static.com/image/x/${isbn}-475x500-1.jpg`,
+})
+check('Une adresse de couverture Decitre est acceptée sans erreur', !r.error, show(r))
+r = await B.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: `https://pictures.abebooks.com/isbn/${isbn}-fr-300.jpg`,
+})
+check('Une adresse de couverture AbeBooks est acceptée sans erreur', !r.error, show(r))
+r = await B.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: 'https://pictures.abebooks.com/isbn/9780000000002-fr-300.jpg',
+})
+check('Une adresse de libraire pour un autre ISBN est refusée', !!r.error, show(r))
 r = await B.client.from('editions').select('cover_url').eq('isbn', isbn)
 check(
   "La couverture déjà renseignée n'est pas écrasée",
@@ -209,7 +224,7 @@ check(
     r.data[0].publisher === 'Éditeur',
   show(r),
 )
-r = await A.client.rpc('import_editions', {
+await A.client.rpc('import_editions', {
   p_rows: [{ isbn: importIsbn, title: 'Autre titre', volume: 9 }],
 })
 r = await B.client.from('editions').select('title, volume').eq('isbn', importIsbn)
@@ -429,7 +444,7 @@ check(
   r.data?.cover_url === null && r.data?.cover_locked === true,
   show(r),
 )
-r = await A.client.rpc('set_edition_cover', { p_isbn: govIsbn, p_cover_url: govCover })
+await A.client.rpc('set_edition_cover', { p_isbn: govIsbn, p_cover_url: govCover })
 r = await A.client.from('editions').select('cover_url').eq('isbn', govIsbn).single()
 check(
   'La mise à jour automatique ne touche pas une couverture verrouillée',
@@ -474,6 +489,86 @@ r = await A.client.rpc('set_contribution_level', { p_user: B.id, p_level: 'colle
 check('Un utilisateur ordinaire ne peut pas restreindre un autre utilisateur', !!r.error, show(r))
 r = await B.client.from('profiles').select('contribution').eq('id', B.id).single()
 check('Le niveau de B est resté « full »', r.data?.contribution === 'full', show(r))
+// (B peut être administrateur, donc autorisé : le contrôle d'un non-possesseur se fait avec A)
+r = await A.client.rpc('set_edition_kind', {
+  p_isbn: importIsbn,
+  p_kind: 'integral',
+  p_from: 1,
+  p_to: 3,
+})
+check("A ne peut pas changer le type d'un album qu'il ne possède pas", !!r.error, show(r))
+r = await anon.rpc('set_edition_kind', { p_isbn: govIsbn, p_kind: 'integral', p_from: 1, p_to: 3 })
+check("Un anonyme ne peut pas changer le type d'un album", !!r.error, show(r))
+r = await A.client.rpc('set_edition_kind', {
+  p_isbn: govIsbn,
+  p_kind: 'coffret',
+  p_from: 1,
+  p_to: 3,
+})
+check("Un type d'album inconnu est refusé", !!r.error, show(r))
+r = await A.client.rpc('set_edition_kind', {
+  p_isbn: govIsbn,
+  p_kind: 'integral',
+  p_from: 3,
+  p_to: 1,
+})
+check('Une plage de tomes inversée est refusée', !!r.error, show(r))
+r = await A.client.rpc('set_edition_kind', {
+  p_isbn: govIsbn,
+  p_kind: 'integral',
+  p_from: 1,
+  p_to: 3,
+})
+check(
+  'Le possesseur déclare une intégrale des tomes 1 à 3',
+  !r.error && ['applied', 'unchanged'].includes(r.data),
+  show(r),
+)
+r = await A.client
+  .from('editions')
+  .select('kind, volume_from, volume_to')
+  .eq('isbn', govIsbn)
+  .single()
+check(
+  'Le type et la plage sont enregistrés',
+  r.data?.kind === 'integral' && r.data?.volume_from === 1 && r.data?.volume_to === 3,
+  show(r),
+)
+r = await A.client.from('editions').update({ kind: 'album' }).eq('isbn', govIsbn).select()
+check("Aucune modification directe du type d'un album", !!r.error || r.data?.length === 0, show(r))
+r = await A.client.rpc('set_edition_kind', {
+  p_isbn: govIsbn,
+  p_kind: 'album',
+  p_from: null,
+  p_to: null,
+})
+check(
+  "Le possesseur rétablit l'album ordinaire (état de départ du prochain passage)",
+  !r.error && ['applied', 'unchanged'].includes(r.data),
+  show(r),
+)
+r = await A.client.rpc('rename_series', { p_series: seriesId, p_name: 'Nom pirate' })
+check('Un utilisateur ordinaire ne peut pas renommer une série', !!r.error, show(r))
+r = await A.client.rpc('set_series_total', { p_series: seriesId, p_total: 99 })
+check('Un utilisateur ordinaire ne peut pas fixer le total partagé', !!r.error, show(r))
+r = await A.client.rpc('set_series_status', { p_series: seriesId, p_status: 'finished' })
+check('Un utilisateur ordinaire ne peut pas fixer le statut partagé', !!r.error, show(r))
+r = await A.client.rpc('list_series_admin', { p_query: 'test' })
+check('Un utilisateur ordinaire ne peut pas lister les séries (administration)', !!r.error, show(r))
+r = await anon.rpc('rename_series', { p_series: seriesId, p_name: 'Nom pirate' })
+check('Un anonyme ne peut pas renommer une série', !!r.error, show(r))
+r = await A.client
+  .from('series')
+  .select('name, total_source, status_source')
+  .eq('id', seriesId)
+  .single()
+check(
+  'La série est intacte (nom, total et statut non modifiés)',
+  r.data?.name === 'Série de test RLS' &&
+    r.data?.total_source === 'auto' &&
+    r.data?.status_source === 'auto',
+  show(r),
+)
 console.log(
   '  (les parcours « collection seule », validation et annulation sont testés par supabase/tests/gouvernance.sql)',
 )

@@ -12,7 +12,7 @@ export type Database = {
         Row: {
           created_at: string
           id: number
-          isbn: string
+          isbn: string | null
           kind: string
           new_value: string | null
           old_value: string | null
@@ -20,13 +20,14 @@ export type Database = {
           reverts_id: number | null
           reviewed_at: string | null
           reviewed_by: string | null
+          series_id: string | null
           status: string
           user_id: string | null
         }
         Insert: {
           created_at?: string
-          id?: number
-          isbn: string
+          id?: never
+          isbn?: string | null
           kind: string
           new_value?: string | null
           old_value?: string | null
@@ -34,13 +35,14 @@ export type Database = {
           reverts_id?: number | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          series_id?: string | null
           status?: string
           user_id?: string | null
         }
         Update: {
           created_at?: string
-          id?: number
-          isbn?: string
+          id?: never
+          isbn?: string | null
           kind?: string
           new_value?: string | null
           old_value?: string | null
@@ -48,10 +50,19 @@ export type Database = {
           reverts_id?: number | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          series_id?: string | null
           status?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'catalogue_changes_reverts_id_fkey'
+            columns: ['reverts_id']
+            isOneToOne: false
+            referencedRelation: 'catalogue_changes'
+            referencedColumns: ['id']
+          },
+        ]
       }
       collection_items: {
         Row: {
@@ -120,6 +131,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           isbn: string
+          kind: string
           published_on: string | null
           publisher: string | null
           review_status: string
@@ -127,6 +139,8 @@ export type Database = {
           source: string | null
           title: string
           volume: number | null
+          volume_from: number | null
+          volume_to: number | null
         }
         Insert: {
           authors?: string[]
@@ -135,6 +149,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           isbn: string
+          kind?: string
           published_on?: string | null
           publisher?: string | null
           review_status?: string
@@ -142,6 +157,8 @@ export type Database = {
           source?: string | null
           title: string
           volume?: number | null
+          volume_from?: number | null
+          volume_to?: number | null
         }
         Update: {
           authors?: string[]
@@ -150,6 +167,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           isbn?: string
+          kind?: string
           published_on?: string | null
           publisher?: string | null
           review_status?: string
@@ -157,6 +175,8 @@ export type Database = {
           source?: string | null
           title?: string
           volume?: number | null
+          volume_from?: number | null
+          volume_to?: number | null
         }
         Relationships: [
           {
@@ -205,6 +225,8 @@ export type Database = {
           name: string
           name_key: string
           publication_status: string | null
+          starts_at_zero: boolean
+          status_source: string
           total_checked_at: string | null
           total_source: string
           total_volumes: number | null
@@ -215,6 +237,8 @@ export type Database = {
           name: string
           name_key: string
           publication_status?: string | null
+          starts_at_zero?: boolean
+          status_source?: string
           total_checked_at?: string | null
           total_source?: string
           total_volumes?: number | null
@@ -225,6 +249,8 @@ export type Database = {
           name?: string
           name_key?: string
           publication_status?: string | null
+          starts_at_zero?: boolean
+          status_source?: string
           total_checked_at?: string | null
           total_source?: string
           total_volumes?: number | null
@@ -285,12 +311,14 @@ export type Database = {
         }
         Returns: {
           authors: string[]
+          cover_locked: boolean
           cover_url: string | null
           created_at: string
           created_by: string | null
           isbn: string
           published_on: string | null
           publisher: string | null
+          review_status: string
           series_id: string | null
           source: string | null
           title: string
@@ -318,11 +346,14 @@ export type Database = {
         }[]
       }
       import_editions: { Args: { p_rows: Json }; Returns: Json }
+      is_admin: { Args: never; Returns: boolean }
+      is_allowed_cover_url: {
+        Args: { p_cover_url: string; p_isbn: string }
+        Returns: boolean
+      }
+      is_moderator: { Args: never; Returns: boolean }
       is_valid_isbn13: { Args: { p_isbn: string }; Returns: boolean }
       isbn13_to_isbn10: { Args: { p_isbn: string }; Returns: string }
-      regenerate_share_token: { Args: never; Returns: string }
-      is_admin: { Args: never; Returns: boolean }
-      is_moderator: { Args: never; Returns: boolean }
       list_catalogue_changes: {
         Args: {
           p_before?: number
@@ -334,22 +365,23 @@ export type Database = {
         }
         Returns: {
           created_at: string
-          current_cover: string | null
+          current_cover: string
           id: number
           isbn: string
           kind: string
-          new_value: string | null
-          old_value: string | null
+          new_value: string
+          old_value: string
           origin: string
-          pseudo: string | null
-          reverts_id: number | null
-          reviewed_at: string | null
-          reviewed_pseudo: string | null
-          series_name: string | null
+          pseudo: string
+          reverts_id: number
+          reviewed_at: string
+          reviewed_pseudo: string
+          series_id: string
+          series_name: string
           status: string
-          title: string | null
-          user_id: string | null
-          volume: number | null
+          title: string
+          user_id: string
+          volume: number
         }[]
       }
       list_users_admin: {
@@ -365,12 +397,41 @@ export type Database = {
           role: string
         }[]
       }
-      report_cover: {
-        Args: { p_cover_url: string | null; p_isbn: string }
+      regenerate_share_token: { Args: never; Returns: string }
+      list_series_admin: {
+        Args: { p_limit?: number; p_query?: string }
+        Returns: {
+          edition_count: number
+          id: string
+          name: string
+          publication_status: string
+          status_source: string
+          total_source: string
+          total_volumes: number
+        }[]
+      }
+      rename_series: { Args: { p_name: string; p_series: string }; Returns: undefined }
+      set_edition_kind: {
+        Args: { p_from?: number; p_isbn: string; p_kind: string; p_to?: number }
         Returns: string
       }
-      review_change: { Args: { p_accept: boolean; p_id: number }; Returns: undefined }
+      set_series_status: {
+        Args: { p_series: string; p_status: string }
+        Returns: undefined
+      }
+      set_series_total: {
+        Args: { p_series: string; p_total: number }
+        Returns: undefined
+      }
+      report_cover: {
+        Args: { p_cover_url: string; p_isbn: string }
+        Returns: string
+      }
       revert_change: { Args: { p_id: number }; Returns: undefined }
+      review_change: {
+        Args: { p_accept: boolean; p_id: number }
+        Returns: undefined
+      }
       set_contribution_level: {
         Args: { p_level: string; p_user: string }
         Returns: undefined

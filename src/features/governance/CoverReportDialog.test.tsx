@@ -48,15 +48,17 @@ describe('CoverReportDialog', () => {
 
   it('propose les autres sources et pas la couverture déjà affichée', async () => {
     renderDialog(OPEN_LIBRARY)
-    await waitFor(() => expect(screen.getAllByText('Choisir celle-ci')).toHaveLength(2))
+    await waitFor(() => expect(screen.getAllByText('Choisir celle-ci')).toHaveLength(4))
     expect(screen.getByText('Amazon')).toBeTruthy()
     expect(screen.getByText('BnF')).toBeTruthy()
+    expect(screen.getByText('Decitre')).toBeTruthy()
+    expect(screen.getByText('AbeBooks')).toBeTruthy()
     expect(screen.queryByText('Open Library')).toBeNull()
   })
 
   it('envoie la couverture choisie et prévient la page quand elle est appliquée', async () => {
     const { onChanged } = renderDialog()
-    await waitFor(() => expect(screen.getAllByText('Choisir celle-ci')).toHaveLength(2))
+    await waitFor(() => expect(screen.getAllByText('Choisir celle-ci')).toHaveLength(4))
     fireEvent.click(screen.getAllByText('Choisir celle-ci')[0])
     await waitFor(() => expect(api.reportCover).toHaveBeenCalledWith('9782723452144', AMAZON))
     await waitFor(() => expect(onChanged).toHaveBeenCalled())
@@ -66,7 +68,7 @@ describe('CoverReportDialog', () => {
   it('annonce une proposition en attente sans recharger la page', async () => {
     vi.mocked(api.reportCover).mockResolvedValueOnce('pending')
     const { onChanged } = renderDialog()
-    await waitFor(() => expect(screen.getAllByText('Choisir celle-ci')).toHaveLength(2))
+    await waitFor(() => expect(screen.getAllByText('Choisir celle-ci')).toHaveLength(4))
     fireEvent.click(screen.getAllByText('Choisir celle-ci')[1])
     await waitFor(() => expect(api.reportCover).toHaveBeenCalledWith('9782723452144', BNF))
     expect(await screen.findByText(/en attente de validation/)).toBeTruthy()
@@ -75,7 +77,7 @@ describe('CoverReportDialog', () => {
 
   it('permet de choisir « pas de couverture » quand il y en a une', async () => {
     renderDialog()
-    await waitFor(() => expect(screen.getAllByText('Choisir celle-ci')).toHaveLength(2))
+    await waitFor(() => expect(screen.getAllByText('Choisir celle-ci')).toHaveLength(4))
     fireEvent.click(screen.getByRole('button', { name: /pas de couverture/ }))
     await waitFor(() => expect(api.reportCover).toHaveBeenCalledWith('9782723452144', null))
   })
@@ -85,7 +87,7 @@ describe('CoverReportDialog', () => {
       new Error('Seuls les possesseurs de cet album peuvent signaler sa couverture'),
     )
     renderDialog()
-    await waitFor(() => expect(screen.getAllByText('Choisir celle-ci')).toHaveLength(2))
+    await waitFor(() => expect(screen.getAllByText('Choisir celle-ci')).toHaveLength(4))
     fireEvent.click(screen.getAllByText('Choisir celle-ci')[0])
     expect(await screen.findByText(/Seuls les possesseurs/)).toBeTruthy()
   })
