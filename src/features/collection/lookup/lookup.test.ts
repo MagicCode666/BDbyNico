@@ -58,6 +58,31 @@ describe('parseBnfResponse', () => {
     })
   })
 
+  it('lit résumé, pagination, format, prix public et langue', () => {
+    const xml = bnfXml(
+      [
+        field('010', [
+          ['a', '978-2-8001-0000-0'],
+          ['d', '13,50 EUR'],
+        ]),
+        field('101', [['a', 'fre']]),
+        field('200', [['a', 'Un album']]),
+        field('215', [
+          ['a', '1 vol. (48 p.)'],
+          ['d', '32 cm'],
+        ]),
+        field('330', [['a', 'Une  histoire\npassionnante.']]),
+      ].join(''),
+    )
+    expect(parseBnfResponse(xml)).toMatchObject({
+      summary: 'Une histoire passionnante.',
+      pages: 48,
+      formatCm: 32,
+      publicPrice: 13.5,
+      language: 'fre',
+    })
+  })
+
   it("devine une intégrale d'après la note « Réunit » de la BnF", () => {
     const xml = bnfXml(
       [

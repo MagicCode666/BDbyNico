@@ -1,4 +1,11 @@
 import { isbn13To10 } from '../../../lib/isbn'
+import {
+  parseFormatCm,
+  parseLanguage,
+  parsePages,
+  parsePublicPrice,
+  parseSummary,
+} from '../../../lib/bnfFields'
 import { imageExists } from './amazon'
 import { detectKind } from '../kinds'
 import { toIsoDate } from './dates'
@@ -70,6 +77,11 @@ export function parseBnfResponse(xml: string): BookInfo | null {
         .filter(Boolean)
         .join(' | '),
     ),
+    summary: parseSummary(first(datafields(record, ['330'])[0], 'a')),
+    pages: parsePages(first(datafields(record, ['215'])[0], 'a')),
+    formatCm: parseFormatCm(first(datafields(record, ['215'])[0], 'd')),
+    publicPrice: parsePublicPrice(first(datafields(record, ['010'])[0], 'd')),
+    language: parseLanguage(first(datafields(record, ['101'])[0], 'a')),
   }
 }
 

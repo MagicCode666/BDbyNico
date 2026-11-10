@@ -3,7 +3,14 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AuthContext, type AuthContextValue } from '../../auth/AuthContext'
+import ThemeProvider from '../../theme/ThemeProvider'
 import ImportPage from './ImportPage'
+
+// La barre latérale interroge la base pour le pseudo : inutile ici
+vi.mock('../../components/shell/useAccountSummary', () => ({
+  useAccountSummary: () => undefined,
+  ROLE_LABELS: { user: '', moderator: '', admin: '' },
+}))
 
 vi.mock('./api', () => ({
   findExistingItems: vi.fn(async () => new Map()),
@@ -25,11 +32,13 @@ const auth: AuthContextValue = {
 
 function renderPage() {
   return render(
-    <AuthContext.Provider value={auth}>
-      <MemoryRouter>
-        <ImportPage />
-      </MemoryRouter>
-    </AuthContext.Provider>,
+    <ThemeProvider>
+      <AuthContext.Provider value={auth}>
+        <MemoryRouter>
+          <ImportPage />
+        </MemoryRouter>
+      </AuthContext.Provider>
+    </ThemeProvider>,
   )
 }
 
@@ -46,7 +55,7 @@ describe('ImportPage', () => {
 
   it('propose de choisir un fichier au départ', () => {
     renderPage()
-    expect(screen.getByText('Importer une collection')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Importer une collection' })).toBeTruthy()
     expect(document.querySelector('input[type="file"]')).toBeTruthy()
   })
 

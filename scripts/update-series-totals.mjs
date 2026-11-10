@@ -21,6 +21,7 @@ import {
 import {
   bestMatch,
   decideTotal,
+  fetchDetails,
   fetchNotices,
   mapLimit,
   nameKey,
@@ -37,6 +38,8 @@ const option = (flag) => {
 }
 const dryRun = args.includes('--dry-run')
 const skipCovers = args.includes('--skip-covers')
+// Albums dont on complète la fiche par passage (le reste aux passages suivants)
+const DETAILS_BATCH = 400
 // Couvertures Open Library vérifiées par passage (le reste aux passages suivants)
 const COVER_BATCH = 1500
 const limit = Number(option('--limit') ?? 100)
@@ -213,6 +216,65 @@ async function improveCovers(db, mode) {
   )
 }
 
+/**
+ * Complète la fiche des albums jamais vérifiés (résumé, pages, format, prix, langue) d'après la
+ * BnF, par lots de 20 ISBN. On ne remplit que les champs vides ; un album absent de la BnF est
+ * marqué « vérifié » quand même pour ne pas le réinterroger chaque nuit.
+ */
+async function fillDetails(db) {
+  const { data: rows, error } = await db
+    .from('editions')
+    .select('isbn, summary, pages, format_cm, public_price, language')
+    .is('details_checked_at', null)
+    .eq('review_status', 'approved')
+    .not('isbn', 'like', '97899999999%')
+    .order('created_at')
+    .limit(DETAILS_BATCH)
+  if (error) throw error
+  if (!rows.length) return console.log('Fiches : aucune à compléter.')
+
+  let filled = 0
+  let missing = 0
+  let failedBatches = 0
+  for (let i = 0; i < rows.length; i += 20) {
+    // Pause entre deux lots : la BnF coupe la connexion quand on la sollicite trop vite
+    if (i > 0) await new Promise((resolve) => setTimeout(resolve, 1000))
+    const batch = rows.slice(i, i + 20).map((row) => row.isbn)
+    let found
+    try {
+      found = await fetchDetails(batch)
+    } catch (e) {
+      failedBatches++
+      console.error(`- fiches : lot en échec (${e.message ?? e}), repris à la prochaine passe`)
+      continue
+    }
+    for (const isbn of batch) {
+      const details = found.get(isbn)
+      if (!details) missing++
+      else if (Object.values(details).some((value) => value !== undefined)) filled++
+      if (dryRun) continue
+      // Complète sans écraser, comme l'application (fill_edition_details)
+      const current = rows.find((row) => row.isbn === isbn)
+      const { error: updateError } = await db
+        .from('editions')
+        .update({
+          summary: current.summary ?? details?.summary ?? null,
+          pages: current.pages ?? details?.pages ?? null,
+          format_cm: current.format_cm ?? details?.formatCm ?? null,
+          public_price: current.public_price ?? details?.publicPrice ?? null,
+          language: current.language ?? details?.language ?? null,
+          details_checked_at: new Date().toISOString(),
+        })
+        .eq('isbn', isbn)
+      if (updateError) throw updateError
+    }
+  }
+  console.log(
+    `Fiches : ${filled} complétée(s), ${missing} absente(s) de la BnF, ` +
+      `${failedBatches} lot(s) en échec, sur ${rows.length} traitée(s).`,
+  )
+}
+
 async function run() {
   const url = process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -296,6 +358,11 @@ async function run() {
     } catch (e) {
       console.error(`Couvertures : échec (${e.message ?? e})`)
     }
+  }
+  try {
+    await fillDetails(db)
+  } catch (e) {
+    console.error(`Fiches : échec (${e.message ?? e})`)
   }
   if (seriesList.length > 0 && done === 0) process.exit(1)
 }

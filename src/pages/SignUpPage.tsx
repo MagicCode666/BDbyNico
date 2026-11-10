@@ -44,7 +44,7 @@ export default function SignUpPage() {
       <AuthCard
         title="Vérifiez vos emails"
         footer={
-          <Link to="/connexion" className="text-indigo-600 underline">
+          <Link to="/connexion" className="text-accent-text underline">
             Retour à la connexion
           </Link>
         }
@@ -62,7 +62,7 @@ export default function SignUpPage() {
       footer={
         <>
           Déjà un compte ?{' '}
-          <Link to="/connexion" className="text-indigo-600 underline">
+          <Link to="/connexion" className="text-accent-text underline">
             Se connecter
           </Link>
         </>

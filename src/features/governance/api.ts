@@ -4,7 +4,13 @@ export type Role = 'user' | 'moderator' | 'admin'
 export type Contribution = 'full' | 'collection_only'
 export type ChangeStatus = 'applied' | 'pending' | 'rejected' | 'reverted'
 export type ChangeKind =
-  'create' | 'cover' | 'edition_kind' | 'series_name' | 'series_total' | 'series_status'
+  | 'create'
+  | 'cover'
+  | 'edition_kind'
+  | 'series_name'
+  | 'series_total'
+  | 'series_status'
+  | 'series_genres'
 export type ChangeOrigin = 'user' | 'import' | 'job' | 'admin'
 
 export interface Access {
@@ -240,6 +246,15 @@ export async function setSeriesStatus(
   const { error } = await supabase.rpc('set_series_status', {
     p_series: seriesId,
     p_status: status as string,
+  })
+  if (error) throw error
+}
+
+/** Fixe les genres de la série (3 au plus, liste fermée). */
+export async function setSeriesGenres(seriesId: string, genres: string[]): Promise<void> {
+  const { error } = await supabase.rpc('set_series_genres', {
+    p_series: seriesId,
+    p_genres: genres,
   })
   if (error) throw error
 }

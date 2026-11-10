@@ -70,9 +70,9 @@ export default function ClearCollectionDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="clear-title"
-        className="w-full max-w-md rounded bg-white p-5 shadow-lg"
+        className="w-full max-w-md rounded bg-surface p-5 shadow-lg"
       >
-        <h2 id="clear-title" className="mb-2 text-lg font-semibold text-red-700">
+        <h2 id="clear-title" className="mb-2 text-lg font-semibold text-danger-text">
           Vider ma collection
         </h2>
         <p className="mb-3 text-sm">
@@ -82,7 +82,7 @@ export default function ClearCollectionDialog({
               ? 'Votre collection est déjà vide.'
               : `${count} album${count > 1 ? 's' : ''} (possédés et envies) ${count > 1 ? 'seront retirés' : 'sera retiré'} de votre collection.`}
         </p>
-        <p className="mb-4 text-sm text-slate-600">
+        <p className="mb-4 text-sm text-muted">
           <strong>Cette action est irréversible.</strong> Votre compte et le catalogue partagé ne
           sont pas touchés. Vous pourrez réimporter le fichier exporté pour tout restaurer.
         </p>
@@ -91,12 +91,12 @@ export default function ClearCollectionDialog({
           type="button"
           onClick={onExport}
           disabled={busy}
-          className="mb-1 rounded border border-slate-300 px-3 py-2 text-sm font-medium hover:border-indigo-600 disabled:opacity-50"
+          className="mb-1 rounded border border-line-strong px-3 py-2 text-sm font-medium hover:border-accent disabled:opacity-50"
         >
           Exporter ma collection d'abord (CSV)
         </button>
         {exported && (
-          <p role="status" className="mb-3 text-xs text-green-700">
+          <p role="status" className="mb-3 text-xs text-ok">
             Fichier téléchargé.
           </p>
         )}
@@ -118,7 +118,7 @@ export default function ClearCollectionDialog({
           value={typed}
           onChange={(e) => setTyped(e.target.value)}
           autoComplete="off"
-          className="mb-4 w-full rounded border border-slate-300 px-3 py-2 focus:border-red-600 focus:outline-none"
+          className="mb-4 w-full rounded border border-line-strong px-3 py-2 focus:border-danger focus:outline-none"
         />
 
         {error && (
@@ -132,7 +132,7 @@ export default function ClearCollectionDialog({
             type="button"
             onClick={onCancel}
             disabled={busy}
-            className="rounded border border-slate-300 px-4 py-2 text-sm font-medium disabled:opacity-50"
+            className="rounded border border-line-strong px-4 py-2 text-sm font-medium disabled:opacity-50"
           >
             Annuler
           </button>
@@ -140,7 +140,7 @@ export default function ClearCollectionDialog({
             type="button"
             onClick={onClear}
             disabled={!canClear}
-            className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-40"
+            className="rounded bg-danger px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-40"
           >
             {busy ? 'Suppression…' : 'Vider ma collection'}
           </button>

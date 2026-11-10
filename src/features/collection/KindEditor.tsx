@@ -58,9 +58,9 @@ export default function KindEditor({ edition, onChanged }: Props) {
 
   const current = toAlbumKind(edition.kind)
   return (
-    <section className="flex max-w-lg flex-col gap-2 rounded border border-slate-200 p-3">
+    <section className="flex max-w-lg flex-col gap-2 rounded border border-line p-3">
       <h3 className="text-sm font-semibold">Type d'album</h3>
-      <p className="text-xs text-slate-600">
+      <p className="text-xs text-muted">
         {current === 'integral'
           ? `Intégrale · ${rangeLabel(edition.volumeFrom, edition.volumeTo)}. C'est un objet distinct des tomes qu'elle reprend.`
           : current === 'special'
@@ -74,7 +74,7 @@ export default function KindEditor({ edition, onChanged }: Props) {
           <select
             value={kind}
             onChange={(e) => setKind(toAlbumKind(e.target.value))}
-            className="rounded border border-slate-300 px-2 py-1"
+            className="rounded border border-line-strong px-2 py-1"
           >
             {(Object.keys(KIND_LABELS) as AlbumKind[]).map((value) => (
               <option key={value} value={value}>
@@ -93,7 +93,7 @@ export default function KindEditor({ edition, onChanged }: Props) {
                 max={999}
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
-                className="w-24 rounded border border-slate-300 px-2 py-1"
+                className="w-24 rounded border border-line-strong px-2 py-1"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -104,7 +104,7 @@ export default function KindEditor({ edition, onChanged }: Props) {
                 max={999}
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
-                className="w-24 rounded border border-slate-300 px-2 py-1"
+                className="w-24 rounded border border-line-strong px-2 py-1"
               />
             </label>
           </>
@@ -113,13 +113,13 @@ export default function KindEditor({ edition, onChanged }: Props) {
           type="button"
           disabled={busy}
           onClick={save}
-          className="rounded border border-slate-300 px-3 py-1 text-sm font-medium hover:border-indigo-600 disabled:opacity-50"
+          className="rounded border border-line-strong px-3 py-1 text-sm font-medium hover:border-accent disabled:opacity-50"
         >
           Enregistrer le type
         </button>
       </div>
       {kind === 'integral' && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           Laissez les deux numéros vides pour une intégrale de toute la série.
         </p>
       )}

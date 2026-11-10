@@ -60,9 +60,9 @@ export default function BarcodeScanner({ onDetect, onClose }: BarcodeScannerProp
   }, [])
 
   return (
-    <div className="flex flex-col gap-2 rounded border border-slate-300 p-3">
+    <div className="flex flex-col gap-2 rounded border border-line-strong p-3">
       {errorKind ? (
-        <p role="alert" className="rounded bg-red-50 p-3 text-sm text-red-700">
+        <p role="alert" className="rounded bg-danger-soft p-3 text-sm text-danger-text">
           {ERROR_MESSAGES[errorKind]}
         </p>
       ) : (
@@ -71,11 +71,11 @@ export default function BarcodeScanner({ onDetect, onClose }: BarcodeScannerProp
             <video ref={videoRef} playsInline muted autoPlay className="aspect-[4/3] w-full" />
             <div className="pointer-events-none absolute inset-x-8 top-1/2 h-24 -translate-y-1/2 rounded border-2 border-white/80" />
           </div>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted">
             Placez le code-barres du livre (au dos) dans le cadre.
           </p>
           {notIsbn && (
-            <p role="status" className="text-sm text-amber-700">
+            <p role="status" className="text-sm text-warn">
               Ce code-barres n'est pas celui d'un livre (ISBN). Cherchez celui qui commence par 978
               ou 979.
             </p>
@@ -85,7 +85,7 @@ export default function BarcodeScanner({ onDetect, onClose }: BarcodeScannerProp
       <button
         type="button"
         onClick={onClose}
-        className="self-start rounded border border-slate-300 px-3 py-1 text-sm"
+        className="self-start rounded border border-line-strong px-3 py-1 text-sm"
       >
         Fermer
       </button>

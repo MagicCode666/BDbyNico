@@ -1,4 +1,5 @@
 import type { Change } from './api'
+import { genreLabel } from '../series/genres'
 
 const STATUS_WORDS: Record<string, string> = { ongoing: 'en cours', finished: 'terminée' }
 const SOURCE_WORDS: Record<string, string> = { manual: 'fixé à la main', auto: 'automatique' }
@@ -34,6 +35,11 @@ function describeValue(kind: Change['kind'], value: string | null): string {
 export function describeChange(change: Change): string | null {
   if (change.kind === 'edition_kind') {
     return `Type : ${describeKindValue(change.oldValue)} → ${describeKindValue(change.newValue)}`
+  }
+  if (change.kind === 'series_genres') {
+    const show = (value: string | null) =>
+      value ? value.split(',').map(genreLabel).join(', ') : 'aucun'
+    return `Genres : ${show(change.oldValue)} → ${show(change.newValue)}`
   }
   const label = {
     series_name: 'Nom',
