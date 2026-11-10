@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.10.1...bdbynico-v0.11.0) (2026-11-10)
+
+
+### Nouveautés
+
+* meilleur rapprochement des séries avec la BnF ([#33](https://github.com/MagicCode666/BDbyNico/issues/33)) ([1a26566](https://github.com/MagicCode666/BDbyNico/commit/1a265665f56bc90d4b31020c430f3b6012c3a50f))
+
 ## [0.10.1](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.10.0...bdbynico-v0.10.1) (2026-11-10)
 
 
