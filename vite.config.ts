@@ -20,7 +20,7 @@ export default defineConfig({
   // Port fixe : les liens des emails d'authentification n'aboutissent qu'à localhost:5173.
   // Si un serveur tourne déjà, Vite s'arrête avec un message au lieu de grimper de port.
   server: { port: 5173, strictPort: true },
-  test: { environment: 'jsdom' },
+  test: { environment: 'jsdom', setupFiles: ['./src/test/setup.ts'] },
   plugins: [
     react(),
     tailwindcss(),

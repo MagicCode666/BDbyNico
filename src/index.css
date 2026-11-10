@@ -287,3 +287,58 @@ button.bg-danger {
   );
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25);
 }
+
+/* ---- Structure de l'application : barre latérale, barre du haut, onglets du bas ---- */
+@layer components {
+  .surface-side {
+    background: var(--grad-side);
+    box-shadow:
+      inset -1px 0 0 var(--edge),
+      10px 0 30px -18px rgb(0 0 0 / 0.7);
+  }
+  .surface-bar {
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    box-shadow:
+      0 1px 0 var(--edge),
+      0 14px 30px -22px rgb(0 0 0 / 0.9);
+  }
+  .surface-tabs {
+    background: var(--grad-side);
+    box-shadow:
+      0 -1px 0 var(--edge),
+      0 -14px 30px -18px rgb(0 0 0 / 0.8);
+  }
+  .search-field {
+    background: var(--grad-surface);
+    box-shadow:
+      inset 0 2px 5px rgb(0 0 0 / 0.3),
+      inset 0 -1px 0 var(--edge);
+  }
+  :root[data-theme='clair'] .search-field {
+    box-shadow: inset 0 1px 3px rgb(40 40 60 / 0.12);
+  }
+  .nav-link {
+    transition: background-color 0.12s ease;
+  }
+  .nav-link[aria-current='page'] {
+    color: var(--fg);
+    border-left-color: var(--accent);
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--accent) 24%, transparent), transparent 85%),
+      var(--raised);
+    box-shadow: inset 0 1px 0 var(--edge);
+  }
+  .tab-link[aria-current='page'] {
+    color: var(--fg);
+    box-shadow: inset 0 2px 0 var(--accent);
+  }
+  .tab-add {
+    background: var(--grad-accent);
+    border: 3px solid var(--bg);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.4),
+      0 0 0 1px var(--accent),
+      0 10px 24px -6px color-mix(in srgb, var(--accent) 75%, transparent);
+  }
+}

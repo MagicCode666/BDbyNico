@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigationType } from 'react-router-dom'
+import { Link, useNavigationType, useSearchParams } from 'react-router-dom'
 
 import FormMessage from '../../components/FormMessage'
 import { useScrollRestoration } from '../../lib/useScrollRestoration'
@@ -26,7 +26,6 @@ interface OwnedInSeries {
 const FILTERS_KEY = 'bdbynico:collection-filters'
 
 interface SavedFilters {
-  status: Status
   query: string
   read: ReadFilter
   dedicatedOnly: boolean
@@ -45,18 +44,22 @@ export default function CollectionPage() {
   // Au retour en arrière, on retrouve les filtres et la position de la liste
   const navigationType = useNavigationType()
   const [saved] = useState(() => (navigationType === 'POP' ? readSavedFilters() : {}))
-  const [status, setStatus] = useState<Status>(saved.status ?? 'owned')
+  // Possédés ou envies : l'adresse (?statut=envies) commande l'onglet, la navigation latérale y mène
+  const [searchParams, setSearchParams] = useSearchParams()
+  const status: Status = searchParams.get('statut') === 'envies' ? 'wanted' : 'owned'
+  const setStatus = (next: Status) =>
+    setSearchParams(next === 'wanted' ? { statut: 'envies' } : {}, { replace: true })
   const [query, setQuery] = useState(saved.query ?? '')
   const [read, setRead] = useState<ReadFilter>(saved.read ?? 'all')
   const [dedicatedOnly, setDedicatedOnly] = useState(saved.dedicatedOnly ?? false)
   useScrollRestoration('collection', !loading)
   useEffect(() => {
     try {
-      sessionStorage.setItem(FILTERS_KEY, JSON.stringify({ status, query, read, dedicatedOnly }))
+      sessionStorage.setItem(FILTERS_KEY, JSON.stringify({ query, read, dedicatedOnly }))
     } catch {
       // stockage indisponible : les filtres ne seront simplement pas restaurés
     }
-  }, [status, query, read, dedicatedOnly])
+  }, [query, read, dedicatedOnly])
 
   const entries = useMemo(() => data ?? [], [data])
   // Couvertures manquantes (après un import, par exemple) : cherchées au fil de l'eau, puis
