@@ -15,7 +15,12 @@ import {
   type SeriesData,
 } from './api'
 import { buildSeriesView, type Slot } from './buildView'
-import { effectiveStatus, PUBLICATION_LABELS, type PublicationStatus } from './status'
+import {
+  completionLabel,
+  effectiveStatus,
+  PUBLICATION_LABELS,
+  type PublicationStatus,
+} from './status'
 import { useMissingCovers } from './useMissingCovers'
 
 const buttonClass =
@@ -147,7 +152,7 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
           </span>
           {view.complete && (
             <span className="rounded bg-green-100 px-2 py-0.5 text-sm font-medium text-green-800">
-              {publication === 'ongoing' ? 'À jour' : 'Complète'}
+              {completionLabel(true, publication)}
             </span>
           )}
           {publication && (
@@ -161,7 +166,9 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
             ? `Total personnel : ${settings.totalOverride} tomes${series.totalVolumes ? ` (total partagé : ${series.totalVolumes})` : ''}`
             : view.totalIsEstimate
               ? `Total inconnu : au moins ${view.total} tomes (à confirmer)`
-              : `Total : ${view.total} tomes`}
+              : publication === 'finished'
+                ? `Total : ${view.total} tomes`
+                : `Au moins ${view.total} tomes connus (série non terminée : de nouveaux tomes ont pu sortir)`}
         </p>
         {editingTotal ? (
           <form onSubmit={saveTotal} className="flex items-center gap-2" noValidate>

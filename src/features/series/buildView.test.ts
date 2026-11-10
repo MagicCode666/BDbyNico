@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildSeriesView, missingVolumes, type CatalogueEdition, type UserItem } from './buildView'
+import { completionLabel } from './status'
 
 const edition = (
   volume: number | null,
@@ -169,5 +170,21 @@ describe('tome 0 (prologue)', () => {
     })
     expect(view.total).toBe(2)
     expect(view.missing).toEqual([2])
+  })
+})
+
+describe('completionLabel', () => {
+  it('ne dit « Complète » que pour une série terminée', () => {
+    expect(completionLabel(true, 'finished')).toBe('Complète')
+  })
+
+  it('dit « À jour » pour une série en cours ou au statut inconnu', () => {
+    expect(completionLabel(true, 'ongoing')).toBe('À jour')
+    expect(completionLabel(true, null)).toBe('À jour')
+    expect(completionLabel(true, undefined)).toBe('À jour')
+  })
+
+  it("n'affiche rien tant que des tomes manquent", () => {
+    expect(completionLabel(false, 'finished')).toBeNull()
   })
 })

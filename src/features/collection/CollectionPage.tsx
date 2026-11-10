@@ -11,7 +11,7 @@ import { AlbumThumb } from './AlbumCard'
 import { listCollection } from './api'
 import { STATUS_LABELS, type ReadFilter, type Status } from './types'
 import { useAsync } from './useAsync'
-import { effectiveStatus, PUBLICATION_LABELS } from '../series/status'
+import { completionLabel, effectiveStatus, PUBLICATION_LABELS } from '../series/status'
 import { effectiveTotal, filterEntries, groupBySeries, progressLabel } from './utils'
 
 const STATUSES: Status[] = ['owned', 'wanted']
@@ -217,7 +217,7 @@ export default function CollectionPage() {
                     )}
                     {complete && (
                       <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                        {publication === 'ongoing' ? 'À jour' : 'Complète'}
+                        {completionLabel(true, publication)}
                       </span>
                     )}
                   </span>
