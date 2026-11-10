@@ -26,14 +26,14 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'logo.svg'],
+      includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
         name: 'BDbyNico',
         short_name: 'BDbyNico',
         description: 'Gérez votre collection de bandes dessinées.',
         lang: 'fr',
-        theme_color: '#4f46e5',
-        background_color: '#ffffff',
+        theme_color: '#120e0c',
+        background_color: '#120e0c',
         display: 'standalone',
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
