@@ -155,7 +155,12 @@ export function parseNotices(xml) {
         summary: parseSummary(sub(datafields(record, '330')[0], 'a')),
         pages: parsePages(sub(datafields(record, '215')[0], 'a')),
         formatCm: parseFormatCm(sub(datafields(record, '215')[0], 'd')),
-        publicPrice: parsePublicPrice(sub(datafields(record, '010').find((f) => sub(f, 'd')), 'd')),
+        publicPrice: parsePublicPrice(
+          sub(
+            datafields(record, '010').find((f) => sub(f, 'd')),
+            'd',
+          ),
+        ),
         language: parseLanguage(sub(datafields(record, '101')[0], 'a')),
       },
       mention: [
