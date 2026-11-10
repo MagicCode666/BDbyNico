@@ -8,6 +8,7 @@ import {
   bnfCoverUrl,
   bnfCoverUrls,
   decitreCoverUrl,
+  fetchWithRetry,
   findRetailerCover,
 } from './covers.mjs'
 
@@ -119,5 +120,71 @@ describe('couvertures de libraires', () => {
       arrayBuffer: async () => new ArrayBuffer(0),
     })
     expect(await findRetailerCover('9791034768516', { fetchFn })).toBeUndefined()
+  })
+})
+
+describe('fetchWithRetry', () => {
+  const ok = { ok: true, status: 200 }
+  const fast = { attempts: 3, delayMs: 0 }
+
+  it('réessaie après une coupure de connexion puis rend la réponse', async () => {
+    let calls = 0
+    const fetchFn = async () => {
+      calls++
+      if (calls < 3) throw new TypeError('fetch failed')
+      return ok
+    }
+    expect(await fetchWithRetry(fetchFn, 'u', {}, fast)).toBe(ok)
+    expect(calls).toBe(3)
+  })
+
+  it("abandonne avec la dernière erreur après le nombre d'essais prévu", async () => {
+    let calls = 0
+    const fetchFn = async () => {
+      calls++
+      throw new TypeError('fetch failed')
+    }
+    await expect(fetchWithRetry(fetchFn, 'u', {}, fast)).rejects.toThrow('fetch failed')
+    expect(calls).toBe(3)
+  })
+
+  it("réessaie une réponse 429 ou 5xx, sans jamais dépasser le nombre d'essais", async () => {
+    const statuses = [503, 429, 200]
+    let calls = 0
+    const fetchFn = async () => ({ ok: false, status: statuses[calls++] })
+    expect((await fetchWithRetry(fetchFn, 'u', {}, fast)).status).toBe(200)
+    let always = 0
+    const failing = async () => {
+      always++
+      return { ok: false, status: 500 }
+    }
+    expect((await fetchWithRetry(failing, 'u', {}, fast)).status).toBe(500)
+    expect(always).toBe(3)
+  })
+
+  it('ne réessaie pas une réponse définitive (404, 403)', async () => {
+    let calls = 0
+    const fetchFn = async () => {
+      calls++
+      return { ok: false, status: 404 }
+    }
+    expect((await fetchWithRetry(fetchFn, 'u', {}, fast)).status).toBe(404)
+    expect(calls).toBe(1)
+  })
+
+  it('les vérifications de couverture en profitent', async () => {
+    let calls = 0
+    const fetchFn = async () => {
+      calls++
+      if (calls === 1) throw new TypeError('fetch failed')
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => 'image/jpeg' },
+        arrayBuffer: async () => new ArrayBuffer(60000),
+      }
+    }
+    expect(await bnfCoverExists('u', { fetchFn, retry: fast })).toBe(true)
+    expect(calls).toBe(2)
   })
 })
