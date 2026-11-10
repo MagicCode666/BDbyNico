@@ -98,6 +98,7 @@ const seriesData = (): SeriesData => ({
     totalVolumes: 6,
     publicationStatus: 'finished',
     startsAtZero: false,
+    genres: ['aventure', 'polar'],
   },
   editions: [1, 2].map((volume) => ({
     isbn: `isbn-${volume}`,

@@ -43,6 +43,7 @@ const KIND_LABELS = {
   series_name: 'Série renommée',
   series_total: 'Total de série',
   series_status: 'Statut de série',
+  series_genres: 'Genres de série',
 } as const
 const CONTRIBUTION_LABELS: Record<Contribution, string> = {
   full: 'Contributeur',

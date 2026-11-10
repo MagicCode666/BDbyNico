@@ -239,6 +239,7 @@ export type Database = {
       series: {
         Row: {
           created_at: string
+          genres: string[]
           id: string
           name: string
           name_key: string
@@ -251,6 +252,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          genres?: string[]
           id?: string
           name: string
           name_key: string
@@ -263,6 +265,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          genres?: string[]
           id?: string
           name?: string
           name_key?: string
@@ -362,6 +365,10 @@ export type Database = {
           p_public_price?: number
           p_summary?: string
         }
+        Returns: undefined
+      }
+      set_series_genres: {
+        Args: { p_genres: string[]; p_series: string }
         Returns: undefined
       }
       get_shared_collection: {

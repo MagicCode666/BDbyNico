@@ -17,6 +17,9 @@ import {
 } from './api'
 import { buildSeriesView, type Slot } from './buildView'
 import { heroEdition, seriesAuthors } from './hero'
+import { useAccountSummary } from '../../components/shell/useAccountSummary'
+import GenreChips from './GenreChips'
+import GenreEditor from './GenreEditor'
 import IntegralsSection from './IntegralsSection'
 import {
   completionLabel,
@@ -68,6 +71,7 @@ export default function SeriesPage() {
 
 function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void }) {
   const { user } = useAuth()
+  const moderator = (useAccountSummary()?.role ?? 'user') !== 'user'
   const { series, editions, items, settings } = data
   useScrollRestoration(`series:${series.id}`, true)
   const [busy, setBusy] = useState(false)
@@ -238,6 +242,7 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
           </div>
           <h1 className="title-metal text-4xl sm:text-5xl">{series.name}</h1>
           {authors.length > 0 && <p className="text-muted">{authors.join(' · ')}</p>}
+          <GenreChips genres={series.genres} />
           <p className="text-sm text-muted">{totalSentence}</p>
         </div>
         <aside
@@ -464,6 +469,8 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
           </ul>
         </section>
       )}
+
+      {moderator && <GenreEditor seriesId={series.id} genres={series.genres} onChanged={reload} />}
 
       <details className="card p-4">
         <summary className="cursor-pointer font-display text-lg font-bold uppercase tracking-wide">

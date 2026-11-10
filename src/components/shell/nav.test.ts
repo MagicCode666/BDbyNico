@@ -12,6 +12,7 @@ describe('activeNavId', () => {
     ['/collection/importer', '', 'ajouter'],
     ['/collection/9782203001176', '', 'collection'],
     ['/series/abc', '', 'collection'],
+    ['/explorer', '?genre=polar', 'explorer'],
     ['/profil', '', 'profil'],
     ['/admin', '', 'admin'],
     ['/inconnue', '', null],

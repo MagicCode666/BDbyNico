@@ -55,6 +55,7 @@ const data = (): SeriesData => ({
     totalVolumes: 4,
     publicationStatus: 'finished',
     startsAtZero: false,
+    genres: ['aventure', 'polar'],
   },
   editions: [1, 2, 3, 4].map(edition),
   items: [
