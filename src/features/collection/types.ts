@@ -21,6 +21,8 @@ export interface SeriesInfo {
   name: string
   totalVolumes: number | null
   publicationStatus?: PublicationStatus | null
+  /** Le catalogue connaît un tome 0 (prologue) : il compte dans la série pour tout le monde. */
+  startsAtZero?: boolean
 }
 
 export interface Edition {

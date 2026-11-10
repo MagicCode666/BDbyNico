@@ -204,6 +204,7 @@ export default function CollectionPage() {
             ownedVolumes: owned.volumes,
             ignored: settings?.ignored ?? [],
             ownsIntegral: owned.ownsIntegral,
+            hasVolumeZero: group.startsAtZero,
           })
           const shownTotal = total ? progress.target : null
           const shownOwned = total ? progress.owned : owned.count

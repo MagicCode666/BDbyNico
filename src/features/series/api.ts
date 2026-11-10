@@ -17,6 +17,7 @@ export interface SeriesData {
     name: string
     totalVolumes: number | null
     publicationStatus: PublicationStatus | null
+    startsAtZero: boolean
   }
   editions: CatalogueEdition[]
   items: UserItem[]
@@ -29,7 +30,7 @@ const NO_SETTINGS: SeriesSettings = { ignored: [], totalOverride: null }
 export async function getSeriesData(seriesId: string): Promise<SeriesData | null> {
   const { data: series, error: seriesError } = await supabase
     .from('series')
-    .select('id, name, total_volumes, publication_status')
+    .select('id, name, total_volumes, publication_status, starts_at_zero')
     .eq('id', seriesId)
     .maybeSingle()
   if (seriesError) throw seriesError
@@ -85,6 +86,7 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
       name: series.name,
       totalVolumes: series.total_volumes,
       publicationStatus: toPublicationStatus(series.publication_status),
+      startsAtZero: series.starts_at_zero,
     },
     editions,
     items,

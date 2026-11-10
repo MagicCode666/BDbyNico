@@ -639,6 +639,49 @@ begin
     raise exception 'ECHEC : l''import ne lit pas correctement le type et la plage'; end if;
   n := n + 1;
 
+  -- 8g. Tome 0 : la série le mémorise tant que le catalogue en connaît un (album approuvé) ----------
+  if not (select starts_at_zero from public.series where name = 'Série tome zéro') then
+    raise exception 'ECHEC : une série avec un tome 0 n''est pas marquée'; end if;
+  n := n + 1;
+  if (select starts_at_zero from public.series where id = s_a) then
+    raise exception 'ECHEC : une série sans tome 0 est marquée'; end if;
+  n := n + 1;
+
+  -- un tome 0 en attente (utilisateur « collection seule ») ne compte pas avant validation
+  perform pg_temp._t_as(rst);
+  perform public.add_edition(pg_temp._t_isbn('978990000010'), 'Prologue en attente', 'Série zéro en attente', 0);
+  reset role;
+  if (select starts_at_zero from public.series where name = 'Série zéro en attente') then
+    raise exception 'ECHEC : un tome 0 en attente compte déjà dans la série'; end if;
+  n := n + 1;
+  select id into ch from public.catalogue_changes
+    where isbn = pg_temp._t_isbn('978990000010') and kind = 'create' and status = 'pending';
+  perform pg_temp._t_as(mdr);
+  perform public.review_change(ch, true);
+  reset role;
+  if not (select starts_at_zero from public.series where name = 'Série zéro en attente') then
+    raise exception 'ECHEC : la validation du tome 0 ne marque pas la série'; end if;
+  n := n + 1;
+
+  -- une intégrale, ou un tome 0 qui change de numéro, ne compte plus
+  update public.editions set kind = 'integral' where isbn = pg_temp._t_isbn('978990000010');
+  if (select starts_at_zero from public.series where name = 'Série zéro en attente') then
+    raise exception 'ECHEC : une intégrale compte comme tome 0'; end if;
+  n := n + 1;
+  update public.editions set kind = 'album', volume = 1 where isbn = pg_temp._t_isbn('978990000010');
+  if (select starts_at_zero from public.series where name = 'Série zéro en attente') then
+    raise exception 'ECHEC : un tome renuméroté compte encore comme tome 0'; end if;
+  n := n + 1;
+  update public.editions set volume = 0 where isbn = pg_temp._t_isbn('978990000010');
+  if not (select starts_at_zero from public.series where name = 'Série zéro en attente') then
+    raise exception 'ECHEC : le retour au tome 0 ne marque pas la série'; end if;
+  n := n + 1;
+  delete from public.collection_items where isbn = pg_temp._t_isbn('978990000010');
+  delete from public.editions where isbn = pg_temp._t_isbn('978990000010');
+  if (select starts_at_zero from public.series where name = 'Série zéro en attente') then
+    raise exception 'ECHEC : la suppression du tome 0 ne démarque pas la série'; end if;
+  n := n + 1;
+
   -- 9. Le job (sans utilisateur) remplace une couverture : journalisé « job », annulable --------
   update public.editions set cover_url = ol_c, cover_locked = false where isbn = i_c;
   perform set_config('request.jwt.claims', '', true);

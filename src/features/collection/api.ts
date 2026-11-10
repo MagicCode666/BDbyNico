@@ -9,7 +9,7 @@ const SELECT = `
   editions (
     isbn, title, volume, authors, publisher, published_on, cover_url,
     review_status, cover_locked, kind, volume_from, volume_to,
-    series ( id, name, total_volumes, publication_status )
+    series ( id, name, total_volumes, publication_status, starts_at_zero )
   )
 `
 
@@ -18,6 +18,7 @@ interface RawSeries {
   name: string
   total_volumes: number | null
   publication_status: string | null
+  starts_at_zero?: boolean
 }
 
 interface RawEdition {
@@ -62,6 +63,7 @@ function toSeries(raw: RawSeries | null): SeriesInfo | null {
         name: raw.name,
         totalVolumes: raw.total_volumes,
         publicationStatus: toPublicationStatus(raw.publication_status),
+        startsAtZero: raw.starts_at_zero ?? false,
       }
     : null
 }

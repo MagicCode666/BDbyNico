@@ -73,8 +73,12 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
     editions: editionsWithCovers,
     items,
     ignored: settings.ignored,
+    startsAtZero: series.startsAtZero,
   })
   const publication = effectiveStatus(settings.statusOverride, series.publicationStatus)
+  // Le tome 0 (prologue) compte dans la série : « 10 tomes » pour les tomes 0 à 9
+  const tomeCount = view.slots.length
+  const tomesLabel = view.hasVolumeZero ? ' tomes (dont le tome 0)' : ' tomes'
   const ignoredSlots = view.slots.filter((slot) => slot.kind === 'ignored')
   const visibleSlots = view.slots.filter((slot) => slot.kind !== 'ignored')
 
@@ -177,8 +181,8 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
             : view.totalIsEstimate
               ? `Total inconnu : au moins ${view.total} tomes (à confirmer)`
               : publication === 'finished'
-                ? `Total : ${view.total} tomes`
-                : `Au moins ${view.total} tomes connus (série non terminée : de nouveaux tomes ont pu sortir)`}
+                ? `Total : ${tomeCount}${tomesLabel}`
+                : `Au moins ${tomeCount}${tomesLabel} connus (série non terminée : de nouveaux tomes ont pu sortir)`}
         </p>
         {editingTotal ? (
           <form onSubmit={saveTotal} className="flex items-center gap-2" noValidate>

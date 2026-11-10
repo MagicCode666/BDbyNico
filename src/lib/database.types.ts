@@ -225,6 +225,7 @@ export type Database = {
           name: string
           name_key: string
           publication_status: string | null
+          starts_at_zero: boolean
           status_source: string
           total_checked_at: string | null
           total_source: string
@@ -236,6 +237,7 @@ export type Database = {
           name: string
           name_key: string
           publication_status?: string | null
+          starts_at_zero?: boolean
           status_source?: string
           total_checked_at?: string | null
           total_source?: string
@@ -247,6 +249,7 @@ export type Database = {
           name?: string
           name_key?: string
           publication_status?: string | null
+          starts_at_zero?: boolean
           status_source?: string
           total_checked_at?: string | null
           total_source?: string

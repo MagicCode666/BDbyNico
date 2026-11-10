@@ -43,6 +43,8 @@ export interface SeriesView {
   /** Tomes que l'utilisateur ne possède pas encore et n'ignore pas. */
   missing: number[]
   complete: boolean
+  /** La série compte un tome 0 (prologue), en plus des tomes numérotés. */
+  hasVolumeZero: boolean
   /** Albums de la série sans numéro de tome. */
   unnumbered: { edition: CatalogueEdition; item: UserItem | null }[]
   /** Intégrales, coffrets et hors-séries : objets distincts des tomes, hors de la grille. */
@@ -57,6 +59,8 @@ export interface SeriesViewInput {
   editions: CatalogueEdition[]
   items: UserItem[]
   ignored: number[]
+  /** Le catalogue connaît un tome 0 (même sans édition chargée ici). */
+  startsAtZero?: boolean
 }
 
 /**
@@ -111,10 +115,9 @@ export function buildSeriesView(input: SeriesViewInput): SeriesView {
       byVolume.set(edition.volume, { edition, item })
     }
   }
-  // Albums sans numéro, et tome 0 que l'utilisateur n'a pas : proposés dans la liste « sans numéro »
+  // Albums sans numéro de tome : proposés dans la liste « sans numéro »
   for (const edition of gridEditions) {
-    const hasNoSlot = edition.volume === null || (edition.volume === 0 && !byVolume.has(0))
-    if (hasNoSlot && !unnumbered.some((u) => u.edition.isbn === edition.isbn)) {
+    if (edition.volume === null && !unnumbered.some((u) => u.edition.isbn === edition.isbn)) {
       unnumbered.push({ edition, item: null })
     }
   }
@@ -122,7 +125,7 @@ export function buildSeriesView(input: SeriesViewInput): SeriesView {
   // Pour un tome manquant : une édition du catalogue, de préférence avec couverture
   const candidates = new Map<number, CatalogueEdition>()
   for (const edition of gridEditions) {
-    if (edition.volume === null || edition.volume === 0) continue
+    if (edition.volume === null) continue
     const current = candidates.get(edition.volume)
     if (!current || (!current.coverUrl && edition.coverUrl)) candidates.set(edition.volume, edition)
   }
@@ -131,9 +134,10 @@ export function buildSeriesView(input: SeriesViewInput): SeriesView {
   const chosenTotal = input.override ?? input.total
   const total = Math.max(chosenTotal ?? 0, knownMax)
 
-  // Un tome 0 (prologue) n'a de case que si l'utilisateur le possède ou le souhaite
+  // Un tome 0 (prologue) a sa case dès que le catalogue en connaît un : il compte dans la série
+  const hasVolumeZero = !!input.startsAtZero || byVolume.has(0) || candidates.has(0)
   const slots: Slot[] = []
-  for (let volume = byVolume.has(0) ? 0 : 1; volume <= total; volume++) {
+  for (let volume = hasVolumeZero ? 0 : 1; volume <= total; volume++) {
     const mine = byVolume.get(volume)
     if (mine) {
       slots.push({
@@ -167,6 +171,7 @@ export function buildSeriesView(input: SeriesViewInput): SeriesView {
       total > 0 &&
       ownedCount === targetCount &&
       (ownedCount > 0 || integrals.some((entry) => entry.item?.status === 'owned')),
+    hasVolumeZero,
     unnumbered,
     integrals,
   }

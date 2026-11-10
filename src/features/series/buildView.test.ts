@@ -145,9 +145,10 @@ describe('tome 0 (prologue)', () => {
     expect(view.ownedCount).toBe(3)
     expect(view.targetCount).toBe(3)
     expect(view.complete).toBe(true)
+    expect(view.hasVolumeZero).toBe(true)
   })
 
-  it("ne réclame pas le tome 0 qu'on n'a pas : il est proposé à part", () => {
+  it("compte dans la série un tome 0 connu du catalogue, même sans l'avoir", () => {
     const view = buildSeriesView({
       total: 2,
       override: null,
@@ -155,9 +156,62 @@ describe('tome 0 (prologue)', () => {
       items: [item(e1), item(e2)],
       ignored: [],
     })
-    expect(view.slots.map((s) => s.volume)).toEqual([1, 2])
+    expect(view.slots.map((s) => s.volume)).toEqual([0, 1, 2])
+    expect(view.slots[0].kind).toBe('missing')
+    expect(view.targetCount).toBe(3)
+    expect(view.ownedCount).toBe(2)
+    expect(view.complete).toBe(false)
+    expect(view.unnumbered).toHaveLength(0)
+  })
+
+  it('un tome 0 en envie est une case « envie » qui compte aussi', () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e0, e1, e2],
+      items: [item(e0, 'wanted'), item(e1), item(e2)],
+      ignored: [],
+    })
+    expect(view.slots[0].kind).toBe('wanted')
+    expect(view.targetCount).toBe(3)
+    expect(view.complete).toBe(false)
+  })
+
+  it('on peut exclure le tome 0 de sa liste : la série redevient complète pour soi', () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e0, e1, e2],
+      items: [item(e1), item(e2)],
+      ignored: [0],
+    })
+    expect(view.targetCount).toBe(2)
     expect(view.complete).toBe(true)
-    expect(view.unnumbered.map((u) => u.edition.volume)).toEqual([0])
+  })
+
+  it('suffit que la série mémorise un tome 0, même sans son édition ici', () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e1, e2],
+      items: [item(e1), item(e2)],
+      ignored: [],
+      startsAtZero: true,
+    })
+    expect(view.slots.map((s) => s.kind)).toEqual(['unknown', 'owned', 'owned'])
+    expect(view.hasVolumeZero).toBe(true)
+  })
+
+  it('sans tome 0, la série commence au tome 1', () => {
+    const view = buildSeriesView({
+      total: 2,
+      override: null,
+      editions: [e1, e2],
+      items: [item(e1)],
+      ignored: [],
+    })
+    expect(view.slots.map((s) => s.volume)).toEqual([1, 2])
+    expect(view.hasVolumeZero).toBe(false)
   })
 
   it('un tome 0 possédé ne fait pas dépasser le total', () => {

@@ -46,6 +46,7 @@ export interface SeriesGroup {
   name: string | null
   totalVolumes: number | null
   publicationStatus: PublicationStatus | null
+  startsAtZero: boolean
   entries: Entry[]
 }
 
@@ -72,6 +73,7 @@ export function groupBySeries(entries: Entry[]): SeriesGroup[] {
         name: series?.name ?? null,
         totalVolumes: series?.totalVolumes ?? null,
         publicationStatus: series?.publicationStatus ?? null,
+        startsAtZero: series?.startsAtZero ?? false,
         entries: [],
       }
       groups.set(key, group)

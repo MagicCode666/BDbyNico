@@ -43,15 +43,40 @@ describe('seriesProgress', () => {
     expect(progress).toMatchObject({ owned: 0, target: 3, complete: false, missing: [1, 2, 3] })
   })
 
-  it('le tome 0 ne compte que si on le possède', () => {
+  it('un tome 0 connu du catalogue compte, même sans le posséder (10 tomes pour 0 à 9)', () => {
+    const progress = seriesProgress({
+      total: 9,
+      ownedVolumes: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      ignored: [],
+      hasVolumeZero: true,
+    })
+    expect(progress).toMatchObject({ owned: 9, target: 10, complete: false, missing: [0] })
+  })
+
+  it('on peut exclure le tome 0 : 9 / 9 et la série est complète pour soi', () => {
+    const progress = seriesProgress({
+      total: 9,
+      ownedVolumes: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      ignored: [0],
+      hasVolumeZero: true,
+    })
+    expect(progress).toMatchObject({ owned: 9, target: 9, complete: true, missing: [] })
+  })
+
+  it('posséder le tome 0 donne 10 / 10', () => {
+    const progress = seriesProgress({
+      total: 9,
+      ownedVolumes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+      ignored: [],
+      hasVolumeZero: true,
+    })
+    expect(progress).toMatchObject({ owned: 10, target: 10, complete: true })
+  })
+
+  it("sans tome 0 dans le catalogue, il n'est pas réclamé", () => {
     expect(seriesProgress({ total: 2, ownedVolumes: [1, 2], ignored: [] })).toMatchObject({
       owned: 2,
       target: 2,
-      complete: true,
-    })
-    expect(seriesProgress({ total: 2, ownedVolumes: [0, 1, 2], ignored: [] })).toMatchObject({
-      owned: 3,
-      target: 3,
       complete: true,
     })
   })
