@@ -4,7 +4,7 @@ import { Link, NavLink } from 'react-router-dom'
 import VersionBadge from './VersionBadge'
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
-  `rounded px-3 py-1 text-sm font-medium ${isActive ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`
+  `rounded px-3 py-1 text-sm font-medium ${isActive ? 'bg-accent text-on-accent' : 'text-fg hover:bg-raised'}`
 
 interface PageLayoutProps {
   title: string
@@ -16,7 +16,7 @@ export default function PageLayout({ title, children }: PageLayoutProps) {
   return (
     <div className="mx-auto min-h-screen max-w-4xl p-4">
       <header className="mb-6 flex flex-wrap items-center justify-between gap-2">
-        <Link to="/" className="text-xl font-bold text-indigo-600">
+        <Link to="/" className="text-xl font-bold text-accent-text">
           BDbyNico
         </Link>
         <nav className="flex gap-2">

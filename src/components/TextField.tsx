@@ -13,7 +13,7 @@ export default function TextField({ label, id, ...props }: TextFieldProps) {
       </label>
       <input
         id={inputId}
-        className="rounded border border-slate-300 px-3 py-2 focus:border-indigo-600 focus:outline-none"
+        className="rounded border border-line-strong px-3 py-2 focus:border-accent focus:outline-none"
         {...props}
       />
     </div>

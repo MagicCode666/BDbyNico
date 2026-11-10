@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import VersionBadge from '../components/VersionBadge'
 
-const linkClass = 'rounded border border-indigo-600 px-4 py-2 font-medium text-indigo-600'
+const linkClass = 'rounded border border-accent px-4 py-2 font-medium text-accent-text'
 
 export default function HomePage() {
   const { user, loading } = useAuth()
@@ -11,7 +11,7 @@ export default function HomePage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-4 p-6 text-center">
       <h1 className="text-3xl font-bold">BDbyNico</h1>
-      <p className="text-slate-600">Gérez votre collection de bandes dessinées.</p>
+      <p className="text-muted">Gérez votre collection de bandes dessinées.</p>
       {!loading &&
         (user ? (
           <div className="flex gap-3">

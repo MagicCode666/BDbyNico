@@ -91,7 +91,7 @@ export default function ImportPage() {
 
       {step.kind === 'choose' && (
         <section className="flex max-w-lg flex-col gap-3">
-          <p className="text-slate-600">
+          <p className="text-muted">
             Importez l'export CSV de votre collection <strong>Bubble</strong>. Le fichier est lu
             dans votre navigateur : vous pourrez vérifier son contenu avant que quoi que ce soit ne
             soit enregistré.
@@ -102,13 +102,13 @@ export default function ImportPage() {
               type="file"
               accept=".csv,text/csv"
               onChange={onFile}
-              className="rounded border border-slate-300 p-2 text-sm"
+              className="rounded border border-line-strong p-2 text-sm"
             />
           </label>
         </section>
       )}
 
-      {step.kind === 'reading' && <p className="text-slate-600">Lecture du fichier…</p>}
+      {step.kind === 'reading' && <p className="text-muted">Lecture du fichier…</p>}
 
       {step.kind === 'preview' && (
         <Preview
@@ -125,18 +125,18 @@ export default function ImportPage() {
           </p>
           {step.progress && step.progress.total > 0 && (
             <>
-              <div className="h-2 overflow-hidden rounded bg-slate-100">
+              <div className="h-2 overflow-hidden rounded bg-raised">
                 <div
-                  className="h-full bg-indigo-600"
+                  className="h-full bg-accent"
                   style={{ width: `${(step.progress.done / step.progress.total) * 100}%` }}
                 />
               </div>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-muted">
                 {step.progress.done} / {step.progress.total}
               </p>
             </>
           )}
-          <p className="text-sm text-slate-500">Ne fermez pas cette page pendant l'import.</p>
+          <p className="text-sm text-muted">Ne fermez pas cette page pendant l'import.</p>
         </section>
       )}
 
@@ -179,13 +179,13 @@ function Preview({
 
   return (
     <section className="flex max-w-2xl flex-col gap-4">
-      <p className="text-slate-600">
+      <p className="text-muted">
         Fichier <strong>{fileName}</strong> : voici ce qui va être importé.
       </p>
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {facts.map(([label, value]) => (
-          <div key={label} className="rounded border border-slate-200 p-2">
-            <dt className="text-xs text-slate-500">{label}</dt>
+          <div key={label} className="rounded border border-line p-2">
+            <dt className="text-xs text-muted">{label}</dt>
             <dd className="text-xl font-semibold">{value}</dd>
           </div>
         ))}
@@ -219,14 +219,14 @@ function Preview({
           type="button"
           onClick={onStart}
           disabled={stats.total === 0}
-          className="rounded bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          className="rounded bg-accent px-4 py-2 font-medium text-on-accent hover:bg-accent-strong disabled:opacity-50"
         >
           Importer {stats.total} album{stats.total > 1 ? 's' : ''}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded border border-slate-300 px-4 py-2 font-medium"
+          className="rounded border border-line-strong px-4 py-2 font-medium"
         >
           Choisir un autre fichier
         </button>
@@ -238,11 +238,11 @@ function Preview({
 function IssueList({ title, issues }: { title: string; issues: ImportPlan['warnings'] }) {
   if (issues.length === 0) return null
   return (
-    <details className="rounded border border-slate-200 p-2 text-sm">
+    <details className="rounded border border-line p-2 text-sm">
       <summary className="cursor-pointer font-medium">
         {title} ({issues.length})
       </summary>
-      <ul className="mt-2 flex flex-col gap-1 text-slate-600">
+      <ul className="mt-2 flex flex-col gap-1 text-muted">
         {issues.slice(0, MAX_ISSUES_SHOWN).map((issue, index) => (
           <li key={index}>
             Ligne {issue.line} : {issue.message}
@@ -274,21 +274,21 @@ function Done({ report, onAgain }: { report: ImportReport; onAgain: () => void }
           </li>
         ))}
       </ul>
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-muted">
         Les couvertures sont récupérées au fil de l'eau quand vous ouvrez « Ma collection » : cela
         peut prendre quelques minutes.
       </p>
       <div className="flex gap-2">
         <Link
           to="/collection"
-          className="rounded bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700"
+          className="rounded bg-accent px-4 py-2 font-medium text-on-accent hover:bg-accent-strong"
         >
           Voir ma collection
         </Link>
         <button
           type="button"
           onClick={onAgain}
-          className="rounded border border-slate-300 px-4 py-2 font-medium"
+          className="rounded border border-line-strong px-4 py-2 font-medium"
         >
           Importer un autre fichier
         </button>

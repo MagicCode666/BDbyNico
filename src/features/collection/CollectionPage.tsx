@@ -120,7 +120,7 @@ export default function CollectionPage() {
               role="tab"
               aria-selected={status === value}
               onClick={() => setStatus(value)}
-              className={`rounded px-3 py-1 text-sm font-medium ${status === value ? 'bg-indigo-600 text-white' : 'border border-slate-300'}`}
+              className={`rounded px-3 py-1 text-sm font-medium ${status === value ? 'bg-accent text-on-accent' : 'border border-line-strong'}`}
             >
               {STATUS_LABELS[value]}s ({counts[value]})
             </button>
@@ -132,13 +132,13 @@ export default function CollectionPage() {
           placeholder="Titre, série, auteur, ISBN…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="min-w-0 flex-1 rounded border border-slate-300 px-3 py-1"
+          className="min-w-0 flex-1 rounded border border-line-strong px-3 py-1"
         />
         <select
           aria-label="Lecture"
           value={read}
           onChange={(e) => setRead(e.target.value as ReadFilter)}
-          className="rounded border border-slate-300 px-2 py-1"
+          className="rounded border border-line-strong px-2 py-1"
         >
           <option value="all">Tous</option>
           <option value="read">Lus</option>
@@ -154,34 +154,34 @@ export default function CollectionPage() {
         </label>
         <Link
           to="/collection/ajouter"
-          className="rounded bg-indigo-600 px-3 py-1 text-sm font-medium text-white hover:bg-indigo-700"
+          className="rounded bg-accent px-3 py-1 text-sm font-medium text-on-accent hover:bg-accent-strong"
         >
           Ajouter un album
         </Link>
         <Link
           to="/collection/importer"
-          className="rounded border border-indigo-600 px-3 py-1 text-sm font-medium text-indigo-600"
+          className="rounded border border-accent px-3 py-1 text-sm font-medium text-accent-text"
         >
           Importer
         </Link>
       </div>
       {remaining > 0 && (
-        <p role="status" className="mb-3 text-sm text-slate-500">
+        <p role="status" className="mb-3 text-sm text-muted">
           Récupération des couvertures… ({remaining} restante{remaining > 1 ? 's' : ''})
         </p>
       )}
 
       {pendingCount > 0 && (
-        <p role="status" className="mb-3 rounded bg-amber-50 p-2 text-sm text-amber-800">
+        <p role="status" className="mb-3 rounded bg-warn-soft p-2 text-sm text-warn">
           {pendingCount} album{pendingCount > 1 ? 's' : ''} en attente de validation : visible
           {pendingCount > 1 ? 's' : ''} de vous seulement pour l'instant.
         </p>
       )}
 
-      {loading && <p className="text-slate-600">Chargement…</p>}
+      {loading && <p className="text-muted">Chargement…</p>}
       {error && <FormMessage kind="error">Impossible de charger la collection.</FormMessage>}
       {!loading && !error && groups.length === 0 && (
-        <p className="text-slate-600">
+        <p className="text-muted">
           {entries.length === 0
             ? 'Votre collection est vide. Ajoutez votre premier album !'
             : 'Aucun album ne correspond à ces critères.'}
@@ -212,13 +212,13 @@ export default function CollectionPage() {
           const showProgress = group.name !== null && status === 'owned'
           const complete = showProgress && !!total && progress.complete
           return (
-            <section key={group.key} className="rounded border border-slate-200 p-3">
+            <section key={group.key} className="rounded border border-line p-3">
               <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3">
                 <h2 className="text-lg font-semibold">
                   {group.name ? (
                     <Link
                       to={`/series/${group.key}`}
-                      className="hover:text-indigo-600 hover:underline"
+                      className="hover:text-accent-text hover:underline"
                     >
                       {group.name}
                     </Link>
@@ -227,17 +227,17 @@ export default function CollectionPage() {
                   )}
                 </h2>
                 {showProgress && (
-                  <span className="flex items-center gap-2 text-sm text-slate-600">
+                  <span className="flex items-center gap-2 text-sm text-muted">
                     {total && progress.target === 0
                       ? 'Tomes unitaires exclus'
                       : progressLabel({ ...group, totalVolumes: shownTotal }, shownOwned)}
                     {publication && (
-                      <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                      <span className="rounded bg-raised px-2 py-0.5 text-xs text-fg">
                         {PUBLICATION_LABELS[publication]}
                       </span>
                     )}
                     {complete && (
-                      <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                      <span className="rounded bg-ok-soft px-2 py-0.5 text-xs font-medium text-ok">
                         {completionLabel(true, publication)}
                       </span>
                     )}
@@ -250,10 +250,10 @@ export default function CollectionPage() {
                   aria-valuemin={0}
                   aria-valuemax={shownTotal}
                   aria-valuenow={Math.min(shownOwned, shownTotal)}
-                  className="mb-3 h-1.5 overflow-hidden rounded bg-slate-100"
+                  className="mb-3 h-1.5 overflow-hidden rounded bg-raised"
                 >
                   <div
-                    className="h-full bg-indigo-600"
+                    className="h-full bg-accent"
                     style={{ width: `${Math.min(100, (shownOwned / shownTotal) * 100)}%` }}
                   />
                 </div>

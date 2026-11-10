@@ -18,7 +18,7 @@ interface Props {
 }
 
 const buttonClass =
-  'rounded border border-slate-300 px-2 py-1 text-xs font-medium hover:border-indigo-600 disabled:opacity-50'
+  'rounded border border-line-strong px-2 py-1 text-xs font-medium hover:border-accent disabled:opacity-50'
 
 /**
  * Intégrales, coffrets et hors-séries de la série. Ce sont des objets distincts des tomes qu'ils
@@ -53,10 +53,7 @@ export default function IntegralsSection({
           )
           const allExcluded = covered.length > 0 && excludable.length === 0
           return (
-            <li
-              key={edition.isbn}
-              className="flex gap-3 rounded border border-slate-200 p-2 text-sm"
-            >
+            <li key={edition.isbn} className="flex gap-3 rounded border border-line p-2 text-sm">
               <CoverImage
                 coverUrl={edition.coverUrl}
                 title={edition.title}
@@ -65,14 +62,14 @@ export default function IntegralsSection({
               <div className="flex flex-col gap-1">
                 <p className="font-medium">
                   {item ? (
-                    <Link to={`/collection/${edition.isbn}`} className="text-indigo-600 underline">
+                    <Link to={`/collection/${edition.isbn}`} className="text-accent-text underline">
                       {edition.title}
                     </Link>
                   ) : (
                     edition.title
                   )}
                 </p>
-                <p className="text-xs text-slate-600">
+                <p className="text-xs text-muted">
                   {isIntegral
                     ? `Intégrale · ${rangeLabel(edition.volumeFrom, edition.volumeTo)}`
                     : 'Hors-série'}
@@ -112,7 +109,7 @@ export default function IntegralsSection({
                     </button>
                   )}
                   {item?.status === 'owned' && allExcluded && (
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-muted">
                       Tomes unitaires exclus de votre liste
                     </span>
                   )}

@@ -25,7 +25,7 @@ import {
 import { useMissingCovers } from './useMissingCovers'
 
 const buttonClass =
-  'rounded border border-slate-300 px-2 py-1 text-xs font-medium hover:border-indigo-600 disabled:opacity-50'
+  'rounded border border-line-strong px-2 py-1 text-xs font-medium hover:border-accent disabled:opacity-50'
 
 export default function SeriesPage() {
   const { seriesId = '' } = useParams()
@@ -34,12 +34,12 @@ export default function SeriesPage() {
 
   return (
     <PageLayout title={data?.series.name ?? 'Série'}>
-      {!data && loading && <p className="text-slate-600">Chargement…</p>}
+      {!data && loading && <p className="text-muted">Chargement…</p>}
       {error && !data && <FormMessage kind="error">Impossible de charger cette série.</FormMessage>}
       {!data && !loading && !error && (
-        <p className="text-slate-600">
+        <p className="text-muted">
           Série introuvable.{' '}
-          <Link to="/collection" className="text-indigo-600 underline">
+          <Link to="/collection" className="text-accent-text underline">
             Retour à la collection
           </Link>
         </p>
@@ -165,17 +165,17 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
             {view.ownedCount} / {view.targetCount} tomes
           </span>
           {view.complete && (
-            <span className="rounded bg-green-100 px-2 py-0.5 text-sm font-medium text-green-800">
+            <span className="rounded bg-ok-soft px-2 py-0.5 text-sm font-medium text-ok">
               {completionLabel(true, publication)}
             </span>
           )}
           {publication && (
-            <span className="rounded bg-slate-100 px-2 py-0.5 text-sm text-slate-700">
+            <span className="rounded bg-raised px-2 py-0.5 text-sm text-fg">
               {PUBLICATION_LABELS[publication]}
             </span>
           )}
         </p>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted">
           {settings.totalOverride !== null
             ? `Total personnel : ${settings.totalOverride} tomes${series.totalVolumes ? ` (total partagé : ${series.totalVolumes})` : ''}`
             : view.totalIsEstimate
@@ -196,7 +196,7 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
               max={999}
               value={totalInput}
               onChange={(e) => setTotalInput(e.target.value)}
-              className="w-24 rounded border border-slate-300 px-2 py-1"
+              className="w-24 rounded border border-line-strong px-2 py-1"
             />
             <button type="submit" disabled={busy} className={buttonClass}>
               Enregistrer
@@ -224,7 +224,7 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
             value={settings.statusOverride ?? ''}
             disabled={busy}
             onChange={(e) => changeStatus(e.target.value)}
-            className="rounded border border-slate-300 px-2 py-1"
+            className="rounded border border-line-strong px-2 py-1"
           >
             <option value="">
               {series.publicationStatus
@@ -239,7 +239,7 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
           </select>
         </div>
         {view.missing.length > 0 && (
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted">
             Manquent : {view.missing.map((v) => `T${v}`).join(', ')}
           </p>
         )}
@@ -247,7 +247,7 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
 
       {error && <FormMessage kind="error">{error}</FormMessage>}
       {remaining > 0 && (
-        <p role="status" className="text-sm text-slate-500">
+        <p role="status" className="text-sm text-muted">
           Récupération des couvertures… ({remaining} restante{remaining > 1 ? 's' : ''})
         </p>
       )}
@@ -283,13 +283,13 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
             {view.unnumbered.map(({ edition, item }) => (
               <li key={edition.isbn} className="flex items-center gap-2">
                 {item ? (
-                  <Link to={`/collection/${edition.isbn}`} className="text-indigo-600 underline">
+                  <Link to={`/collection/${edition.isbn}`} className="text-accent-text underline">
                     {edition.title}
                   </Link>
                 ) : (
                   <span>{edition.title}</span>
                 )}
-                <span className="text-slate-500">
+                <span className="text-muted">
                   {item ? (item.status === 'owned' ? 'possédé' : 'envie') : 'non possédé'}
                 </span>
                 {!item && (
@@ -315,7 +315,7 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
             {ignoredSlots.map((slot) => (
               <li
                 key={slot.volume}
-                className="flex items-center gap-2 rounded border border-slate-200 px-2 py-1 text-sm"
+                className="flex items-center gap-2 rounded border border-line px-2 py-1 text-sm"
               >
                 T{slot.volume}
                 <button
@@ -350,7 +350,7 @@ function SlotCard({ slot, seriesName, busy, onAdd, onMarkOwned, onIgnore }: Slot
   if (slot.kind === 'owned' || slot.kind === 'wanted') {
     const { edition, item } = slot
     return (
-      <div className="flex flex-col gap-1 rounded border border-slate-200 p-2">
+      <div className="flex flex-col gap-1 rounded border border-line p-2">
         <Link to={`/collection/${edition.isbn}`} className="flex flex-col gap-1">
           <CoverImage
             coverUrl={edition.coverUrl}
@@ -359,7 +359,7 @@ function SlotCard({ slot, seriesName, busy, onAdd, onMarkOwned, onIgnore }: Slot
           />
           <span className="line-clamp-2 text-sm font-medium">{edition.title}</span>
         </Link>
-        <span className="text-xs text-slate-600">
+        <span className="text-xs text-muted">
           {label} · {slot.kind === 'owned' ? 'Possédé' : 'Envie'}
           {item.read && ' · lu'}
         </span>
@@ -380,14 +380,14 @@ function SlotCard({ slot, seriesName, busy, onAdd, onMarkOwned, onIgnore }: Slot
   if (slot.kind === 'missing') {
     const { edition } = slot
     return (
-      <div className="flex flex-col gap-1 rounded border border-dashed border-slate-300 p-2">
+      <div className="flex flex-col gap-1 rounded border border-dashed border-line-strong p-2">
         <CoverImage
           coverUrl={edition.coverUrl}
           title={edition.title}
           className="aspect-[2/3] w-full rounded opacity-60"
         />
         <span className="line-clamp-2 text-sm font-medium">{edition.title}</span>
-        <span className="text-xs text-slate-600">{label} · manquant</span>
+        <span className="text-xs text-muted">{label} · manquant</span>
         <div className="flex flex-wrap gap-1">
           <button
             type="button"
@@ -419,13 +419,13 @@ function SlotCard({ slot, seriesName, busy, onAdd, onMarkOwned, onIgnore }: Slot
   }
 
   return (
-    <div className="flex flex-col gap-1 rounded border border-dashed border-slate-300 p-2">
-      <div className="flex aspect-[2/3] w-full items-center justify-center rounded bg-slate-100 p-2 text-center text-xs text-slate-500">
+    <div className="flex flex-col gap-1 rounded border border-dashed border-line-strong p-2">
+      <div className="flex aspect-[2/3] w-full items-center justify-center rounded bg-raised p-2 text-center text-xs text-muted">
         Tome {slot.volume}
         <br />
         pas encore référencé
       </div>
-      <span className="text-xs text-slate-600">{label} · manquant</span>
+      <span className="text-xs text-muted">{label} · manquant</span>
       <div className="flex flex-wrap gap-1">
         <Link
           to={`/collection/ajouter?serie=${encodeURIComponent(seriesName)}&tome=${slot.volume}`}

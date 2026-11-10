@@ -89,12 +89,12 @@ export default function CoverReportDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="cover-report-title"
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded bg-white p-5 shadow-lg"
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded bg-surface p-5 shadow-lg"
       >
         <h2 id="cover-report-title" className="mb-1 text-lg font-semibold">
           Cette couverture n'est pas bonne
         </h2>
-        <p className="mb-4 text-sm text-slate-600">
+        <p className="mb-4 text-sm text-muted">
           {title} : choisissez la bonne couverture. Le choix est partagé par tous les utilisateurs.
         </p>
 
@@ -110,7 +110,7 @@ export default function CoverReportDialog({
             <button
               type="button"
               onClick={onClose}
-              className="self-end rounded border border-slate-300 px-4 py-2 text-sm font-medium"
+              className="self-end rounded border border-line-strong px-4 py-2 text-sm font-medium"
             >
               Fermer
             </button>
@@ -118,12 +118,12 @@ export default function CoverReportDialog({
         ) : (
           <>
             {candidates === null && (
-              <p role="status" className="text-sm text-slate-600">
+              <p role="status" className="text-sm text-muted">
                 Recherche des couvertures disponibles…
               </p>
             )}
             {candidates?.length === 0 && (
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-muted">
                 Aucune autre couverture trouvée dans les sources connues.
               </p>
             )}
@@ -136,12 +136,12 @@ export default function CoverReportDialog({
                       title={`${title} (${candidate.source})`}
                       className="aspect-[2/3] w-full rounded"
                     />
-                    <span className="text-xs text-slate-600">{candidate.source}</span>
+                    <span className="text-xs text-muted">{candidate.source}</span>
                     <button
                       type="button"
                       disabled={busy}
                       onClick={() => choose(candidate.url)}
-                      className="rounded bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                      className="rounded bg-accent px-2 py-1 text-xs font-medium text-on-accent hover:bg-accent-strong disabled:opacity-50"
                     >
                       Choisir celle-ci
                     </button>
@@ -159,7 +159,7 @@ export default function CoverReportDialog({
                 type="button"
                 disabled={busy || candidates === null || currentCover === null}
                 onClick={() => choose(null)}
-                className="rounded border border-slate-300 px-3 py-2 text-sm font-medium disabled:opacity-50"
+                className="rounded border border-line-strong px-3 py-2 text-sm font-medium disabled:opacity-50"
                 title="Affiche le titre à la place de l'image"
               >
                 Aucune ne convient : pas de couverture
@@ -168,7 +168,7 @@ export default function CoverReportDialog({
                 type="button"
                 disabled={busy}
                 onClick={onClose}
-                className="rounded border border-slate-300 px-4 py-2 text-sm font-medium disabled:opacity-50"
+                className="rounded border border-line-strong px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 Annuler
               </button>

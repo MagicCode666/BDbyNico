@@ -1,1 +1,289 @@
 @import 'tailwindcss';
+
+/*
+ * Identité visuelle BDbyNico : « Rouille et chrome » (sombre) et « Papier et encre » (clair).
+ * Tout passe par des jetons (variables CSS) : un thème est un jeu de valeurs, la mise en page ne
+ * change pas. Le thème actif est l'attribut data-theme de <html> (voir src/theme).
+ *
+ * Contrastes : l'orange d'accent porte du texte sombre en thème sombre (--on-accent) et du texte
+ * blanc en thème clair ; chaque couleur de texte d'un thème tient au moins 4,5:1 sur ses fonds.
+ */
+
+@theme inline {
+  --font-display: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif;
+  --font-sans: 'Barlow', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-text: var(--accent-text);
+  --color-on-accent: var(--on-accent);
+  --color-steel: var(--steel);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-text: var(--danger-text);
+  --color-danger-soft: var(--danger-soft);
+
+  --shadow-card: var(--shadow-1);
+  --shadow-lift: var(--shadow-2);
+  --shadow-glow: var(--glow);
+}
+
+/* ---- Rouille et chrome (sombre, par défaut) ---- */
+:root,
+:root[data-theme='rouille'] {
+  color-scheme: dark;
+  --bg: #120e0c;
+  --surface: #1c1613;
+  --raised: #271e1a;
+  --line: #3a2d27;
+  --line-strong: #4f3e35;
+  --fg: #f0e8e2;
+  --muted: #a89b92;
+  --accent: #e8590c;
+  --accent-strong: #ff6f26;
+  --accent-text: #ff8a47;
+  --on-accent: #120e0c;
+  --steel: #b8c0c8;
+  --ok: #7fbf6a;
+  --ok-soft: rgb(127 191 106 / 0.14);
+  --warn: #f2b134;
+  --warn-soft: rgb(242 177 52 / 0.14);
+  --danger: #c9302c;
+  --danger-text: #ff7a7f;
+  --danger-soft: rgb(229 72 77 / 0.14);
+
+  --grad-surface: linear-gradient(165deg, #2a201b 0%, #1c1613 55%, #15100e 100%);
+  --grad-raised: linear-gradient(165deg, #35281f, #271e1a);
+  --grad-side: linear-gradient(180deg, #1f1815 0%, #130f0d 100%);
+  --grad-accent: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 82%, white),
+    var(--accent) 55%,
+    color-mix(in srgb, var(--accent) 82%, black)
+  );
+  --edge: rgb(255 214 180 / 0.08);
+  --shadow-1:
+    inset 0 1px 0 var(--edge), 0 8px 18px -8px rgb(0 0 0 / 0.7), 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-2:
+    inset 0 1px 0 var(--edge), 0 22px 44px -14px rgb(0 0 0 / 0.8), 0 6px 12px rgb(0 0 0 / 0.4);
+  --glow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 70%, transparent),
+    0 12px 30px -8px color-mix(in srgb, var(--accent) 60%, transparent);
+  --title-grad: linear-gradient(
+    180deg,
+    var(--fg) 35%,
+    color-mix(in srgb, var(--fg) 55%, var(--steel))
+  );
+  --ambient:
+    radial-gradient(
+      1100px 520px at 88% -12%,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      760px 420px at -6% 108%,
+      color-mix(in srgb, var(--steel) 10%, transparent),
+      transparent 58%
+    );
+  --grain: 0.05;
+}
+
+/* ---- Papier et encre (clair) ---- */
+:root[data-theme='clair'] {
+  color-scheme: light;
+  --bg: #f4f4f2;
+  --surface: #ffffff;
+  --raised: #ecece8;
+  --line: #d8d8d2;
+  --line-strong: #c4c4bc;
+  --fg: #16161a;
+  --muted: #5e5e68;
+  --accent: #c2410c;
+  --accent-strong: #a8360a;
+  --accent-text: #b03a0a;
+  --on-accent: #ffffff;
+  --steel: #4a515c;
+  --ok: #1e8e5a;
+  --ok-soft: rgb(30 142 90 / 0.12);
+  --warn: #a96300;
+  --warn-soft: rgb(169 99 0 / 0.12);
+  --danger: #c0262d;
+  --danger-text: #b4161d;
+  --danger-soft: rgb(192 38 45 / 0.1);
+
+  --grad-surface: linear-gradient(165deg, #ffffff 0%, #fbfbf9 55%, #f4f4f0 100%);
+  --grad-raised: linear-gradient(165deg, #f4f4f0, #e8e8e3);
+  --grad-side: linear-gradient(180deg, #ffffff 0%, #f1f1ed 100%);
+  --edge: rgb(255 255 255 / 0.9);
+  --shadow-1:
+    inset 0 1px 0 var(--edge), 0 8px 18px -10px rgb(40 40 60 / 0.28), 0 1px 2px rgb(40 40 60 / 0.12);
+  --shadow-2:
+    inset 0 1px 0 var(--edge), 0 22px 44px -18px rgb(40 40 60 / 0.34),
+    0 4px 10px rgb(40 40 60 / 0.12);
+  --glow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent),
+    0 10px 24px -8px color-mix(in srgb, var(--accent) 38%, transparent);
+  --title-grad: linear-gradient(var(--fg), var(--fg));
+  --ambient: radial-gradient(
+    1000px 480px at 90% -12%,
+    color-mix(in srgb, var(--accent) 9%, transparent),
+    transparent 62%
+  );
+  --grain: 0;
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+  }
+  body {
+    min-height: 100vh;
+    background: var(--ambient), var(--bg);
+    background-attachment: fixed;
+    color: var(--fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Grain discret derrière le contenu (thème sombre seulement) */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: var(--grain);
+    z-index: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  }
+  #root {
+    position: relative;
+    z-index: 1;
+  }
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    line-height: 1.05;
+    text-wrap: balance;
+  }
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 2px;
+  }
+  input,
+  select,
+  textarea {
+    background: var(--bg);
+    color: var(--fg);
+    color-scheme: inherit;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--muted);
+    opacity: 0.8;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}
+
+@layer components {
+  /* Carte : dégradé léger, filet de lumière en haut, ombre en deux couches */
+  .card {
+    background: var(--grad-surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    box-shadow: var(--shadow-1);
+  }
+  .card-lift {
+    background: var(--grad-surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: var(--shadow-2);
+  }
+  /* Titre à reflet métallique (sombre) */
+  .title-metal {
+    background: var(--title-grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* Pastille « coupée » : coin biseauté, signature de la marque */
+  .badge {
+    display: inline-block;
+    padding: 4px 12px 4px 9px;
+    border: 1px solid var(--line);
+    background: var(--grad-raised);
+    box-shadow: inset 0 1px 0 var(--edge);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+  }
+  .badge-accent {
+    background: var(--grad-accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+  }
+  .chip {
+    display: inline-block;
+    padding: 3px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--grad-surface);
+    box-shadow: inset 0 1px 0 var(--edge);
+    color: var(--accent-text);
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+}
+
+/* Les boutons pleins (fond d'accent) prennent le dégradé et la lueur de la marque. */
+button.bg-accent,
+a.bg-accent {
+  background-image: var(--grad-accent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.3),
+    var(--glow);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    filter 0.12s ease;
+}
+button.bg-accent:hover:not(:disabled),
+a.bg-accent:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+button.bg-danger {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--danger) 85%, white),
+    var(--danger)
+  );
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25);
+}

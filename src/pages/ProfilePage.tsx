@@ -101,12 +101,12 @@ export default function ProfilePage() {
     <AuthCard
       title="Mon profil"
       footer={
-        <Link to="/" className="text-indigo-600 underline">
+        <Link to="/" className="text-accent-text underline">
           Retour à l'accueil
         </Link>
       }
     >
-      <p className="text-center text-sm text-slate-600">{user?.email}</p>
+      <p className="text-center text-sm text-muted">{user?.email}</p>
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         <TextField
           label="Pseudo"
@@ -123,17 +123,17 @@ export default function ProfilePage() {
       <button
         type="button"
         onClick={onSignOut}
-        className="rounded border border-slate-300 px-4 py-2 font-medium hover:bg-slate-50"
+        className="rounded border border-line-strong px-4 py-2 font-medium hover:bg-raised"
       >
         Se déconnecter
       </button>
 
       {isModerator && (
-        <section className="flex flex-col gap-2 border-t border-slate-200 pt-4">
+        <section className="flex flex-col gap-2 border-t border-line pt-4">
           <h2 className="font-semibold">Administration</h2>
           <Link
             to="/admin"
-            className="rounded border border-slate-300 px-4 py-2 text-center font-medium hover:bg-slate-50"
+            className="rounded border border-line-strong px-4 py-2 text-center font-medium hover:bg-raised"
           >
             Catalogue : propositions et journal
             {pendingCount > 0 && ` (${pendingCount} à valider)`}
@@ -141,31 +141,31 @@ export default function ProfilePage() {
         </section>
       )}
 
-      <section className="flex flex-col gap-2 border-t border-slate-200 pt-4">
+      <section className="flex flex-col gap-2 border-t border-line pt-4">
         <h2 className="font-semibold">Mes données</h2>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted">
           Téléchargez votre collection (CSV). Ce fichier peut être réimporté dans BDbyNico.
         </p>
         <button
           type="button"
           onClick={onExport}
           disabled={exporting}
-          className="rounded border border-slate-300 px-4 py-2 font-medium hover:bg-slate-50 disabled:opacity-50"
+          className="rounded border border-line-strong px-4 py-2 font-medium hover:bg-raised disabled:opacity-50"
         >
           {exporting ? 'Export en cours…' : 'Exporter ma collection'}
         </button>
         {exportMessage && <FormMessage kind="success">{exportMessage}</FormMessage>}
       </section>
 
-      <section className="flex flex-col gap-2 rounded border border-red-200 p-3">
-        <h2 className="font-semibold text-red-700">Zone dangereuse</h2>
-        <p className="text-sm text-slate-600">
+      <section className="flex flex-col gap-2 rounded border border-danger p-3">
+        <h2 className="font-semibold text-danger-text">Zone dangereuse</h2>
+        <p className="text-sm text-muted">
           Retirer tous les albums de votre collection. Votre compte n'est pas supprimé.
         </p>
         <button
           type="button"
           onClick={() => setClearing(true)}
-          className="rounded border border-red-300 px-4 py-2 font-medium text-red-700 hover:bg-red-50"
+          className="rounded border border-danger px-4 py-2 font-medium text-danger-text hover:bg-danger-soft"
         >
           Vider ma collection…
         </button>

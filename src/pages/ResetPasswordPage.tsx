@@ -15,14 +15,14 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  if (loading) return <p className="p-6 text-center text-slate-600">Chargement…</p>
+  if (loading) return <p className="p-6 text-center text-muted">Chargement…</p>
 
   if (!user) {
     return (
       <AuthCard
         title="Lien invalide"
         footer={
-          <Link to="/mot-de-passe-oublie" className="text-indigo-600 underline">
+          <Link to="/mot-de-passe-oublie" className="text-accent-text underline">
             Demander un nouveau lien
           </Link>
         }

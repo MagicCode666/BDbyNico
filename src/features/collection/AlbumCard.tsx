@@ -17,13 +17,13 @@ export function CoverImage({ coverUrl, title, className }: CoverImageProps) {
       alt={`Couverture de ${title}`}
       loading="lazy"
       referrerPolicy="no-referrer"
-      className={`bg-slate-100 object-cover ${className ?? ''}`}
+      className={`bg-raised object-cover ${className ?? ''}`}
     />
   ) : (
     <div
       role="img"
       aria-label={`Pas de couverture pour ${title}`}
-      className={`flex items-center justify-center bg-slate-200 p-2 text-center text-xs text-slate-500 ${className ?? ''}`}
+      className={`flex items-center justify-center bg-raised p-2 text-center text-xs text-muted ${className ?? ''}`}
     >
       {title}
     </div>
@@ -58,13 +58,13 @@ export function AlbumThumb({ entry }: { entry: Entry }) {
           <span
             role="img"
             aria-label={dedication}
-            className={`absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[10px] text-white shadow ${entry.dedication === 'drawing' ? 'bg-amber-500' : 'bg-slate-700'}`}
+            className={`absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[10px] text-on-accent shadow ${entry.dedication === 'drawing' ? 'bg-warn' : 'bg-steel'}`}
           >
             ✎
           </span>
         )}
       </div>
-      <span className="text-center text-[10px] text-slate-500">
+      <span className="text-center text-[10px] text-muted">
         {edition.kind === 'integral' || edition.kind === 'special'
           ? shortKindLabel(edition.kind, edition.volumeFrom, edition.volumeTo)
           : edition.volume !== null

@@ -20,12 +20,12 @@ export default function AlbumPage() {
 
   return (
     <PageLayout title="Fiche de l'album">
-      {loading && <p className="text-slate-600">Chargement…</p>}
+      {loading && <p className="text-muted">Chargement…</p>}
       {error && <FormMessage kind="error">Impossible de charger cet album.</FormMessage>}
       {!loading && !error && !entry && (
-        <p className="text-slate-600">
+        <p className="text-muted">
           Cet album n'est pas dans votre collection.{' '}
-          <Link to="/collection" className="text-indigo-600 underline">
+          <Link to="/collection" className="text-accent-text underline">
             Retour à la collection
           </Link>
         </p>
@@ -98,7 +98,7 @@ function AlbumDetails({ entry, onReload }: { entry: Entry; onReload: () => void 
         <button
           type="button"
           onClick={() => setReportingCover(true)}
-          className="text-xs text-slate-600 underline hover:text-indigo-600"
+          className="text-xs text-muted underline hover:text-accent-text"
         >
           Cette couverture n'est pas bonne
         </button>
@@ -106,7 +106,7 @@ function AlbumDetails({ entry, onReload }: { entry: Entry; onReload: () => void 
       <div className="flex flex-col gap-4">
         <div>
           <h2 className="text-xl font-semibold">{edition.title}</h2>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted">
             {[
               edition.series &&
                 `${edition.series.name}${edition.volume !== null ? ` · tome ${edition.volume}` : ''}`,
@@ -121,7 +121,7 @@ function AlbumDetails({ entry, onReload }: { entry: Entry; onReload: () => void 
         </div>
 
         {edition.pending && (
-          <p role="status" className="rounded bg-amber-50 p-2 text-sm text-amber-800">
+          <p role="status" className="rounded bg-warn-soft p-2 text-sm text-warn">
             Cet album est en attente de validation : il n'est visible que de vous pour l'instant.
           </p>
         )}
@@ -147,7 +147,7 @@ function AlbumDetails({ entry, onReload }: { entry: Entry; onReload: () => void 
               id="status"
               value={status}
               onChange={(e) => setStatus(e.target.value as Status)}
-              className="rounded border border-slate-300 px-3 py-2"
+              className="rounded border border-line-strong px-3 py-2"
             >
               {(Object.keys(STATUS_LABELS) as Status[]).map((value) => (
                 <option key={value} value={value}>
@@ -177,7 +177,7 @@ function AlbumDetails({ entry, onReload }: { entry: Entry; onReload: () => void 
                 id="dedication"
                 value={dedication}
                 onChange={(e) => setDedication(e.target.value as Dedication | '')}
-                className="rounded border border-slate-300 px-3 py-2"
+                className="rounded border border-line-strong px-3 py-2"
               >
                 <option value="">Aucune</option>
                 {(Object.keys(DEDICATION_LABELS) as Dedication[]).map((value) => (
@@ -232,7 +232,7 @@ function AlbumDetails({ entry, onReload }: { entry: Entry; onReload: () => void 
               maxLength={2000}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="rounded border border-slate-300 px-3 py-2 focus:border-indigo-600 focus:outline-none"
+              className="rounded border border-line-strong px-3 py-2 focus:border-accent focus:outline-none"
             />
           </div>
           {error && <FormMessage kind="error">{error}</FormMessage>}
@@ -240,7 +240,7 @@ function AlbumDetails({ entry, onReload }: { entry: Entry; onReload: () => void 
           <SubmitButton busy={busy}>Enregistrer</SubmitButton>
         </form>
 
-        <div className="max-w-lg border-t border-slate-200 pt-4">
+        <div className="max-w-lg border-t border-line pt-4">
           {confirmDelete ? (
             <div className="flex items-center gap-3">
               <span className="text-sm">Retirer cet album de votre collection ?</span>
@@ -248,14 +248,14 @@ function AlbumDetails({ entry, onReload }: { entry: Entry; onReload: () => void 
                 type="button"
                 onClick={onDelete}
                 disabled={busy}
-                className="rounded bg-red-600 px-3 py-1 text-sm font-medium text-white disabled:opacity-50"
+                className="rounded bg-danger px-3 py-1 text-sm font-medium text-white disabled:opacity-50"
               >
                 Oui, retirer
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmDelete(false)}
-                className="rounded border border-slate-300 px-3 py-1 text-sm"
+                className="rounded border border-line-strong px-3 py-1 text-sm"
               >
                 Annuler
               </button>
@@ -264,7 +264,7 @@ function AlbumDetails({ entry, onReload }: { entry: Entry; onReload: () => void 
             <button
               type="button"
               onClick={() => setConfirmDelete(true)}
-              className="text-sm text-red-600 underline"
+              className="text-sm text-danger-text underline"
             >
               Retirer de ma collection
             </button>

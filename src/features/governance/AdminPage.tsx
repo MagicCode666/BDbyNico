@@ -50,7 +50,7 @@ const CONTRIBUTION_LABELS: Record<Contribution, string> = {
 }
 
 const buttonClass =
-  'rounded border border-slate-300 px-2 py-1 text-xs font-medium hover:border-indigo-600 disabled:opacity-50'
+  'rounded border border-line-strong px-2 py-1 text-xs font-medium hover:border-accent disabled:opacity-50'
 
 const dateFormat = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
 
@@ -61,16 +61,16 @@ export default function AdminPage() {
   if (loading) {
     return (
       <PageLayout title="Administration">
-        <p className="text-slate-600">Chargement…</p>
+        <p className="text-muted">Chargement…</p>
       </PageLayout>
     )
   }
   if (!access.isModerator) {
     return (
       <PageLayout title="Administration">
-        <p className="text-slate-600">
+        <p className="text-muted">
           Cette page est réservée aux modérateurs.{' '}
-          <Link to="/collection" className="text-indigo-600 underline">
+          <Link to="/collection" className="text-accent-text underline">
             Retour à la collection
           </Link>
         </p>
@@ -95,7 +95,7 @@ export default function AdminPage() {
             role="tab"
             aria-selected={tab === id}
             onClick={() => setTab(id)}
-            className={`rounded px-3 py-1 text-sm font-medium ${tab === id ? 'bg-indigo-600 text-white' : 'border border-slate-300'}`}
+            className={`rounded px-3 py-1 text-sm font-medium ${tab === id ? 'bg-accent text-on-accent' : 'border border-line-strong'}`}
           >
             {label}
           </button>
@@ -125,7 +125,7 @@ function CoverPair({ change }: { change: Change }) {
           title={`${label} (avant)`}
           className="aspect-[2/3] w-14 rounded"
         />
-        <figcaption className="text-[10px] text-slate-500">avant</figcaption>
+        <figcaption className="text-[10px] text-muted">avant</figcaption>
       </figure>
       <span aria-hidden="true">→</span>
       <figure className="flex flex-col items-center gap-1">
@@ -134,7 +134,7 @@ function CoverPair({ change }: { change: Change }) {
           title={`${label} (après)`}
           className="aspect-[2/3] w-14 rounded"
         />
-        <figcaption className="text-[10px] text-slate-500">après</figcaption>
+        <figcaption className="text-[10px] text-muted">après</figcaption>
       </figure>
     </div>
   )
@@ -213,7 +213,7 @@ function ChangeList({ mode }: { mode: 'pending' | 'journal' }) {
                 setExtra([])
                 setExhausted(false)
               }}
-              className="rounded border border-slate-300 px-2 py-1"
+              className="rounded border border-line-strong px-2 py-1"
             >
               <option value="">Tous</option>
               {(Object.keys(STATUS_LABELS) as ChangeStatus[]).map((value) => (
@@ -232,7 +232,7 @@ function ChangeList({ mode }: { mode: 'pending' | 'journal' }) {
                 setExtra([])
                 setExhausted(false)
               }}
-              className="rounded border border-slate-300 px-2 py-1"
+              className="rounded border border-line-strong px-2 py-1"
             >
               <option value="">Tous</option>
               {[...authors].map(([id, pseudo]) => (
@@ -259,9 +259,9 @@ function ChangeList({ mode }: { mode: 'pending' | 'journal' }) {
 
       {error && <FormMessage kind="error">{error}</FormMessage>}
       {loadError && <FormMessage kind="error">Impossible de charger la liste.</FormMessage>}
-      {loading && rows.length === 0 && <p className="text-slate-600">Chargement…</p>}
+      {loading && rows.length === 0 && <p className="text-muted">Chargement…</p>}
       {!loading && !loadError && rows.length === 0 && (
-        <p className="text-slate-600">
+        <p className="text-muted">
           {mode === 'pending' ? 'Aucune proposition en attente.' : 'Aucun changement.'}
         </p>
       )}
@@ -270,25 +270,25 @@ function ChangeList({ mode }: { mode: 'pending' | 'journal' }) {
         {rows.map((change) => {
           const busy = busyId === change.id
           return (
-            <li key={change.id} className="flex flex-col gap-2 rounded border border-slate-200 p-3">
+            <li key={change.id} className="flex flex-col gap-2 rounded border border-line p-3">
               <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
                 <span className="font-medium">
                   {KIND_LABELS[change.kind]} ·{' '}
                   {isSeriesChange(change) ? (
-                    (change.seriesName ?? <span className="text-slate-500">série supprimée</span>)
+                    (change.seriesName ?? <span className="text-muted">série supprimée</span>)
                   ) : (
                     <>
-                      {change.title ?? <span className="text-slate-500">album supprimé</span>}
+                      {change.title ?? <span className="text-muted">album supprimé</span>}
                       {change.seriesName &&
                         ` (${change.seriesName}${change.volume !== null ? ` T${change.volume}` : ''})`}
                     </>
                   )}
                 </span>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-muted">
                   {dateFormat.format(new Date(change.createdAt))}
                 </span>
               </div>
-              <p className="text-xs text-slate-600">
+              <p className="text-xs text-muted">
                 {change.pseudo ?? ORIGIN_LABELS[change.origin]}
                 {change.pseudo &&
                   change.origin !== 'user' &&
@@ -301,7 +301,7 @@ function ChangeList({ mode }: { mode: 'pending' | 'journal' }) {
               {describeChange(change) && <p className="text-sm">{describeChange(change)}</p>}
               {change.kind === 'cover' && <CoverPair change={change} />}
               {change.kind === 'create' && change.status === 'pending' && (
-                <p className="text-xs text-slate-600">
+                <p className="text-xs text-muted">
                   Nouvel album ajouté par un utilisateur « collection seule » : refuser le retire du
                   catalogue et de sa collection.
                 </p>
@@ -377,28 +377,28 @@ function UsersTab() {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-muted">
         Un utilisateur « collection seule » peut ajouter et retirer des albums de sa collection,
         mais ses ajouts d'albums inconnus et ses corrections de couverture attendent votre
         validation.
       </p>
       {message && <FormMessage kind="error">{message}</FormMessage>}
       {error && <FormMessage kind="error">Impossible de charger les utilisateurs.</FormMessage>}
-      {loading && !data && <p className="text-slate-600">Chargement…</p>}
+      {loading && !data && <p className="text-muted">Chargement…</p>}
       <ul className="flex flex-col gap-2">
         {data?.map((user) => (
           <li
             key={user.id}
-            className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 p-3"
+            className="flex flex-wrap items-center justify-between gap-2 rounded border border-line p-3"
           >
             <div className="text-sm">
               <span className="font-medium">{user.pseudo}</span>
               {user.role !== 'user' && (
-                <span className="ml-2 rounded bg-slate-100 px-2 py-0.5 text-xs">
+                <span className="ml-2 rounded bg-raised px-2 py-0.5 text-xs">
                   {user.role === 'admin' ? 'Administrateur' : 'Modérateur'}
                 </span>
               )}
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted">
                 Inscrit le {dateFormat.format(new Date(user.createdAt))} · {user.collectionCount}{' '}
                 album(s) · {user.changeCount} changement(s) au catalogue
                 {user.pendingCount > 0 && ` · ${user.pendingCount} en attente`}
@@ -410,7 +410,7 @@ function UsersTab() {
                 value={user.contribution}
                 disabled={busyId === user.id}
                 onChange={(e) => change(user, e.target.value as Contribution)}
-                className="rounded border border-slate-300 px-2 py-1"
+                className="rounded border border-line-strong px-2 py-1"
               >
                 {(Object.keys(CONTRIBUTION_LABELS) as Contribution[]).map((value) => (
                   <option key={value} value={value}>
