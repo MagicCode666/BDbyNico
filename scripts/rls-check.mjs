@@ -442,10 +442,18 @@ check(
   !r.error && r.data.length > 0 && r.data.every((row) => row.user_id === A.id),
   show(r),
 )
+// Un modérateur ou un administrateur lit tout le journal (voulu) : le contrôle dépend du rôle de B
+r = await B.client.from('profiles').select('role').eq('id', B.id).single()
+const bIsModerator = r.data?.role === 'moderator' || r.data?.role === 'admin'
 r = await B.client.from('catalogue_changes').select('id, user_id')
 check(
-  'B ne voit aucune ligne du journal de A',
-  !r.error && r.data.every((row) => row.user_id !== A.id),
+  bIsModerator
+    ? 'B (modérateur) lit tout le journal, y compris les lignes de A'
+    : 'B ne voit aucune ligne du journal de A',
+  !r.error &&
+    (bIsModerator
+      ? r.data.some((row) => row.user_id === A.id)
+      : r.data.every((row) => row.user_id !== A.id)),
   show(r),
 )
 r = await anon.from('catalogue_changes').select('id')
