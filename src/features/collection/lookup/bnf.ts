@@ -1,4 +1,5 @@
 import { isbn13To10 } from '../../../lib/isbn'
+import { imageExists } from './amazon'
 import { toIsoDate } from './dates'
 import type { BookInfo } from './types'
 
@@ -63,7 +64,8 @@ export function parseBnfResponse(xml: string): BookInfo | null {
   }
 }
 
-export async function lookupBnf(isbn13: string): Promise<BookInfo | null> {
+/** Interroge le catalogue de la BnF à partir d'un ISBN-13 (et de sa forme ISBN-10). */
+async function fetchBnfRecord(isbn13: string): Promise<string> {
   // Les notices anciennes ne sont indexées que par ISBN-10 : on cherche les deux formes.
   const isbn10 = isbn13To10(isbn13)
   const query = [isbn13, isbn10]
@@ -79,5 +81,31 @@ export async function lookupBnf(isbn13: string): Promise<BookInfo | null> {
   })
   const response = await fetch(`${SRU_URL}?${params}`, { signal: AbortSignal.timeout(8000) })
   if (!response.ok) throw new Error(`BnF : HTTP ${response.status}`)
-  return parseBnfResponse(await response.text())
+  return response.text()
+}
+
+export async function lookupBnf(isbn13: string): Promise<BookInfo | null> {
+  return parseBnfResponse(await fetchBnfRecord(isbn13))
+}
+
+/** Identifiant (ark) de la première notice d'une réponse SRU, ex. « cb41492610m ». */
+export function parseBnfArk(xml: string): string | undefined {
+  return xml.match(/ark:\/12148\/(cb[0-9a-z]+)/)?.[1]
+}
+
+/** Adresse de la couverture d'une notice. Le service répond par une erreur sans couverture. */
+export function bnfCoverUrl(ark: string): string {
+  return `https://catalogue.bnf.fr/couverture?&appName=NE&idArk=ark:/12148/${ark}&couverture=1`
+}
+
+/** Couverture de la BnF pour un ISBN-13, si le catalogue en a une (vérifiée en la chargeant). */
+export async function findBnfCover(isbn13: string): Promise<string | undefined> {
+  try {
+    const ark = parseBnfArk(await fetchBnfRecord(isbn13))
+    if (!ark) return undefined
+    const url = bnfCoverUrl(ark)
+    return (await imageExists(url)) ? url : undefined
+  } catch {
+    return undefined
+  }
 }

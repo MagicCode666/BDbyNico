@@ -131,6 +131,22 @@ const isbn10 = (() => {
 const coverAmazon = `https://images-na.ssl-images-amazon.com/images/P/${isbn10}.01.LZZZZZZZ.jpg`
 r = await B.client.rpc('set_edition_cover', { p_isbn: isbn, p_cover_url: coverAmazon })
 check('Une autre adresse autorisée est acceptée sans erreur', !r.error, show(r))
+const bnfBase = 'https://catalogue.bnf.fr/couverture?&appName=NE&idArk=ark:/12148/cb41492610m'
+r = await B.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: `${bnfBase}&couverture=1`,
+})
+check('Une adresse de couverture de la BnF est acceptée sans erreur', !r.error, show(r))
+r = await B.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: `${bnfBase}&couverture=1&autre=1`,
+})
+check('Une adresse de la BnF avec un paramètre en trop est refusée', !!r.error, show(r))
+r = await B.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: `${bnfBase}&couverture=1`.replace('catalogue.bnf.fr', 'exemple.invalid'),
+})
+check('Une fausse adresse de la BnF (autre site) est refusée', !!r.error, show(r))
 r = await B.client.from('editions').select('cover_url').eq('isbn', isbn)
 check(
   "La couverture déjà renseignée n'est pas écrasée",
