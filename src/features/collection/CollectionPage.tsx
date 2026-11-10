@@ -10,7 +10,8 @@ import { AlbumThumb } from './AlbumCard'
 import { listCollection } from './api'
 import { STATUS_LABELS, type ReadFilter, type Status } from './types'
 import { useAsync } from './useAsync'
-import { filterEntries, groupBySeries, progressLabel } from './utils'
+import { effectiveStatus } from '../series/status'
+import { effectiveTotal, filterEntries, groupBySeries, progressLabel } from './utils'
 
 const STATUSES: Status[] = ['owned', 'wanted']
 
@@ -137,8 +138,11 @@ export default function CollectionPage() {
       <div className="flex flex-col gap-3">
         {groups.map((group) => {
           const settings = seriesSettings?.get(group.key)
-          const total = settings?.totalOverride ?? group.totalVolumes
           const owned = ownedBySeries.get(group.key) ?? { count: 0, volumes: [] }
+          // Jamais plus de tomes possédés que de tomes existants
+          const total = effectiveTotal(settings?.totalOverride ?? group.totalVolumes, owned.volumes)
+          const ownedNumbered = new Set(owned.volumes).size
+          const publication = effectiveStatus(settings?.statusOverride, group.publicationStatus)
           const showProgress = group.name !== null && status === 'owned'
           const complete =
             showProgress &&
@@ -161,10 +165,13 @@ export default function CollectionPage() {
                 </h2>
                 {showProgress && (
                   <span className="flex items-center gap-2 text-sm text-slate-600">
-                    {progressLabel({ ...group, totalVolumes: total }, owned.count)}
+                    {progressLabel(
+                      { ...group, totalVolumes: total },
+                      total ? ownedNumbered : owned.count,
+                    )}
                     {complete && (
                       <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                        Complète
+                        {publication === 'ongoing' ? 'À jour' : 'Complète'}
                       </span>
                     )}
                   </span>
