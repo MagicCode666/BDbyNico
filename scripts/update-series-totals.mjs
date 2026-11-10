@@ -5,11 +5,11 @@
 //   node scripts/update-series-totals.mjs                 mise à jour réelle (clé service_role requise)
 //   node scripts/update-series-totals.mjs --dry-run       lit la base, n'écrit rien
 //   node scripts/update-series-totals.mjs --limit 20      nombre de séries traitées (100 par défaut)
-//   node scripts/update-series-totals.mjs --name "Lucky Luke"   interroge seulement la BnF et affiche
+//   node scripts/update-series-totals.mjs --name "Lucky Luke" [--authors "Morris;Goscinny"]   interroge seulement la BnF et affiche
 //                                                         le résultat (aucune clé, aucune écriture)
 import { createClient } from '@supabase/supabase-js'
 
-import { computeSeries, fetchNotices, mapLimit } from './lib/bnf-series.mjs'
+import { bestMatch, fetchNotices, mapLimit, topAuthors } from './lib/bnf-series.mjs'
 
 const args = process.argv.slice(2)
 const option = (flag) => {
@@ -21,15 +21,17 @@ const limit = Number(option('--limit') ?? 100)
 // Séries traitées en parallèle (la BnF est lente : ~3 s par requête)
 const CONCURRENCY = 4
 const singleName = option('--name')
+const singleAuthors = (option('--authors') ?? '').split(';').filter(Boolean)
 
 async function inspectOne(name) {
   console.log(`Recherche de « ${name} » à la BnF…`)
-  const notices = await fetchNotices(name)
-  const result = computeSeries(notices, name)
+  const notices = await fetchNotices(name, { authors: singleAuthors })
+  const result = bestMatch(notices, name)
   console.log(`Notices lues : ${notices.length}, dans la série : ${result.matched}`)
   console.log(
     `Écartées : ${result.skipped.sansNumero} sans numéro, ${result.skipped.special} spéciales`,
   )
+  console.log(`Série BnF retenue : ${result.bnfName}`)
   console.log(`Total de tomes retenu : ${result.total ?? 'inconnu'}`)
   console.log(`Albums retenus (un par tome) : ${result.albums.length}`)
   console.log(
@@ -39,6 +41,26 @@ async function inspectOne(name) {
   for (const album of result.albums.slice(-12)) {
     console.log(`  T${album.volume}  ${album.isbn ?? '(sans ISBN)'}  ${album.title}`)
   }
+}
+
+/**
+ * Cherche la série à la BnF. Les albums déjà saisis par les utilisateurs servent de repères :
+ * leurs auteurs restreignent la recherche et leurs ISBN confirment le nom de la série à la BnF.
+ */
+async function lookupSeries(db, series) {
+  const { data: owned, error } = await db
+    .from('editions')
+    .select('isbn, authors')
+    .eq('series_id', series.id)
+    .neq('source', 'bnf')
+  if (error) throw error
+  const isbns = owned.map((edition) => edition.isbn)
+  const authors = topAuthors(owned)
+  if (authors.length > 0) {
+    const result = bestMatch(await fetchNotices(series.name, { authors }), series.name, isbns)
+    if (result.reliable) return result
+  }
+  return bestMatch(await fetchNotices(series.name), series.name, isbns)
 }
 
 async function run() {
@@ -63,13 +85,12 @@ async function run() {
   let failed = 0
   await mapLimit(seriesList, CONCURRENCY, async (series) => {
     try {
-      const notices = await fetchNotices(series.name)
-      const result = computeSeries(notices, series.name)
+      const result = await lookupSeries(db, series)
       // Le total ne diminue jamais tout seul : une série ne perd pas de tomes
       const newTotal =
         result.reliable && result.total > (series.total_volumes ?? 0) ? result.total : undefined
       console.log(
-        `- ${series.name} : total ${series.total_volumes ?? '?'} -> ${newTotal ?? 'inchangé'}, ` +
+        `- ${series.name}${result.bnfName === series.name ? '' : ` [BnF : ${result.bnfName}]`} : total ${series.total_volumes ?? '?'} -> ${newTotal ?? 'inchangé'}, ` +
           `${result.albums.length} album(s), ${result.skipped.special} spécial(aux) écarté(s)` +
           (result.reliable
             ? ''

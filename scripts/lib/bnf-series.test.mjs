@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  bestMatch,
   cleanSeriesName,
   computeSeries,
   decodeEntities,
+  mapLimit,
   nameKey,
   parseNotices,
   parseVolume,
+  strippedName,
+  topAuthors,
 } from './bnf-series.mjs'
 
 const field = (tag, subs) =>
@@ -138,5 +142,94 @@ describe('computeSeries', () => {
   })
   it('renvoie un total nul quand rien ne correspond', () => {
     expect(computeSeries(notices, 'Inconnue').total).toBeNull()
+  })
+})
+
+describe('rapprochement des noms', () => {
+  it('traite « & » comme « et »', () => {
+    expect(nameKey('Boule & Bill')).toBe(nameKey('Boule et Bill'))
+  })
+
+  it.each([
+    ['Lucky Luke (Dargaud)', 'Lucky Luke'],
+    ['Corto Maltese (Quenehen, Vives)', 'Corto Maltese'],
+    ['Gaston (40ème Anniversaire)', 'Gaston (40ème Anniversaire)'],
+    ['XIII', 'XIII'],
+  ])('strippedName(%s) -> %s', (input, expected) => {
+    expect(strippedName(input)).toBe(expected)
+  })
+
+  it('topAuthors classe les auteurs par fréquence', () => {
+    const editions = [
+      { authors: ['Hergé'] },
+      { authors: ['Hergé', 'Moulinsart'] },
+      { authors: null },
+      { authors: ['Moulinsart'] },
+      { authors: ['Autre'] },
+    ]
+    expect(topAuthors(editions, 2)).toEqual(['Hergé', 'Moulinsart'])
+  })
+
+  // ISBN-13 valide à partir de 12 chiffres (ajoute la clé de contrôle)
+  const isbn13 = (base) => {
+    const digits = String(base).split('').map(Number)
+    const sum = digits.reduce((total, d, i) => total + d * (i % 2 === 0 ? 1 : 3), 0)
+    return `${base}${(10 - (sum % 10)) % 10}`
+  }
+  const tomes = (series, count, firstBase = 978200000000) =>
+    Array.from(
+      { length: count },
+      (_, i) =>
+        parseNotices(
+          xml(notice({ series, volume: String(i + 1), isbn: isbn13(firstBase + i) })),
+        )[0],
+    )
+
+  it('retrouve la série BnF grâce à un album possédé', () => {
+    const notices = [
+      ...tomes('Les aventures de Tintin', 24),
+      ...tomes('Collection Tintin', 3, 978300000000),
+    ]
+    const result = bestMatch(notices, 'Tintin', [notices[0].isbn])
+    expect(result.bnfName).toBe('Les aventures de Tintin')
+    expect(result.total).toBe(24)
+    expect(result.reliable).toBe(true)
+  })
+
+  it('accepte une couverture faible quand un album possédé confirme la série', () => {
+    const notices = tomes('Le chat', 3).map((n, i) => ({
+      ...n,
+      volume: undefined,
+      volumeText: String([1, 2, 12][i]),
+    }))
+    expect(bestMatch(notices, 'Le Chat', []).reliable).toBe(false)
+    expect(bestMatch(notices, 'Le Chat', [notices[0].isbn]).reliable).toBe(true)
+  })
+
+  it('sans repère, ne confond pas avec une autre série au nom proche', () => {
+    const notices = [...tomes('Le chat du rabbin', 10), ...tomes('Le Chat', 2, 978400000000)]
+    expect(bestMatch(notices, 'Le Chat').bnfName).toBe('Le Chat')
+  })
+
+  it("ignore la précision entre parenthèses du nom d'origine", () => {
+    const result = bestMatch(tomes('Lucky Luke', 10), 'Lucky Luke (Dargaud)')
+    expect(result.bnfName).toBe('Lucky Luke')
+    expect(result.total).toBe(10)
+  })
+})
+
+describe('mapLimit', () => {
+  it("garde l'ordre et limite le nombre de tâches simultanées", async () => {
+    let active = 0
+    let peak = 0
+    const results = await mapLimit([1, 2, 3, 4, 5, 6], 2, async (n) => {
+      active++
+      peak = Math.max(peak, active)
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      active--
+      return n * 10
+    })
+    expect(results).toEqual([10, 20, 30, 40, 50, 60])
+    expect(peak).toBe(2)
   })
 })
