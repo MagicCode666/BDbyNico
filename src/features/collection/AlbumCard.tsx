@@ -52,7 +52,7 @@ export function AlbumThumb({ entry }: { entry: Entry }) {
       title={`${edition.title}${entry.read ? ' (lu)' : ''}${dedication ? `, ${dedication}` : ''}`}
       className="flex w-16 shrink-0 flex-col gap-1 hover:opacity-80"
     >
-      <div className="relative">
+      <div className="cover-art relative">
         <Cover entry={entry} className="aspect-[2/3] w-16 rounded" />
         {dedication && (
           <span

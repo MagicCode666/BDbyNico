@@ -113,10 +113,10 @@
   --accent-text: #b03a0a;
   --on-accent: #ffffff;
   --steel: #4a515c;
-  --ok: #1e8e5a;
-  --ok-soft: rgb(30 142 90 / 0.12);
-  --warn: #a96300;
-  --warn-soft: rgb(169 99 0 / 0.12);
+  --ok: #136b45;
+  --ok-soft: rgb(19 107 69 / 0.12);
+  --warn: #8a4f00;
+  --warn-soft: rgb(138 79 0 / 0.12);
   --danger: #c0262d;
   --danger-text: #b4161d;
   --danger-soft: rgb(192 38 45 / 0.1);

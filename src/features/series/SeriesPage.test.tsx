@@ -11,6 +11,7 @@ vi.mock('../../components/shell/useAccountSummary', () => ({
   useAccountSummary: () => undefined,
   ROLE_LABELS: { user: '', moderator: '', admin: '' },
 }))
+vi.mock('../../lib/supabase', () => ({ supabase: {} }))
 vi.mock('./useMissingCovers', () => ({ useMissingCovers: () => ({ covers: {}, remaining: 0 }) }))
 
 const getSeriesData = vi.fn<(id: string) => Promise<SeriesData>>()

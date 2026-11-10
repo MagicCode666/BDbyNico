@@ -115,7 +115,7 @@ export default function CollectionPage() {
 
   return (
     <PageLayout title="Ma collection">
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="card mb-4 flex flex-wrap items-center gap-3 px-4 py-3">
         <div role="tablist" className="flex gap-1">
           {STATUSES.map((value) => (
             <button
@@ -123,7 +123,7 @@ export default function CollectionPage() {
               role="tab"
               aria-selected={status === value}
               onClick={() => setStatus(value)}
-              className={`rounded px-3 py-1 text-sm font-medium ${status === value ? 'bg-accent text-on-accent' : 'border border-line-strong'}`}
+              className={`rounded px-3 py-1 text-sm font-medium ${status === value ? 'bg-accent text-on-accent' : 'border border-line-strong hover:bg-raised'}`}
             >
               {STATUS_LABELS[value]}s ({counts[value]})
             </button>
@@ -135,13 +135,13 @@ export default function CollectionPage() {
           placeholder="Titre, série, auteur, ISBN…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="min-w-0 flex-1 rounded border border-line-strong px-3 py-1"
+          className="min-w-0 flex-1 rounded border border-line-strong bg-surface px-3 py-1"
         />
         <select
           aria-label="Lecture"
           value={read}
           onChange={(e) => setRead(e.target.value as ReadFilter)}
-          className="rounded border border-line-strong px-2 py-1"
+          className="rounded border border-line-strong bg-surface px-2 py-1"
         >
           <option value="all">Tous</option>
           <option value="read">Lus</option>
@@ -215,9 +215,9 @@ export default function CollectionPage() {
           const showProgress = group.name !== null && status === 'owned'
           const complete = showProgress && !!total && progress.complete
           return (
-            <section key={group.key} className="rounded border border-line p-3">
+            <section key={group.key} className="card p-4">
               <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3">
-                <h2 className="text-lg font-semibold">
+                <h2 className="font-display text-xl font-bold tracking-wide">
                   {group.name ? (
                     <Link
                       to={`/series/${group.key}`}
@@ -253,10 +253,10 @@ export default function CollectionPage() {
                   aria-valuemin={0}
                   aria-valuemax={shownTotal}
                   aria-valuenow={Math.min(shownOwned, shownTotal)}
-                  className="mb-3 h-1.5 overflow-hidden rounded bg-raised"
+                  className="mb-3 h-1.5 overflow-hidden rounded-sm border border-line bg-raised"
                 >
                   <div
-                    className="h-full bg-accent"
+                    className="h-full bg-gradient-to-r from-accent to-accent-text"
                     style={{ width: `${Math.min(100, (shownOwned / shownTotal) * 100)}%` }}
                   />
                 </div>
