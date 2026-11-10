@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.10.0...bdbynico-v0.10.1) (2026-11-10)
+
+
+### Performances
+
+* lecture de la BnF en parallèle pour le job des totaux de séries ([#31](https://github.com/MagicCode666/BDbyNico/issues/31)) ([5b1ebf3](https://github.com/MagicCode666/BDbyNico/commit/5b1ebf31169eb839a7eb74936c8c5073c87533fe))
+
 ## [0.10.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.9.0...bdbynico-v0.10.0) (2026-11-09)
 
 
