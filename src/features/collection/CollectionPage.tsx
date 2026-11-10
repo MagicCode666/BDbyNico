@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigationType } from 'react-router-dom'
 
 import FormMessage from '../../components/FormMessage'
+import { useScrollRestoration } from '../../lib/useScrollRestoration'
 import PageLayout from '../../components/PageLayout'
 import { listSeriesSettings } from '../series/api'
 import { missingVolumes } from '../series/buildView'
@@ -15,12 +16,40 @@ import { effectiveTotal, filterEntries, groupBySeries, progressLabel } from './u
 
 const STATUSES: Status[] = ['owned', 'wanted']
 
+const FILTERS_KEY = 'bdbynico:collection-filters'
+
+interface SavedFilters {
+  status: Status
+  query: string
+  read: ReadFilter
+  dedicatedOnly: boolean
+}
+
+function readSavedFilters(): Partial<SavedFilters> {
+  try {
+    return JSON.parse(sessionStorage.getItem(FILTERS_KEY) ?? '{}') as Partial<SavedFilters>
+  } catch {
+    return {}
+  }
+}
+
 export default function CollectionPage() {
   const { data, loading, error } = useAsync(listCollection)
-  const [status, setStatus] = useState<Status>('owned')
-  const [query, setQuery] = useState('')
-  const [read, setRead] = useState<ReadFilter>('all')
-  const [dedicatedOnly, setDedicatedOnly] = useState(false)
+  // Au retour en arrière, on retrouve les filtres et la position de la liste
+  const navigationType = useNavigationType()
+  const [saved] = useState(() => (navigationType === 'POP' ? readSavedFilters() : {}))
+  const [status, setStatus] = useState<Status>(saved.status ?? 'owned')
+  const [query, setQuery] = useState(saved.query ?? '')
+  const [read, setRead] = useState<ReadFilter>(saved.read ?? 'all')
+  const [dedicatedOnly, setDedicatedOnly] = useState(saved.dedicatedOnly ?? false)
+  useScrollRestoration('collection', !loading)
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(FILTERS_KEY, JSON.stringify({ status, query, read, dedicatedOnly }))
+    } catch {
+      // stockage indisponible : les filtres ne seront simplement pas restaurés
+    }
+  }, [status, query, read, dedicatedOnly])
 
   const entries = useMemo(() => data ?? [], [data])
   // Couvertures manquantes (après un import, par exemple) : cherchées au fil de l'eau, puis

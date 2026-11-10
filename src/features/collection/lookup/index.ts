@@ -3,6 +3,7 @@ import { findAmazonCover } from './amazon'
 import { findBnfCover, lookupBnf } from './bnf'
 import { mergeBookInfo } from './merge'
 import { lookupOpenLibrary } from './openLibrary'
+import { findRetailerCover } from './retailers'
 import type { LookupResult } from './types'
 
 /**
@@ -23,7 +24,11 @@ export async function findAlbumInfo(isbn: string): Promise<LookupResult | null> 
         authors: existing.authors,
         publisher: existing.publisher ?? undefined,
         publishedOn: existing.publishedOn ?? undefined,
-        coverUrl: existing.coverUrl ?? (await findAmazonCover(isbn)) ?? (await findBnfCover(isbn)),
+        coverUrl:
+          existing.coverUrl ??
+          (await findAmazonCover(isbn)) ??
+          (await findBnfCover(isbn)) ??
+          (await findRetailerCover(isbn)),
       },
     }
   }
@@ -39,7 +44,11 @@ export async function findAlbumInfo(isbn: string): Promise<LookupResult | null> 
   )
   // Amazon, puis la BnF, avant Open Library qui fournit parfois la page de titre
   if (result) {
-    result.info.coverUrl = (await amazonCover) ?? (await bnfCover) ?? result.info.coverUrl
+    result.info.coverUrl =
+      (await amazonCover) ??
+      (await bnfCover) ??
+      (await findRetailerCover(isbn)) ??
+      result.info.coverUrl
   }
   return result
 }

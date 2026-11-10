@@ -5,6 +5,7 @@ import { amazonCoverUrl } from './amazon'
 import { bnfCoverUrl, parseBnfArk, parseBnfResponse } from './bnf'
 import { toIsoDate } from './dates'
 import { mergeBookInfo } from './merge'
+import { abebooksCoverUrl, decitreCoverUrl } from './retailers'
 import { parseOpenLibrary, parseSeries } from './openLibrary'
 
 function bnfXml(fields: string): string {
@@ -209,6 +210,17 @@ describe('couverture de la BnF', () => {
   it("construit l'adresse du service de couvertures", () => {
     expect(bnfCoverUrl('cb41492610m')).toBe(
       'https://catalogue.bnf.fr/couverture?&appName=NE&idArk=ark:/12148/cb41492610m&couverture=1',
+    )
+  })
+})
+
+describe('couvertures de libraires', () => {
+  it("construit les adresses à partir de l'ISBN-13, y compris en 979", () => {
+    expect(decitreCoverUrl('9791034768516')).toBe(
+      'https://products-images.di-static.com/image/x/9791034768516-475x500-1.jpg',
+    )
+    expect(abebooksCoverUrl('9791034768516')).toBe(
+      'https://pictures.abebooks.com/isbn/9791034768516-fr-300.jpg',
     )
   })
 })

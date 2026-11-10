@@ -147,6 +147,21 @@ r = await B.client.rpc('set_edition_cover', {
   p_cover_url: `${bnfBase}&couverture=1`.replace('catalogue.bnf.fr', 'exemple.invalid'),
 })
 check('Une fausse adresse de la BnF (autre site) est refusée', !!r.error, show(r))
+r = await B.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: `https://products-images.di-static.com/image/x/${isbn}-475x500-1.jpg`,
+})
+check('Une adresse de couverture Decitre est acceptée sans erreur', !r.error, show(r))
+r = await B.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: `https://pictures.abebooks.com/isbn/${isbn}-fr-300.jpg`,
+})
+check('Une adresse de couverture AbeBooks est acceptée sans erreur', !r.error, show(r))
+r = await B.client.rpc('set_edition_cover', {
+  p_isbn: isbn,
+  p_cover_url: 'https://pictures.abebooks.com/isbn/9780000000002-fr-300.jpg',
+})
+check('Une adresse de libraire pour un autre ISBN est refusée', !!r.error, show(r))
 r = await B.client.from('editions').select('cover_url').eq('isbn', isbn)
 check(
   "La couverture déjà renseignée n'est pas écrasée",

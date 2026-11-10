@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import {
   amazonCoverExists,
+  abebooksCoverUrl,
   amazonCoverUrl,
   bnfCoverExists,
   bnfCoverUrl,
   bnfCoverUrls,
+  decitreCoverUrl,
+  findRetailerCover,
 } from './covers.mjs'
 
 const answer =
@@ -74,5 +77,47 @@ describe('couvertures de la BnF', () => {
     expect(await bnfCoverExists('u', { fetchFn: answer(60000) })).toBe(true)
     expect(await bnfCoverExists('u', { fetchFn: answer(3770, 'text/html', false) })).toBe(false)
     expect(await bnfCoverExists('u', { fetchFn: answer(100) })).toBe(false)
+  })
+})
+
+describe('couvertures de libraires', () => {
+  it("construit les adresses à partir de l'ISBN-13 (aussi pour les ISBN en 979)", () => {
+    expect(decitreCoverUrl('9791033509721')).toBe(
+      'https://products-images.di-static.com/image/x/9791033509721-475x500-1.jpg',
+    )
+    expect(abebooksCoverUrl('9791033509721')).toBe(
+      'https://pictures.abebooks.com/isbn/9791033509721-fr-300.jpg',
+    )
+  })
+
+  it("essaie Decitre puis AbeBooks et s'arrête à la première image", async () => {
+    const asked = []
+    const fetchFn = async (url) => {
+      asked.push(url)
+      return url.includes('abebooks')
+        ? {
+            ok: true,
+            headers: { get: () => 'image/jpeg' },
+            arrayBuffer: async () => new ArrayBuffer(26000),
+          }
+        : {
+            ok: false,
+            headers: { get: () => 'text/html' },
+            arrayBuffer: async () => new ArrayBuffer(263),
+          }
+    }
+    expect(await findRetailerCover('9791034768516', { fetchFn })).toBe(
+      abebooksCoverUrl('9791034768516'),
+    )
+    expect(asked).toEqual([decitreCoverUrl('9791034768516'), abebooksCoverUrl('9791034768516')])
+  })
+
+  it("renvoie undefined quand aucun libraire n'a l'image", async () => {
+    const fetchFn = async () => ({
+      ok: false,
+      headers: { get: () => 'text/html' },
+      arrayBuffer: async () => new ArrayBuffer(0),
+    })
+    expect(await findRetailerCover('9791034768516', { fetchFn })).toBeUndefined()
   })
 })

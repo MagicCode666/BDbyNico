@@ -73,3 +73,20 @@ export async function bnfCoverExists(url, { fetchFn = fetch } = {}) {
   if (!(response.headers.get('content-type') ?? '').startsWith('image/')) return false
   return (await response.arrayBuffer()).byteLength > MIN_BNF_COVER_BYTES
 }
+
+// --- Couvertures de libraires (Decitre, AbeBooks) -------------------------------------------------
+// Indexées par ISBN-13 : elles complètent Amazon (dont l'adresse suppose un ISBN-10, absent des
+// ISBN en 979) et la BnF. Adresses non documentées, utilisées en repli seulement.
+export const decitreCoverUrl = (isbn13) =>
+  `https://products-images.di-static.com/image/x/${isbn13}-475x500-1.jpg`
+export const abebooksCoverUrl = (isbn13) =>
+  `https://pictures.abebooks.com/isbn/${isbn13}-fr-300.jpg`
+
+/** Première couverture trouvée chez les libraires (Decitre, puis AbeBooks), ou undefined. */
+export async function findRetailerCover(isbn13, { fetchFn = fetch } = {}) {
+  for (const url of [decitreCoverUrl(isbn13), abebooksCoverUrl(isbn13)]) {
+    // Ils répondent par une erreur (403, 404) quand ils n'ont pas l'image
+    if (await bnfCoverExists(url, { fetchFn })) return url
+  }
+  return undefined
+}

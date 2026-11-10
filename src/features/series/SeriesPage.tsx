@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import FormMessage from '../../components/FormMessage'
 import PageLayout from '../../components/PageLayout'
+import { useScrollRestoration } from '../../lib/useScrollRestoration'
 import { CoverImage } from '../collection/AlbumCard'
 import { useAsync } from '../collection/useAsync'
 import {
@@ -45,6 +46,7 @@ export default function SeriesPage() {
 function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void }) {
   const { user } = useAuth()
   const { series, editions, items, settings } = data
+  useScrollRestoration(`series:${series.id}`, true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editingTotal, setEditingTotal] = useState(false)

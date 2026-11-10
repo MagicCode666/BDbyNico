@@ -344,6 +344,17 @@ begin
     raise exception 'ECHEC : le tome 0 n''a pas été conservé par l''import'; end if;
   n := n + 1;
 
+  -- 8d. Adresses de couverture autorisées : Decitre et AbeBooks, pour le bon ISBN seulement
+  if not public.is_allowed_cover_url(i_c, format('https://products-images.di-static.com/image/x/%s-475x500-1.jpg', i_c))
+     or not public.is_allowed_cover_url(i_c, format('https://pictures.abebooks.com/isbn/%s-fr-300.jpg', i_c)) then
+    raise exception 'ECHEC : une adresse de libraire valide est refusée'; end if;
+  n := n + 1;
+  if public.is_allowed_cover_url(i_c, format('https://products-images.di-static.com/image/x/%s-475x500-1.jpg', i_r))
+     or public.is_allowed_cover_url(i_c, format('https://pictures.abebooks.com/isbn/%s-fr-300.jpg', i_r))
+     or public.is_allowed_cover_url(i_c, format('https://exemple.invalid/isbn/%s-fr-300.jpg', i_c)) then
+    raise exception 'ECHEC : une adresse de libraire pour un autre ISBN ou un autre site est acceptée'; end if;
+  n := n + 1;
+
   -- 9. Le job (sans utilisateur) remplace une couverture : journalisé « job », annulable --------
   update public.editions set cover_url = ol_c, cover_locked = false where isbn = i_c;
   perform set_config('request.jwt.claims', '', true);
