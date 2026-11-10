@@ -10,7 +10,7 @@ import { AlbumThumb } from './AlbumCard'
 import { listCollection } from './api'
 import { STATUS_LABELS, type ReadFilter, type Status } from './types'
 import { useAsync } from './useAsync'
-import { effectiveStatus } from '../series/status'
+import { effectiveStatus, PUBLICATION_LABELS } from '../series/status'
 import { effectiveTotal, filterEntries, groupBySeries, progressLabel } from './utils'
 
 const STATUSES: Status[] = ['owned', 'wanted']
@@ -168,6 +168,11 @@ export default function CollectionPage() {
                     {progressLabel(
                       { ...group, totalVolumes: total },
                       total ? ownedNumbered : owned.count,
+                    )}
+                    {publication && (
+                      <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                        {PUBLICATION_LABELS[publication]}
+                      </span>
                     )}
                     {complete && (
                       <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
