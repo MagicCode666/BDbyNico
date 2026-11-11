@@ -3,8 +3,10 @@ import { Link, useParams } from 'react-router-dom'
 
 import { useAuth } from '../../auth/useAuth'
 import FormMessage from '../../components/FormMessage'
+import IconButton from '../../components/IconButton'
 import { Icon } from '../../components/icons'
 import PageLayout from '../../components/PageLayout'
+import ViewToggle from '../../components/ViewToggle'
 import { useScrollRestoration } from '../../lib/useScrollRestoration'
 import { CoverImage } from '../collection/AlbumCard'
 import { useAsync } from '../collection/useAsync'
@@ -31,8 +33,6 @@ import { useMissingCovers } from './useMissingCovers'
 
 const buttonClass =
   'rounded border border-line-strong px-2.5 py-1 text-xs font-medium hover:border-accent disabled:opacity-50'
-const toolButton =
-  'inline-flex items-center gap-2 rounded border border-line-strong px-3 py-1.5 text-sm font-medium hover:border-accent disabled:opacity-50'
 
 type Filter = 'all' | 'owned' | 'missing'
 type Layout = 'grid' | 'list'
@@ -314,65 +314,37 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
                 ? `Ajouter ${missingEditions.length + wantedItems.length} tome(s) à ma collection ?`
                 : `Mettre ${missingEditions.length} tome(s) en envie ?`}
             </span>
-            <button
-              type="button"
+            <IconButton
+              icon="check"
+              label="Confirmer"
+              variant="primary"
               disabled={busy}
               onClick={() => bulk(confirming)}
-              className={`${toolButton} bg-accent text-on-accent`}
-            >
-              Confirmer
-            </button>
-            <button type="button" onClick={() => setConfirming(null)} className={toolButton}>
-              Annuler
-            </button>
+            />
+            <IconButton icon="close" label="Annuler" onClick={() => setConfirming(null)} />
           </div>
         ) : (
           <>
-            <button
-              type="button"
+            <IconButton
+              icon="check"
+              label="Tout ajouter à ma collection"
               disabled={busy || missingEditions.length + wantedItems.length === 0}
               onClick={() => setConfirming('owned')}
-              className={toolButton}
-            >
-              <Icon name="check" className="h-4 w-4" />
-              Tout ajouter à ma collection
-            </button>
-            <button
-              type="button"
+            />
+            <IconButton
+              icon="heart"
+              label="Mettre les manquants en envie"
               disabled={busy || missingEditions.length === 0}
               onClick={() => setConfirming('wanted')}
-              className={toolButton}
-            >
-              <Icon name="heart" className="h-4 w-4" />
-              Manquants en envie
-            </button>
+            />
           </>
         )}
 
-        <div
-          className="ml-auto inline-flex overflow-hidden rounded border border-line-strong"
-          role="group"
-          aria-label="Affichage"
-        >
-          <button
-            type="button"
-            aria-label="Vue grille"
-            aria-pressed={layout === 'grid'}
-            onClick={() => setLayout('grid')}
-            className={`px-2.5 py-1.5 ${layout === 'grid' ? 'bg-raised text-fg shadow-[inset_0_-2px_0_var(--accent)]' : 'text-muted hover:text-fg'}`}
-          >
-            <Icon name="grid" className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            aria-label="Vue liste"
-            aria-pressed={layout === 'list'}
-            onClick={() => setLayout('list')}
-            className={`px-2.5 py-1.5 ${layout === 'list' ? 'bg-raised text-fg shadow-[inset_0_-2px_0_var(--accent)]' : 'text-muted hover:text-fg'}`}
-          >
-            <Icon name="list" className="h-4 w-4" />
-          </button>
-        </div>
+        <ViewToggle
+          className="ml-auto"
+          value={layout === 'grid' ? 'grille' : 'liste'}
+          onChange={(mode) => setLayout(mode === 'grille' ? 'grid' : 'list')}
+        />
       </div>
 
       {remaining > 0 && (
@@ -434,14 +406,13 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
                   {item ? (item.status === 'owned' ? 'possédé' : 'envie') : 'non possédé'}
                 </span>
                 {!item && (
-                  <button
-                    type="button"
+                  <IconButton
+                    icon="heart"
+                    size="sm"
+                    label={`Mettre en envie : ${edition.title}`}
                     disabled={busy}
                     onClick={() => addEdition(edition.isbn, 'wanted')}
-                    className={buttonClass}
-                  >
-                    + Envie
-                  </button>
+                  />
                 )}
               </li>
             ))}
@@ -456,14 +427,13 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
             {ignoredSlots.map((slot) => (
               <li key={slot.volume} className="card flex items-center gap-2 px-2 py-1 text-sm">
                 T{slot.volume}
-                <button
-                  type="button"
+                <IconButton
+                  icon="undo"
+                  size="sm"
+                  label={`Restaurer le tome ${slot.volume}`}
                   disabled={busy}
                   onClick={() => restore(slot.volume)}
-                  className={buttonClass}
-                >
-                  Restaurer
-                </button>
+                />
               </li>
             ))}
           </ul>
@@ -634,22 +604,20 @@ function SlotCard({ slot, seriesName, layout, busy, onAdd, onMarkOwned, onIgnore
           <Icon name="plus" className="h-[18px] w-[18px]" />
         </button>
         <div className={`flex gap-1.5 ${list ? 'flex-none' : ''}`}>
-          <button
-            type="button"
+          <IconButton
+            icon="heart"
+            size="sm"
+            label={`Mettre en envie : ${label}`}
             disabled={busy}
             onClick={() => onAdd(edition.isbn, 'wanted')}
-            className={buttonClass}
-          >
-            + Envie
-          </button>
-          <button
-            type="button"
+          />
+          <IconButton
+            icon="hide"
+            size="sm"
+            label={`Ignorer le tome ${slot.volume}`}
             disabled={busy}
             onClick={() => onIgnore(slot.volume)}
-            className={buttonClass}
-          >
-            Ignorer
-          </button>
+          />
         </div>
       </article>
     )
@@ -667,20 +635,19 @@ function SlotCard({ slot, seriesName, layout, busy, onAdd, onMarkOwned, onIgnore
       </div>
       <span className="min-w-0 text-sm font-semibold leading-tight">{label}</span>
       <div className={`flex gap-1.5 ${list ? 'flex-none' : ''}`}>
-        <Link
+        <IconButton
           to={`/collection/ajouter?serie=${encodeURIComponent(seriesName)}&tome=${slot.volume}`}
-          className={buttonClass}
-        >
-          Ajouter
-        </Link>
-        <button
-          type="button"
+          icon="plus"
+          size="sm"
+          label={`Ajouter le tome ${slot.volume} à la main`}
+        />
+        <IconButton
+          icon="hide"
+          size="sm"
+          label={`Ignorer le tome ${slot.volume}`}
           disabled={busy}
           onClick={() => onIgnore(slot.volume)}
-          className={buttonClass}
-        >
-          Ignorer
-        </button>
+        />
       </div>
     </article>
   )

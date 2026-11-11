@@ -3,8 +3,9 @@ import { Link, useNavigationType, useSearchParams } from 'react-router-dom'
 
 import FormMessage from '../../components/FormMessage'
 import { useScrollRestoration } from '../../lib/useScrollRestoration'
-import { Icon } from '../../components/icons'
+import IconButton from '../../components/IconButton'
 import PageLayout from '../../components/PageLayout'
+import ViewToggle, { type ViewMode } from '../../components/ViewToggle'
 import { listSeriesSettings } from '../series/api'
 import { seriesProgress } from '../series/progress'
 import { useMissingCovers } from '../series/useMissingCovers'
@@ -35,7 +36,7 @@ interface OwnedInSeries {
 const FILTERS_KEY = 'bdbynico:collection-filters'
 const VIEW_KEY = 'bdbynico:collection-view'
 
-type View = 'grille' | 'liste'
+type View = ViewMode
 
 function readSavedView(): View {
   try {
@@ -248,46 +249,14 @@ export default function CollectionPage() {
           />
           Dédicacés
         </label>
-        <div
-          role="group"
-          aria-label="Affichage"
-          className="flex overflow-hidden rounded border border-line-strong"
-        >
-          {(
-            [
-              ['grille', 'grid', 'Affichage en grille'],
-              ['liste', 'list', 'Affichage en liste'],
-            ] as const
-          ).map(([value, icon, label]) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={view === value}
-              aria-label={label}
-              title={label}
-              onClick={() => setView(value)}
-              className={`flex h-8 w-10 items-center justify-center first:border-r first:border-line-strong ${view === value ? 'bg-raised text-accent-text' : 'text-muted hover:bg-raised hover:text-fg'}`}
-            >
-              <Icon name={icon} className="h-4 w-4" />
-            </button>
-          ))}
-        </div>
-        <Link
+        <ViewToggle value={view} onChange={setView} />
+        <IconButton
           to="/collection/ajouter"
-          aria-label="Ajouter un album"
-          title="Ajouter un album"
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-on-accent shadow hover:bg-accent-strong"
-        >
-          <Icon name="plus" className="h-5 w-5" />
-        </Link>
-        <Link
-          to="/collection/importer"
-          aria-label="Importer une collection"
-          title="Importer une collection"
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-accent text-accent-text hover:bg-raised"
-        >
-          <Icon name="import" className="h-4 w-4" />
-        </Link>
+          icon="plus"
+          label="Ajouter un album"
+          variant="primary"
+        />
+        <IconButton to="/collection/importer" icon="import" label="Importer une collection" />
       </div>
       {remaining > 0 && (
         <p role="status" className="mb-3 text-sm text-muted">

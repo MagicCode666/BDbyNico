@@ -164,7 +164,7 @@ describe('SeriesPage', () => {
   it('« Manquants en envie » ajoute seulement les tomes du catalogue absents', async () => {
     renderPage()
     await screen.findByRole('heading', { name: 'Black Op' })
-    fireEvent.click(screen.getByRole('button', { name: /Manquants en envie/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Mettre les manquants en envie/ }))
     expect(screen.getByText('Mettre 2 tome(s) en envie ?')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer' }))
     await waitFor(() => expect(addCatalogueEdition).toHaveBeenCalledTimes(2))

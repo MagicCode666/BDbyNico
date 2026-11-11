@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { useAuth } from '../../auth/useAuth'
 import FormMessage from '../../components/FormMessage'
+import IconButton from '../../components/IconButton'
 import PageLayout from '../../components/PageLayout'
 import { languageName } from '../../lib/bnfFields'
 import { formatIsbn } from '../../lib/isbn'
@@ -64,9 +65,6 @@ export default function AlbumPage() {
     </PageLayout>
   )
 }
-
-const secondaryButton =
-  'rounded border border-line-strong bg-surface px-3 py-2 text-sm font-medium hover:bg-raised disabled:opacity-50'
 
 function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => void }) {
   const { edition, entry, series } = data
@@ -172,22 +170,21 @@ function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => voi
               role="group"
               aria-label="Ajouter à ma collection"
             >
-              <button
-                type="button"
+              <IconButton
+                icon="check"
+                size="lg"
+                variant="primary"
+                label="Je l'ai"
                 disabled={busy}
                 onClick={() => add('owned')}
-                className="rounded bg-accent px-4 py-2 text-sm font-semibold text-on-accent disabled:opacity-50"
-              >
-                Je l'ai
-              </button>
-              <button
-                type="button"
+              />
+              <IconButton
+                icon="heart"
+                size="lg"
+                label="Je le veux"
                 disabled={busy}
                 onClick={() => add('wanted')}
-                className={secondaryButton}
-              >
-                Je le veux
-              </button>
+              />
             </div>
           )}
           {error && <FormMessage kind="error">{error}</FormMessage>}

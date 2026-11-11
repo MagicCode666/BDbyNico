@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import FormMessage from '../../components/FormMessage'
+import IconButton from '../../components/IconButton'
 import SubmitButton from '../../components/SubmitButton'
 import TextField from '../../components/TextField'
 import { deleteEntry, updateEntry } from './api'
@@ -188,30 +189,22 @@ export default function AlbumCollectionCard({ entry }: { entry: Entry }) {
                 ? 'Retirer cet album de vos envies ?'
                 : 'Retirer cet album de votre collection ?'}
             </span>
-            <button
-              type="button"
-              onClick={onDelete}
+            <IconButton
+              icon="check"
+              variant="danger"
+              label="Oui, retirer"
               disabled={busy}
-              className="rounded bg-danger px-3 py-1 text-sm font-medium text-white disabled:opacity-50"
-            >
-              Oui, retirer
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(false)}
-              className="rounded border border-line-strong px-3 py-1 text-sm"
-            >
-              Annuler
-            </button>
+              onClick={onDelete}
+            />
+            <IconButton icon="close" label="Annuler" onClick={() => setConfirmDelete(false)} />
           </div>
         ) : (
-          <button
-            type="button"
+          <IconButton
+            icon="trash"
+            variant="danger"
+            label={status === 'wanted' ? 'Retirer de mes envies' : 'Retirer de ma collection'}
             onClick={() => setConfirmDelete(true)}
-            className="text-sm text-danger-text underline"
-          >
-            {status === 'wanted' ? 'Retirer de mes envies' : 'Retirer de ma collection'}
-          </button>
+          />
         )}
       </div>
     </section>

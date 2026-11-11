@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import FormMessage from '../../components/FormMessage'
+import IconButton from '../../components/IconButton'
 import {
   loadShareSettings,
   regenerateShareToken,
@@ -125,13 +126,13 @@ export default function ShareSection({ userId }: { userId: string }) {
                   onFocus={(event) => event.currentTarget.select()}
                   className="min-w-0 flex-1 rounded border border-line-strong bg-surface px-3 py-2 text-sm"
                 />
-                <button
-                  type="button"
+                <IconButton
+                  icon={copied ? 'check' : 'copy'}
+                  variant="primary"
+                  size="lg"
+                  label={copied ? 'Lien copié' : 'Copier le lien'}
                   onClick={copy}
-                  className="rounded bg-accent px-3 py-2 text-sm font-semibold text-on-accent hover:bg-accent-strong"
-                >
-                  {copied ? 'Lien copié' : 'Copier le lien'}
-                </button>
+                />
               </div>
               <Switch
                 label="Montrer mes envies"
@@ -156,21 +157,18 @@ export default function ShareSection({ userId }: { userId: string }) {
                     <span className="text-sm">
                       L’ancien lien cessera de fonctionner. Générer un nouveau lien ?
                     </span>
-                    <button
-                      type="button"
-                      onClick={regenerate}
+                    <IconButton
+                      icon="check"
+                      variant="danger"
+                      label="Oui, générer"
                       disabled={busy}
-                      className="rounded bg-danger px-3 py-1 text-sm font-medium text-white disabled:opacity-50"
-                    >
-                      Oui, générer
-                    </button>
-                    <button
-                      type="button"
+                      onClick={regenerate}
+                    />
+                    <IconButton
+                      icon="close"
+                      label="Annuler"
                       onClick={() => setConfirmRegenerate(false)}
-                      className="rounded border border-line-strong px-3 py-1 text-sm"
-                    >
-                      Annuler
-                    </button>
+                    />
                   </div>
                 ) : (
                   <button

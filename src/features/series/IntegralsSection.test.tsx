@@ -86,7 +86,7 @@ describe('IntegralsSection', () => {
 
   it("propose d'ajouter une intégrale du catalogue que l'on n'a pas", () => {
     const { onAdd } = renderSection([{ edition: edition({}), item: null }])
-    fireEvent.click(screen.getByRole('button', { name: '+ Possédée' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Ajouter à ma collection/ }))
     expect(onAdd).toHaveBeenCalledWith('isbn-1', 'owned')
   })
 
