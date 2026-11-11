@@ -11,6 +11,7 @@ const PATHS = {
   grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
   list: 'M4 6h16M4 12h16M4 18h16',
   chevron: 'M9 6l6 6-6 6',
+  import: 'M12 3v12M7 10l5 5 5-5M5 21h14',
 } as const
 
 export type IconName = keyof typeof PATHS
