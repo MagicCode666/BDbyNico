@@ -7,6 +7,7 @@ import {
   groupBySeries,
   normalizeText,
   progressLabel,
+  seriesCoverUrl,
   withoutSupersededWishes,
 } from './utils'
 
@@ -141,5 +142,15 @@ describe('withoutSupersededWishes', () => {
       otherWish,
       noSeries,
     ])
+  })
+})
+
+describe('seriesCoverUrl', () => {
+  it('prend la couverture du premier tome qui en a une', () => {
+    const none = entry({ title: 'A', seriesName: 'S', volume: 1 })
+    const withCover = entry({ title: 'B', seriesName: 'S', volume: 2 })
+    withCover.edition.coverUrl = 'https://exemple.test/2.jpg'
+    expect(seriesCoverUrl([none, withCover])).toBe('https://exemple.test/2.jpg')
+    expect(seriesCoverUrl([none])).toBeNull()
   })
 })

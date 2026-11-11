@@ -127,3 +127,8 @@ export function withoutSupersededWishes(entries: Entry[]): Entry[] {
     return !k || !ownedKeys.has(k)
   })
 }
+
+/** Couverture d'une série : celle du premier tome qui en a une (les entrées sont déjà triées). */
+export function seriesCoverUrl(entries: Entry[]): string | null {
+  return entries.find((entry) => entry.edition.coverUrl)?.edition.coverUrl ?? null
+}
