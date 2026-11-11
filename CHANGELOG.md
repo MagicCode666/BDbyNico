@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.18.0...bdbynico-v0.19.0) (2026-11-11)
+
+
+### Nouveautés
+
+* œil du mot de passe, types de base régénérés, contrôles RLS étendus ([#51](https://github.com/MagicCode666/BDbyNico/issues/51)) ([c1eeeb9](https://github.com/MagicCode666/BDbyNico/commit/c1eeeb9014793a20c6975be07f9d49c14d86ea0d))
+
 ## [0.18.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.17.0...bdbynico-v0.18.0) (2026-11-11)
 
 
