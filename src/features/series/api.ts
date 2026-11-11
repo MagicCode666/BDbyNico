@@ -61,7 +61,7 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
   if (editions.length > 0) {
     const { data: itemRows, error: itemsError } = await supabase
       .from('collection_items')
-      .select('id, isbn, status, read')
+      .select('id, isbn, status')
       .in(
         'isbn',
         editions.map((e) => e.isbn),
@@ -71,7 +71,6 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
       id: row.id,
       isbn: row.isbn,
       status: row.status === 'wanted' ? 'wanted' : 'owned',
-      read: row.read,
     }))
   }
 

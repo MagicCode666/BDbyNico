@@ -114,15 +114,15 @@ describe('SearchPage', () => {
 
   it("propose d'ajouter seulement les albums que l'on n'a pas, en un clic", async () => {
     renderPage()
-    await screen.findByRole('button', { name: '+ Envie' })
-    expect(screen.getAllByRole('button', { name: '+ Possédé' })).toHaveLength(1)
-    fireEvent.click(screen.getByRole('button', { name: '+ Envie' }))
+    await screen.findByRole('button', { name: /^Mettre en envie/ })
+    expect(screen.getAllByRole('button', { name: /^Ajouter à ma collection/ })).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: /^Mettre en envie/ }))
     await waitFor(() =>
       expect(addCatalogueEdition).toHaveBeenCalledWith('u1', '9782205058789', 'wanted'),
     )
     // L'album passe tout de suite à « Envie », sans relancer la recherche
     await screen.findByText('Envie')
-    expect(screen.queryByRole('button', { name: '+ Envie' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Mettre en envie/ })).toBeNull()
     expect(searchCatalogue).toHaveBeenCalledTimes(1)
   })
 

@@ -62,7 +62,6 @@ function SeriesDetail({ entries, name, token }: { entries: Entry[]; name: string
               <span className="text-center text-xs text-muted">
                 {label}
                 {wanted && ' · en envie'}
-                {entry.read && ' · lu'}
               </span>
             </li>
           )

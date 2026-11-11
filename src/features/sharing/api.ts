@@ -17,7 +17,6 @@ export interface SharedRow {
   authors: string[]
   coverUrl: string | null
   status: string
-  read: boolean
   dedicated: boolean
 }
 
@@ -40,7 +39,6 @@ export async function getSharedCollection(token: string): Promise<SharedRow[]> {
     authors: row.authors ?? [],
     coverUrl: row.cover_url ?? null,
     status: row.status,
-    read: !!row.read,
     dedicated: !!row.dedicated,
   }))
 }

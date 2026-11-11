@@ -55,7 +55,7 @@ export default function ExistingDialog({ count, onConfirm, onCancel }: ExistingD
             <span>
               <span className="block font-medium">Les compléter</span>
               <span className="text-sm text-muted">
-                Ajoute ce que le fichier sait en plus (lu, prix, dédicace, édition originale, envie
+                Ajoute ce que le fichier sait en plus (prix, dédicace, édition originale, envie
                 devenue possédée), sans rien effacer. La date d'achat et vos notes ne sont pas
                 touchées.
               </span>

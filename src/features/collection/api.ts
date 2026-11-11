@@ -6,7 +6,7 @@ import type { Dedication, Edition, Entry, SeriesInfo, Status } from './types'
 import { withoutSupersededWishes } from './utils'
 
 const SELECT = `
-  id, status, read, price, condition, notes, acquired_on, created_at, dedication, dedication_by,
+  id, status, price, condition, notes, acquired_on, created_at, dedication, dedication_by,
   first_edition,
   editions (
     isbn, title, volume, authors, publisher, published_on, cover_url,
@@ -49,7 +49,6 @@ interface RawEdition {
 interface RawItem {
   id: string
   status: string
-  read: boolean
   price: number | null
   condition: string | null
   notes: string | null
@@ -107,7 +106,6 @@ function toEntry(raw: RawItem): Entry | null {
   return {
     id: raw.id,
     status: raw.status === 'wanted' ? 'wanted' : 'owned',
-    read: raw.read,
     price: raw.price,
     condition: raw.condition,
     notes: raw.notes,
@@ -210,7 +208,6 @@ export async function addAlbum(userId: string, album: NewAlbum): Promise<void> {
 
 export interface EntryChanges {
   status: Status
-  read: boolean
   price: number | null
   condition: string | null
   notes: string | null
@@ -225,7 +222,6 @@ export async function updateEntry(id: string, changes: EntryChanges): Promise<vo
     .from('collection_items')
     .update({
       status: changes.status,
-      read: changes.read,
       price: changes.price,
       condition: changes.condition,
       notes: changes.notes,

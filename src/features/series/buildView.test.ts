@@ -19,7 +19,6 @@ const item = (ed: CatalogueEdition, status: 'owned' | 'wanted' = 'owned'): UserI
   id: `item-${ed.isbn}`,
   isbn: ed.isbn,
   status,
-  read: false,
 })
 
 describe('missingVolumes', () => {

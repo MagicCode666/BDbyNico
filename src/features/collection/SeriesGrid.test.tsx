@@ -11,7 +11,6 @@ const card = (extra: Partial<GridCard> = {}): GridCard => ({
   coverUrl: 'https://exemple.test/alpha.jpg',
   owned: 12,
   target: 21,
-  readCount: 10,
   albumCount: 12,
   publication: 'ongoing',
   complete: false,
@@ -30,12 +29,11 @@ function renderGrid(cards: GridCard[]) {
 describe('SeriesGrid', () => {
   afterEach(cleanup)
 
-  it('mène à la série, avec la progression, les albums et les lus', () => {
+  it('mène à la série, avec la progression et les albums', () => {
     renderGrid([card()])
     expect(screen.getByRole('link', { name: 'Alpha' }).getAttribute('href')).toBe('/series/s1')
     expect(screen.getByRole('progressbar', { name: 'Progression de Alpha' })).toBeTruthy()
     expect(screen.getByText('12 / 21')).toBeTruthy()
-    expect(screen.getByText('10 / 12')).toBeTruthy()
   })
 
   it('signale une série complète et omet la progression pour un album hors série', () => {

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import FormMessage from '../../components/FormMessage'
+import IconButton from '../../components/IconButton'
 import SubmitButton from '../../components/SubmitButton'
 import TextField from '../../components/TextField'
 import { deleteEntry, updateEntry } from './api'
@@ -13,7 +14,6 @@ const selectClass = 'rounded border border-line-strong bg-surface px-3 py-2'
 export default function AlbumCollectionCard({ entry }: { entry: Entry }) {
   const navigate = useNavigate()
   const [status, setStatus] = useState<Status>(entry.status)
-  const [read, setRead] = useState(entry.read)
   const [price, setPrice] = useState(entry.price?.toString() ?? '')
   const [condition, setCondition] = useState(entry.condition ?? '')
   const [notes, setNotes] = useState(entry.notes ?? '')
@@ -37,7 +37,6 @@ export default function AlbumCollectionCard({ entry }: { entry: Entry }) {
     try {
       await updateEntry(entry.id, {
         status,
-        read,
         price: priceNumber,
         condition: condition.trim() || null,
         notes: notes.trim() || null,
@@ -95,10 +94,6 @@ export default function AlbumCollectionCard({ entry }: { entry: Entry }) {
           </select>
         </div>
         <div className="flex flex-wrap gap-x-6 gap-y-2">
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input type="checkbox" checked={read} onChange={(e) => setRead(e.target.checked)} />
-            Lu
-          </label>
           <label className="flex items-center gap-2 text-sm font-medium">
             <input
               type="checkbox"
@@ -188,30 +183,22 @@ export default function AlbumCollectionCard({ entry }: { entry: Entry }) {
                 ? 'Retirer cet album de vos envies ?'
                 : 'Retirer cet album de votre collection ?'}
             </span>
-            <button
-              type="button"
-              onClick={onDelete}
+            <IconButton
+              icon="check"
+              variant="danger"
+              label="Oui, retirer"
               disabled={busy}
-              className="rounded bg-danger px-3 py-1 text-sm font-medium text-white disabled:opacity-50"
-            >
-              Oui, retirer
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(false)}
-              className="rounded border border-line-strong px-3 py-1 text-sm"
-            >
-              Annuler
-            </button>
+              onClick={onDelete}
+            />
+            <IconButton icon="close" label="Annuler" onClick={() => setConfirmDelete(false)} />
           </div>
         ) : (
-          <button
-            type="button"
+          <IconButton
+            icon="trash"
+            variant="danger"
+            label={status === 'wanted' ? 'Retirer de mes envies' : 'Retirer de ma collection'}
             onClick={() => setConfirmDelete(true)}
-            className="text-sm text-danger-text underline"
-          >
-            {status === 'wanted' ? 'Retirer de mes envies' : 'Retirer de ma collection'}
-          </button>
+          />
         )}
       </div>
     </section>

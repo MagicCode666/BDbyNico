@@ -3,7 +3,9 @@ import { Link, useNavigationType, useSearchParams } from 'react-router-dom'
 
 import FormMessage from '../../components/FormMessage'
 import { useScrollRestoration } from '../../lib/useScrollRestoration'
+import IconButton from '../../components/IconButton'
 import PageLayout from '../../components/PageLayout'
+import ViewToggle, { type ViewMode } from '../../components/ViewToggle'
 import { listSeriesSettings } from '../series/api'
 import { seriesProgress } from '../series/progress'
 import { useMissingCovers } from '../series/useMissingCovers'
@@ -11,7 +13,7 @@ import { AlbumThumb } from './AlbumCard'
 import SeriesGrid, { type GridCard } from './SeriesGrid'
 import { isOutsideGrid } from './kinds'
 import { listCollection } from './api'
-import { STATUS_LABELS, type ReadFilter, type Status } from './types'
+import { STATUS_LABELS, type Status } from './types'
 import { useAsync } from './useAsync'
 import { completionLabel, effectiveStatus, PUBLICATION_LABELS } from '../series/status'
 import {
@@ -34,7 +36,7 @@ interface OwnedInSeries {
 const FILTERS_KEY = 'bdbynico:collection-filters'
 const VIEW_KEY = 'bdbynico:collection-view'
 
-type View = 'grille' | 'liste'
+type View = ViewMode
 
 function readSavedView(): View {
   try {
@@ -46,7 +48,6 @@ function readSavedView(): View {
 
 interface SavedFilters {
   query: string
-  read: ReadFilter
   dedicatedOnly: boolean
 }
 
@@ -78,16 +79,15 @@ export default function CollectionPage() {
     }
   }
   const [query, setQuery] = useState(saved.query ?? '')
-  const [read, setRead] = useState<ReadFilter>(saved.read ?? 'all')
   const [dedicatedOnly, setDedicatedOnly] = useState(saved.dedicatedOnly ?? false)
   useScrollRestoration('collection', !loading)
   useEffect(() => {
     try {
-      sessionStorage.setItem(FILTERS_KEY, JSON.stringify({ query, read, dedicatedOnly }))
+      sessionStorage.setItem(FILTERS_KEY, JSON.stringify({ query, dedicatedOnly }))
     } catch {
       // stockage indisponible : les filtres ne seront simplement pas restaurés
     }
-  }, [query, read, dedicatedOnly])
+  }, [query, dedicatedOnly])
 
   const entries = useMemo(() => data ?? [], [data])
   // Couvertures manquantes (après un import, par exemple) : cherchées au fil de l'eau, puis
@@ -137,8 +137,8 @@ export default function CollectionPage() {
   }, [entries])
   const pendingCount = useMemo(() => entries.filter((e) => e.edition.pending).length, [entries])
   const groups = useMemo(
-    () => groupBySeries(filterEntries(entriesWithCovers, { status, query, read, dedicatedOnly })),
-    [entriesWithCovers, status, query, read, dedicatedOnly],
+    () => groupBySeries(filterEntries(entriesWithCovers, { status, query, dedicatedOnly })),
+    [entriesWithCovers, status, query, dedicatedOnly],
   )
 
   function summarize(group: SeriesGroup) {
@@ -178,7 +178,6 @@ export default function CollectionPage() {
               coverUrl: entry.edition.coverUrl,
               owned: entry.status === 'owned' ? 1 : 0,
               target: null,
-              readCount: entry.read ? 1 : 0,
               albumCount: 1,
               publication: null,
               complete: false,
@@ -195,7 +194,6 @@ export default function CollectionPage() {
               coverUrl: seriesCoverUrl(group.entries),
               owned: status === 'owned' ? shownOwned : group.entries.length,
               target: status === 'owned' && total ? shownTotal : null,
-              readCount: group.entries.filter((entry) => entry.read).length,
               albumCount: group.entries.length,
               publication,
               complete,
@@ -229,16 +227,6 @@ export default function CollectionPage() {
           onChange={(e) => setQuery(e.target.value)}
           className="min-w-0 flex-1 rounded border border-line-strong bg-surface px-3 py-1"
         />
-        <select
-          aria-label="Lecture"
-          value={read}
-          onChange={(e) => setRead(e.target.value as ReadFilter)}
-          className="rounded border border-line-strong bg-surface px-2 py-1"
-        >
-          <option value="all">Tous</option>
-          <option value="read">Lus</option>
-          <option value="unread">Non lus</option>
-        </select>
         <label className="flex items-center gap-1 text-sm">
           <input
             type="checkbox"
@@ -247,31 +235,14 @@ export default function CollectionPage() {
           />
           Dédicacés
         </label>
-        <div role="group" aria-label="Affichage" className="flex gap-1">
-          {(['grille', 'liste'] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={view === value}
-              onClick={() => setView(value)}
-              className={`rounded px-3 py-1 text-sm font-medium ${view === value ? 'bg-accent text-on-accent' : 'border border-line-strong hover:bg-raised'}`}
-            >
-              {value === 'grille' ? 'Grille' : 'Liste'}
-            </button>
-          ))}
-        </div>
-        <Link
+        <ViewToggle value={view} onChange={setView} />
+        <IconButton
           to="/collection/ajouter"
-          className="rounded bg-accent px-3 py-1 text-sm font-medium text-on-accent hover:bg-accent-strong"
-        >
-          Ajouter un album
-        </Link>
-        <Link
-          to="/collection/importer"
-          className="rounded border border-accent px-3 py-1 text-sm font-medium text-accent-text"
-        >
-          Importer
-        </Link>
+          icon="plus"
+          label="Ajouter un album"
+          variant="primary"
+        />
+        <IconButton to="/collection/importer" icon="import" label="Importer une collection" />
       </div>
       {remaining > 0 && (
         <p role="status" className="mb-3 text-sm text-muted">

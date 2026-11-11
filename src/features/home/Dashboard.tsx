@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
 import FormMessage from '../../components/FormMessage'
+import IconButton from '../../components/IconButton'
 import PageLayout from '../../components/PageLayout'
 import { useAccountSummary } from '../../components/shell/useAccountSummary'
 import { CoverImage } from '../collection/AlbumCard'
@@ -40,12 +41,13 @@ export default function Dashboard() {
             <p className="text-sm text-muted">Bon retour</p>
             <h1 className="title-metal text-4xl">{summary?.pseudo ?? 'Votre collection'}</h1>
           </div>
-          <Link
+          <IconButton
             to="/collection/ajouter"
-            className="rounded bg-accent px-4 py-2 text-sm font-semibold text-on-accent hover:bg-accent-strong"
-          >
-            Ajouter un album
-          </Link>
+            icon="plus"
+            label="Ajouter un album"
+            variant="primary"
+            size="lg"
+          />
         </header>
 
         {error && <FormMessage kind="error">Impossible de charger votre collection.</FormMessage>}

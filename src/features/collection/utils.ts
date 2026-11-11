@@ -1,6 +1,6 @@
 import type { PublicationStatus } from '../series/status'
 import { isOutsideGrid } from './kinds'
-import type { Entry, ReadFilter, Status } from './types'
+import type { Entry, Status } from './types'
 
 /** Minuscules sans accents, pour des recherches tolérantes. */
 export function normalizeText(text: string): string {
@@ -10,20 +10,17 @@ export function normalizeText(text: string): string {
 export interface Filters {
   status: Status
   query: string
-  read: ReadFilter
   /** Ne garder que les albums dédicacés (signature ou dessin). */
   dedicatedOnly?: boolean
 }
 
 export function filterEntries(
   entries: Entry[],
-  { status, query, read, dedicatedOnly }: Filters,
+  { status, query, dedicatedOnly }: Filters,
 ): Entry[] {
   const needle = normalizeText(query.trim())
   return entries.filter((entry) => {
     if (entry.status !== status) return false
-    if (read === 'read' && !entry.read) return false
-    if (read === 'unread' && entry.read) return false
     if (dedicatedOnly && !entry.dedication) return false
     if (!needle) return true
     const { edition } = entry

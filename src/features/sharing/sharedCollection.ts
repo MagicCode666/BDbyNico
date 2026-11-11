@@ -17,7 +17,6 @@ export function toSharedEntries(rows: SharedRow[]): Entry[] {
     rows.map((row) => ({
       id: row.isbn,
       status: row.status === 'wanted' ? ('wanted' as const) : ('owned' as const),
-      read: row.read,
       price: null,
       condition: null,
       notes: null,
@@ -91,7 +90,6 @@ export function sharedCards(entries: Entry[], status: Status, token: string): Gr
       coverUrl: seriesCoverUrl(group.entries),
       owned: owned && total ? progress.owned : group.entries.length,
       target: owned && total ? progress.target : null,
-      readCount: group.entries.filter((entry) => entry.read).length,
       albumCount: group.entries.length,
       publication: group.publicationStatus,
       complete: showProgress && progress.complete,
