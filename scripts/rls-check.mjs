@@ -63,6 +63,17 @@ const B = await login('B')
 if (A.id === B.id)
   throw new Error('Les deux comptes sont identiques : utilisez deux comptes différents.')
 const anon = newClient()
+
+// Le compte A doit etre un contributeur ordinaire (role user, niveau full) : avec le niveau
+// collection seule, ses changements de couverture et de type restent en attente de validation
+// et encombrent la file de l'administration. On s'arrete avant de rien creer.
+const levelA = await A.client.from('profiles').select('role, contribution').eq('id', A.id).single()
+if (levelA.data?.role !== 'user' || levelA.data?.contribution !== 'full') {
+  throw new Error(
+    `Le compte A doit avoir le role user et le niveau full (actuellement ${show(levelA.data)}) : ` +
+      'reglez-le dans Administration > Utilisateurs (Contributeur), puis relancez.',
+  )
+}
 console.log('\n--- Profils ---')
 
 let r = await A.client.from('profiles').select('id, share_token')

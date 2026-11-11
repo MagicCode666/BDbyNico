@@ -12,6 +12,7 @@ import AuthCard from '../components/AuthCard'
 import FormMessage from '../components/FormMessage'
 import SubmitButton from '../components/SubmitButton'
 import PasswordField from '../components/PasswordField'
+import PasswordStrength from '../components/PasswordStrength'
 import TextField from '../components/TextField'
 
 export default function SignUpPage() {
@@ -96,6 +97,7 @@ export default function SignUpPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+        <PasswordStrength value={password} />
         {error && <FormMessage kind="error">{error}</FormMessage>}
         <SubmitButton busy={busy}>Créer mon compte</SubmitButton>
       </form>
