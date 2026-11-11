@@ -48,7 +48,10 @@ export default function AddAlbumPage() {
   const [publisher, setPublisher] = useState('')
   const [publishedOn, setPublishedOn] = useState('')
   const [coverUrl, setCoverUrl] = useState('')
-  const [status, setStatus] = useState<Status>('owned')
+  // « catalogue » : référencer l'album sans l'ajouter à sa collection ni à ses envies
+  const [status, setStatus] = useState<Status | 'catalogue'>(
+    searchParams.get('statut') === 'catalogue' ? 'catalogue' : 'owned',
+  )
   // Intégrale ou hors-série : deviné par la recherche, que l'on confirme ici
   const [kind, setKind] = useState<AlbumKind>('album')
   const [rangeFrom, setRangeFrom] = useState('')
@@ -171,7 +174,7 @@ export default function AddAlbumPage() {
         publisher: optional(publisher),
         publishedOn: optional(publishedOn),
         coverUrl: optional(coverUrl),
-        status,
+        status: status === 'catalogue' ? null : status,
         source: source ?? 'manual',
       })
       // Le type se règle une fois l'album ajouté (réservé aux possesseurs) ; un échec n'empêche pas
@@ -350,7 +353,7 @@ export default function AddAlbumPage() {
           <select
             id="status"
             value={status}
-            onChange={(e) => setStatus(e.target.value as Status)}
+            onChange={(e) => setStatus(e.target.value as Status | 'catalogue')}
             className="rounded border border-line-strong px-3 py-2"
           >
             {(Object.keys(STATUS_LABELS) as Status[]).map((value) => (
@@ -358,10 +361,13 @@ export default function AddAlbumPage() {
                 {STATUS_LABELS[value]}
               </option>
             ))}
+            <option value="catalogue">Catalogue seulement (ni possédé, ni en envie)</option>
           </select>
         </div>
         {error && <FormMessage kind="error">{error}</FormMessage>}
-        <SubmitButton busy={busy}>Ajouter</SubmitButton>
+        <SubmitButton busy={busy}>
+          {status === 'catalogue' ? 'Enregistrer dans le catalogue' : 'Ajouter'}
+        </SubmitButton>
       </form>
     </PageLayout>
   )

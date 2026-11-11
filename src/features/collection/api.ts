@@ -171,7 +171,8 @@ export interface NewAlbum {
   publisher?: string
   publishedOn?: string
   coverUrl?: string
-  status: Status
+  /** null : l'album est seulement référencé au catalogue, sans entrer dans la collection. */
+  status: Status | null
   /** Origine des informations (« manual » par défaut). */
   source?: string
 }
@@ -182,7 +183,10 @@ export class AlreadyInCollectionError extends Error {
   }
 }
 
-/** Ajoute l'édition au catalogue partagé (si absente) puis à la collection de l'utilisateur. */
+/**
+ * Ajoute l'édition au catalogue partagé (si absente) puis, sauf demande contraire (status null),
+ * à la collection de l'utilisateur.
+ */
 export async function addAlbum(userId: string, album: NewAlbum): Promise<void> {
   const { error: editionError } = await supabase.rpc('add_edition', {
     p_isbn: album.isbn,
@@ -196,6 +200,7 @@ export async function addAlbum(userId: string, album: NewAlbum): Promise<void> {
     p_source: album.source ?? 'manual',
   })
   if (editionError) throw editionError
+  if (album.status === null) return
 
   const { error } = await supabase
     .from('collection_items')

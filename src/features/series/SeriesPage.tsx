@@ -645,10 +645,16 @@ function SlotCard({ slot, seriesName, layout, busy, onAdd, onMarkOwned, onIgnore
       <span className="min-w-0 text-sm font-semibold leading-tight">{label}</span>
       <div className={`flex gap-1.5 ${list ? 'flex-none' : ''}`}>
         <IconButton
+          to={`/collection/ajouter?serie=${encodeURIComponent(seriesName)}&tome=${slot.volume}&statut=catalogue`}
+          icon="edit"
+          size="sm"
+          label={`Renseigner le tome ${slot.volume} (catalogue seulement)`}
+        />
+        <IconButton
           to={`/collection/ajouter?serie=${encodeURIComponent(seriesName)}&tome=${slot.volume}`}
           icon="plus"
           size="sm"
-          label={`Ajouter le tome ${slot.volume} à la main`}
+          label={`Ajouter le tome ${slot.volume} à ma collection`}
         />
         <IconButton
           icon="hide"
