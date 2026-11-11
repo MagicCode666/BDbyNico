@@ -11,6 +11,7 @@ import {
 import AuthCard from '../components/AuthCard'
 import FormMessage from '../components/FormMessage'
 import SubmitButton from '../components/SubmitButton'
+import PasswordField from '../components/PasswordField'
 import TextField from '../components/TextField'
 
 export default function SignUpPage() {
@@ -87,10 +88,9 @@ export default function SignUpPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <TextField
+        <PasswordField
           label="Mot de passe (8 caractères minimum)"
           name="password"
-          type="password"
           autoComplete="new-password"
           required
           value={password}
