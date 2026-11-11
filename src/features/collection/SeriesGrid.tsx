@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-import { PUBLICATION_LABELS, type PublicationStatus } from '../series/status'
+import { completionLabel, PUBLICATION_LABELS, type PublicationStatus } from '../series/status'
 import { CoverImage } from './AlbumCard'
 
 /** Une carte de la grille : une série (ou un album hors série) et sa progression. */
@@ -58,7 +58,7 @@ export default function SeriesGrid({ cards }: { cards: GridCard[] }) {
 
               {card.complete && (
                 <span className="absolute right-2 top-2 rounded bg-ok-soft px-2 py-0.5 text-xs font-medium text-ok backdrop-blur">
-                  ✓ Complète
+                  ✓ {completionLabel(true, card.publication)}
                 </span>
               )}
 

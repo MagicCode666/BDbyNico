@@ -213,8 +213,10 @@ export type Database = {
           id: string
           pseudo: string
           role: string
+          share_dedications: boolean
           share_enabled: boolean
           share_token: string
+          share_wishes: boolean
         }
         Insert: {
           contribution?: string
@@ -222,8 +224,10 @@ export type Database = {
           id: string
           pseudo: string
           role?: string
+          share_dedications?: boolean
           share_enabled?: boolean
           share_token?: string
+          share_wishes?: boolean
         }
         Update: {
           contribution?: string
@@ -231,8 +235,10 @@ export type Database = {
           id?: string
           pseudo?: string
           role?: string
+          share_dedications?: boolean
           share_enabled?: boolean
           share_token?: string
+          share_wishes?: boolean
         }
         Relationships: []
       }
@@ -376,12 +382,21 @@ export type Database = {
         Returns: {
           authors: string[]
           cover_url: string
+          dedicated: boolean
           isbn: string
+          kind: string
           pseudo: string
+          read: boolean
+          series_id: string
           series_name: string
+          series_status: string
+          series_total: number
+          starts_at_zero: boolean
           status: string
           title: string
           volume: number
+          volume_from: number
+          volume_to: number
         }[]
       }
       import_editions: { Args: { p_rows: Json }; Returns: Json }

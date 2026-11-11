@@ -39,7 +39,10 @@ describe('SeriesGrid', () => {
   })
 
   it('signale une série complète et omet la progression pour un album hors série', () => {
-    renderGrid([card({ complete: true }), card({ key: 'x', name: 'Seul', showProgress: false })])
+    renderGrid([
+      card({ complete: true, publication: 'finished' }),
+      card({ key: 'x', name: 'Seul', showProgress: false }),
+    ])
     expect(screen.getAllByText('✓ Complète')).toHaveLength(1)
     expect(screen.getAllByRole('progressbar')).toHaveLength(1)
   })
