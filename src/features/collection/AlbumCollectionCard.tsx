@@ -183,7 +183,11 @@ export default function AlbumCollectionCard({ entry }: { entry: Entry }) {
       <div className="border-t border-line pt-4">
         {confirmDelete ? (
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm">Retirer cet album de votre collection ?</span>
+            <span className="text-sm">
+              {status === 'wanted'
+                ? 'Retirer cet album de vos envies ?'
+                : 'Retirer cet album de votre collection ?'}
+            </span>
             <button
               type="button"
               onClick={onDelete}
@@ -206,7 +210,7 @@ export default function AlbumCollectionCard({ entry }: { entry: Entry }) {
             onClick={() => setConfirmDelete(true)}
             className="text-sm text-danger-text underline"
           >
-            Retirer de ma collection
+            {status === 'wanted' ? 'Retirer de mes envies' : 'Retirer de ma collection'}
           </button>
         )}
       </div>

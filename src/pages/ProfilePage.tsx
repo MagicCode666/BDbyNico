@@ -10,6 +10,7 @@ import TextField from '../components/TextField'
 import ClearCollectionDialog from '../features/collection/ClearCollectionDialog'
 import { exportCollection } from '../features/export/exportCollection'
 import { countPending } from '../features/governance/api'
+import ShareSection from '../features/sharing/ShareSection'
 import { useAccess } from '../features/governance/useAccess'
 import { supabase } from '../lib/supabase'
 import { THEME_LABELS, toPreference, type ThemePreference } from '../theme/theme'
@@ -162,6 +163,8 @@ export default function ProfilePage() {
             </Link>
           </section>
         )}
+
+        {userId && <ShareSection userId={userId} />}
 
         <section className="card flex flex-col gap-3 p-5">
           <h2 className="text-xl">Mes données</h2>

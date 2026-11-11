@@ -11,6 +11,7 @@ import ImportPage from './features/import/ImportPage'
 import ExplorerPage from './features/explorer/ExplorerPage'
 import SearchPage from './features/search/SearchPage'
 import SeriesPage from './features/series/SeriesPage'
+import SharedPage from './features/sharing/SharedPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -32,6 +33,8 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/connexion" element={<LoginPage />} />
       <Route path="/inscription" element={<SignUpPage />} />
+      <Route path="/partage/:token" element={<SharedPage />} />
+      <Route path="/partage/:token/:seriesId" element={<SharedPage />} />
       <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
       <Route path="/nouveau-mot-de-passe" element={<ResetPasswordPage />} />
       <Route element={<RequireAuth />}>

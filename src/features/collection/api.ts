@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { toPublicationStatus } from '../series/status'
 import { toAlbumKind } from './kinds'
 import type { Dedication, Edition, Entry, SeriesInfo, Status } from './types'
+import { withoutSupersededWishes } from './utils'
 
 const SELECT = `
   id, status, read, price, condition, notes, acquired_on, created_at, dedication, dedication_by,
@@ -122,7 +123,9 @@ function toEntry(raw: RawItem): Entry | null {
 export async function listCollection(): Promise<Entry[]> {
   const { data, error } = await supabase.from('collection_items').select(SELECT)
   if (error) throw error
-  return (data as unknown as RawItem[]).map(toEntry).filter((entry) => entry !== null)
+  return withoutSupersededWishes(
+    (data as unknown as RawItem[]).map(toEntry).filter((entry) => entry !== null),
+  )
 }
 
 export async function getEntry(isbn: string): Promise<Entry | null> {
