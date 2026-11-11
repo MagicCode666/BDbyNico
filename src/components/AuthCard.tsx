@@ -3,45 +3,11 @@ import type { ReactNode } from 'react'
 import Logo from './Logo'
 import VersionBadge from './VersionBadge'
 
-// Couvertures de la mosaïque : tout fichier déposé dans src/assets/auth/covers est repris
-// tel quel (sans fichier, le panneau garde simplement son dégradé).
-const COVER_FILES = import.meta.glob('../assets/auth/covers/*.{jpg,jpeg,png,webp}', {
-  eager: true,
-  query: '?url',
-  import: 'default',
-}) as Record<string, string>
-const COVERS = Object.keys(COVER_FILES)
-  .sort()
-  .map((path) => COVER_FILES[path])
-
 const ARGUMENTS = [
   'Suivez vos séries tome après tome',
   'Retrouvez ce qu’il vous manque, en un coup d’œil',
   'Partagez votre collection par un simple lien',
 ]
-
-/** Mosaïque de couvertures en fond du panneau de marque (décorative). */
-function CoverWall({ covers }: { covers: string[] }) {
-  if (covers.length === 0) return null
-  // On répète les couvertures pour remplir la grille, quel qu'en soit le nombre
-  const tiles = Array.from({ length: 18 }, (_, index) => covers[index % covers.length])
-  return (
-    <div
-      aria-hidden="true"
-      className="absolute -inset-10 grid -rotate-6 grid-cols-3 gap-3 opacity-40 sm:grid-cols-4"
-    >
-      {tiles.map((src, index) => (
-        <img
-          key={index}
-          src={src}
-          alt=""
-          loading="lazy"
-          className="aspect-[2/3] w-full rounded object-cover shadow-lg"
-        />
-      ))}
-    </div>
-  )
-}
 
 interface AuthCardProps {
   title: string
@@ -50,7 +16,7 @@ interface AuthCardProps {
 }
 
 /**
- * Page d'authentification : sur ordinateur, un panneau de marque (couvertures, atouts) à gauche
+ * Page d'authentification : sur ordinateur, un panneau de marque (atouts de l'application) à gauche
  * et le formulaire à droite ; sur mobile, le formulaire seul sous le logo.
  */
 export default function AuthCard({ title, children, footer }: AuthCardProps) {
@@ -60,7 +26,6 @@ export default function AuthCard({ title, children, footer }: AuthCardProps) {
         data-testid="auth-brand-panel"
         className="relative hidden flex-col justify-between overflow-hidden bg-[#130f0d] p-12 text-white lg:flex"
       >
-        <CoverWall covers={COVERS} />
         <div
           aria-hidden="true"
           className="absolute inset-0"
