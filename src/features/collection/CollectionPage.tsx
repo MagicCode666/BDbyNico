@@ -8,12 +8,20 @@ import { listSeriesSettings } from '../series/api'
 import { seriesProgress } from '../series/progress'
 import { useMissingCovers } from '../series/useMissingCovers'
 import { AlbumThumb } from './AlbumCard'
+import SeriesGrid, { type GridCard } from './SeriesGrid'
 import { isOutsideGrid } from './kinds'
 import { listCollection } from './api'
 import { STATUS_LABELS, type ReadFilter, type Status } from './types'
 import { useAsync } from './useAsync'
 import { completionLabel, effectiveStatus, PUBLICATION_LABELS } from '../series/status'
-import { effectiveTotal, filterEntries, groupBySeries, progressLabel } from './utils'
+import {
+  effectiveTotal,
+  filterEntries,
+  groupBySeries,
+  progressLabel,
+  seriesCoverUrl,
+  type SeriesGroup,
+} from './utils'
 
 const STATUSES: Status[] = ['owned', 'wanted']
 
@@ -24,6 +32,17 @@ interface OwnedInSeries {
 }
 
 const FILTERS_KEY = 'bdbynico:collection-filters'
+const VIEW_KEY = 'bdbynico:collection-view'
+
+type View = 'grille' | 'liste'
+
+function readSavedView(): View {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'liste' ? 'liste' : 'grille'
+  } catch {
+    return 'grille'
+  }
+}
 
 interface SavedFilters {
   query: string
@@ -49,6 +68,15 @@ export default function CollectionPage() {
   const status: Status = searchParams.get('statut') === 'envies' ? 'wanted' : 'owned'
   const setStatus = (next: Status) =>
     setSearchParams(next === 'wanted' ? { statut: 'envies' } : {}, { replace: true })
+  const [view, setViewState] = useState<View>(readSavedView)
+  const setView = (next: View) => {
+    setViewState(next)
+    try {
+      localStorage.setItem(VIEW_KEY, next)
+    } catch {
+      // stockage indisponible : le choix ne sera pas retenu
+    }
+  }
   const [query, setQuery] = useState(saved.query ?? '')
   const [read, setRead] = useState<ReadFilter>(saved.read ?? 'all')
   const [dedicatedOnly, setDedicatedOnly] = useState(saved.dedicatedOnly ?? false)
@@ -113,6 +141,70 @@ export default function CollectionPage() {
     [entriesWithCovers, status, query, read, dedicatedOnly],
   )
 
+  function summarize(group: SeriesGroup) {
+    const settings = seriesSettings?.get(group.key)
+    const owned = ownedBySeries.get(group.key) ?? {
+      count: 0,
+      volumes: [],
+      ownsIntegral: false,
+    }
+    // Jamais plus de tomes possédés que de tomes existants
+    const total = effectiveTotal(settings?.totalOverride ?? group.totalVolumes, owned.volumes)
+    // Même calcul que la page de la série : tomes exclus retirés de l'objectif
+    const progress = seriesProgress({
+      total,
+      ownedVolumes: owned.volumes,
+      ignored: settings?.ignored ?? [],
+      ownsIntegral: owned.ownsIntegral,
+      hasVolumeZero: group.startsAtZero,
+    })
+    const shownTotal = total ? progress.target : null
+    const shownOwned = total ? progress.owned : owned.count
+    const publication = effectiveStatus(settings?.statusOverride, group.publicationStatus)
+    const showProgress = group.name !== null && status === 'owned'
+    const complete = showProgress && !!total && progress.complete
+    return { total, progress, shownTotal, shownOwned, publication, showProgress, complete }
+  }
+
+  const cards: GridCard[] =
+    view === 'grille'
+      ? groups.flatMap((group): GridCard[] => {
+          if (group.name === null) {
+            // Albums hors série : une carte par album
+            return group.entries.map((entry) => ({
+              key: entry.id,
+              to: `/collection/${entry.edition.isbn}`,
+              name: entry.edition.title,
+              coverUrl: entry.edition.coverUrl,
+              owned: entry.status === 'owned' ? 1 : 0,
+              target: null,
+              readCount: entry.read ? 1 : 0,
+              albumCount: 1,
+              publication: null,
+              complete: false,
+              showProgress: false,
+            }))
+          }
+          const { total, progress, shownOwned, shownTotal, publication, showProgress, complete } =
+            summarize(group)
+          return [
+            {
+              key: group.key,
+              to: `/series/${group.key}`,
+              name: group.name,
+              coverUrl: seriesCoverUrl(group.entries),
+              owned: status === 'owned' ? shownOwned : group.entries.length,
+              target: status === 'owned' && total ? shownTotal : null,
+              readCount: group.entries.filter((entry) => entry.read).length,
+              albumCount: group.entries.length,
+              publication,
+              complete,
+              showProgress: showProgress && progress.target > 0,
+            },
+          ]
+        })
+      : []
+
   return (
     <PageLayout title="Ma collection">
       <div className="card mb-4 flex flex-wrap items-center gap-3 px-4 py-3">
@@ -155,6 +247,19 @@ export default function CollectionPage() {
           />
           Dédicacés
         </label>
+        <div role="group" aria-label="Affichage" className="flex gap-1">
+          {(['grille', 'liste'] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={view === value}
+              onClick={() => setView(value)}
+              className={`rounded px-3 py-1 text-sm font-medium ${view === value ? 'bg-accent text-on-accent' : 'border border-line-strong hover:bg-raised'}`}
+            >
+              {value === 'grille' ? 'Grille' : 'Liste'}
+            </button>
+          ))}
+        </div>
         <Link
           to="/collection/ajouter"
           className="rounded bg-accent px-3 py-1 text-sm font-medium text-on-accent hover:bg-accent-strong"
@@ -191,29 +296,12 @@ export default function CollectionPage() {
         </p>
       )}
 
-      <div className="flex flex-col gap-3">
-        {groups.map((group) => {
-          const settings = seriesSettings?.get(group.key)
-          const owned = ownedBySeries.get(group.key) ?? {
-            count: 0,
-            volumes: [],
-            ownsIntegral: false,
-          }
-          // Jamais plus de tomes possédés que de tomes existants
-          const total = effectiveTotal(settings?.totalOverride ?? group.totalVolumes, owned.volumes)
-          // Même calcul que la page de la série : tomes exclus retirés de l'objectif
-          const progress = seriesProgress({
-            total,
-            ownedVolumes: owned.volumes,
-            ignored: settings?.ignored ?? [],
-            ownsIntegral: owned.ownsIntegral,
-            hasVolumeZero: group.startsAtZero,
-          })
-          const shownTotal = total ? progress.target : null
-          const shownOwned = total ? progress.owned : owned.count
-          const publication = effectiveStatus(settings?.statusOverride, group.publicationStatus)
-          const showProgress = group.name !== null && status === 'owned'
-          const complete = showProgress && !!total && progress.complete
+      {view === 'grille' && cards.length > 0 && <SeriesGrid cards={cards} />}
+
+      <div className={view === 'liste' ? 'flex flex-col gap-3' : 'hidden'}>
+        {(view === 'liste' ? groups : []).map((group) => {
+          const { total, progress, shownTotal, shownOwned, publication, showProgress, complete } =
+            summarize(group)
           return (
             <section key={group.key} className="card p-4">
               <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3">

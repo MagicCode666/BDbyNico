@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Entry } from './types'
-import { effectiveTotal, filterEntries, groupBySeries, normalizeText, progressLabel } from './utils'
+import {
+  effectiveTotal,
+  filterEntries,
+  groupBySeries,
+  normalizeText,
+  progressLabel,
+  seriesCoverUrl,
+  withoutSupersededWishes,
+} from './utils'
 
 function entry(
   overrides: Partial<Entry> & { title?: string; seriesName?: string; volume?: number },
@@ -120,5 +128,29 @@ describe('effectiveTotal', () => {
 
   it('se déduit des tomes possédés quand le total est inconnu', () => {
     expect(effectiveTotal(null, [2, 4])).toBe(4)
+  })
+})
+
+describe('withoutSupersededWishes', () => {
+  it("masque l'envie d'un tome déjà possédé par une autre édition, garde les autres", () => {
+    const owned = entry({ title: 'A', seriesName: 'BM', volume: 29 })
+    const doubleWish = entry({ title: 'B', seriesName: 'BM', volume: 29, status: 'wanted' })
+    const otherWish = entry({ title: 'C', seriesName: 'BM', volume: 30, status: 'wanted' })
+    const noSeries = entry({ title: 'D', status: 'wanted' })
+    expect(withoutSupersededWishes([owned, doubleWish, otherWish, noSeries])).toEqual([
+      owned,
+      otherWish,
+      noSeries,
+    ])
+  })
+})
+
+describe('seriesCoverUrl', () => {
+  it('prend la couverture du premier tome qui en a une', () => {
+    const none = entry({ title: 'A', seriesName: 'S', volume: 1 })
+    const withCover = entry({ title: 'B', seriesName: 'S', volume: 2 })
+    withCover.edition.coverUrl = 'https://exemple.test/2.jpg'
+    expect(seriesCoverUrl([none, withCover])).toBe('https://exemple.test/2.jpg')
+    expect(seriesCoverUrl([none])).toBeNull()
   })
 })

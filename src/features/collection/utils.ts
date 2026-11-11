@@ -105,3 +105,30 @@ export function effectiveTotal(total: number | null, ownedVolumes: number[]): nu
   const highest = Math.max(total ?? 0, ...ownedVolumes)
   return highest > 0 ? highest : null
 }
+
+/**
+ * Retire les envies devenues sans objet : un tome déjà possédé (même série, même numéro,
+ * quelle que soit l'édition) n'a plus besoin d'être en envie. Les lignes ne sont pas supprimées.
+ */
+export function withoutSupersededWishes(entries: Entry[]): Entry[] {
+  const key = (entry: Entry) =>
+    entry.edition.series && entry.edition.volume !== null && !isOutsideGrid(entry.edition.kind)
+      ? `${entry.edition.series.id}:${entry.edition.volume}`
+      : null
+  const ownedKeys = new Set(
+    entries.flatMap((entry) => {
+      const k = entry.status === 'owned' ? key(entry) : null
+      return k ? [k] : []
+    }),
+  )
+  return entries.filter((entry) => {
+    if (entry.status !== 'wanted') return true
+    const k = key(entry)
+    return !k || !ownedKeys.has(k)
+  })
+}
+
+/** Couverture d'une série : celle du premier tome qui en a une (les entrées sont déjà triées). */
+export function seriesCoverUrl(entries: Entry[]): string | null {
+  return entries.find((entry) => entry.edition.coverUrl)?.edition.coverUrl ?? null
+}
