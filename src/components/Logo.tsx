@@ -13,6 +13,8 @@ interface LogoProps {
   className?: string
   /** Lien vers l'accueil (par défaut oui). */
   linked?: boolean
+  /** « dark » : toujours la version pour fond sombre (panneau de marque), quel que soit le thème. */
+  tone?: 'auto' | 'dark'
 }
 
 /** Logo de la marque, dans la version adaptée au thème affiché. */
@@ -20,9 +22,10 @@ export default function Logo({
   variant = 'logotype',
   className = 'h-9',
   linked = true,
+  tone = 'auto',
 }: LogoProps) {
   const { theme } = useTheme()
-  const dark = theme === 'rouille'
+  const dark = tone === 'dark' || theme === 'rouille'
   const src =
     variant === 'logotype' ? (dark ? logotypeDark : logotypeLight) : dark ? symbolDark : symbolLight
   const image = <img src={src} alt="BDbyNico" className={`w-auto ${className}`} />
