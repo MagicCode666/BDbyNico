@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.15.0...bdbynico-v0.16.0) (2026-11-11)
+
+
+### Nouveautés
+
+* partage de collection, vue grille, envies masquées ([#44](https://github.com/MagicCode666/BDbyNico/issues/44)) ([de505a8](https://github.com/MagicCode666/BDbyNico/commit/de505a84f3ac9ccd71c8c6bd472ec1a96611e2c6))
+
 ## [0.15.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.14.0...bdbynico-v0.15.0) (2026-11-10)
 
 
