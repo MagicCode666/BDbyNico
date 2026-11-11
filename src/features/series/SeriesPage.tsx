@@ -542,7 +542,6 @@ function SlotCard({ slot, seriesName, layout, busy, onAdd, onMarkOwned, onIgnore
           <span className="min-w-0">
             <span className="block text-sm font-semibold leading-tight">{label}</span>
             <span className="block truncate text-xs text-muted">
-              {item.read ? 'Lu · ' : ''}
               {owned ? 'Dans ma collection' : 'Dans mes envies'}
             </span>
           </span>

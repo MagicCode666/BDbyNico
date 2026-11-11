@@ -14,7 +14,6 @@ const selectClass = 'rounded border border-line-strong bg-surface px-3 py-2'
 export default function AlbumCollectionCard({ entry }: { entry: Entry }) {
   const navigate = useNavigate()
   const [status, setStatus] = useState<Status>(entry.status)
-  const [read, setRead] = useState(entry.read)
   const [price, setPrice] = useState(entry.price?.toString() ?? '')
   const [condition, setCondition] = useState(entry.condition ?? '')
   const [notes, setNotes] = useState(entry.notes ?? '')
@@ -38,7 +37,6 @@ export default function AlbumCollectionCard({ entry }: { entry: Entry }) {
     try {
       await updateEntry(entry.id, {
         status,
-        read,
         price: priceNumber,
         condition: condition.trim() || null,
         notes: notes.trim() || null,
@@ -96,10 +94,6 @@ export default function AlbumCollectionCard({ entry }: { entry: Entry }) {
           </select>
         </div>
         <div className="flex flex-wrap gap-x-6 gap-y-2">
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input type="checkbox" checked={read} onChange={(e) => setRead(e.target.checked)} />
-            Lu
-          </label>
           <label className="flex items-center gap-2 text-sm font-medium">
             <input
               type="checkbox"

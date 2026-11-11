@@ -18,7 +18,6 @@ function entry(
   return {
     id: `${seriesName ?? 'x'}-${title}-${volume ?? 0}`,
     status: 'owned',
-    read: false,
     price: null,
     condition: null,
     notes: null,
@@ -50,25 +49,19 @@ describe('normalizeText', () => {
 describe('filterEntries', () => {
   const entries = [
     entry({ title: 'Le Gaulois', seriesName: 'Astérix', volume: 1 }),
-    entry({ title: 'Lu déjà', seriesName: 'Tintin', volume: 1, read: true }),
+    entry({ title: 'Tintin 1', seriesName: 'Tintin', volume: 1 }),
     entry({ title: 'Souhait', seriesName: 'Tintin', volume: 2, status: 'wanted' }),
   ]
-  const base = { status: 'owned' as const, query: '', read: 'all' as const }
+  const base = { status: 'owned' as const, query: '' }
 
   it('filtre par statut', () => {
     expect(filterEntries(entries, base)).toHaveLength(2)
     expect(filterEntries(entries, { ...base, status: 'wanted' })).toHaveLength(1)
   })
-  it('filtre lu / non lu', () => {
-    expect(filterEntries(entries, { ...base, read: 'read' }).map((e) => e.edition.title)).toEqual([
-      'Lu déjà',
-    ])
-    expect(filterEntries(entries, { ...base, read: 'unread' })).toHaveLength(1)
-  })
   it('cherche par titre, série ou auteur sans tenir compte des accents', () => {
     expect(filterEntries(entries, { ...base, query: 'asterix' })).toHaveLength(1)
     expect(filterEntries(entries, { ...base, query: 'GOSCINNY' })).toHaveLength(2)
-    expect(filterEntries(entries, { ...base, query: 'deja' })).toHaveLength(1)
+    expect(filterEntries(entries, { ...base, query: 'tintin 1' })).toHaveLength(1)
     expect(filterEntries(entries, { ...base, query: 'zzz' })).toHaveLength(0)
   })
   it('ne garde que les albums dédicacés et cherche aussi par nom de dédicaceur', () => {

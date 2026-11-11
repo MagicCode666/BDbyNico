@@ -17,7 +17,7 @@ const edition = (extra: Partial<CatalogueEdition>): CatalogueEdition => ({
   ...extra,
 })
 
-const owned = { id: 'i', isbn: 'isbn-1', status: 'owned' as const, read: false }
+const owned = { id: 'i', isbn: 'isbn-1', status: 'owned' as const }
 
 function renderSection(
   integrals: SeriesView['integrals'],

@@ -57,7 +57,6 @@ export interface Edition {
 export interface Entry {
   id: string
   status: Status
-  read: boolean
   price: number | null
   condition: string | null
   notes: string | null
@@ -70,5 +69,3 @@ export interface Entry {
   firstEdition: boolean
   edition: Edition
 }
-
-export type ReadFilter = 'all' | 'read' | 'unread'

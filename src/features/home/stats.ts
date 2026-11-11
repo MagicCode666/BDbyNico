@@ -18,7 +18,6 @@ export interface SeriesStat {
 export interface DashboardStats {
   owned: number
   wanted: number
-  read: number
   seriesCount: number
   completeCount: number
   /** Séries à compléter, les plus proches du but d'abord. */
@@ -89,7 +88,6 @@ export function dashboardStats(
   return {
     owned: owned.length,
     wanted: entries.length - owned.length,
-    read: owned.filter((entry) => entry.read).length,
     seriesCount: bySeries.size,
     completeCount: stats.filter((stat) => stat.complete).length,
     inProgress,

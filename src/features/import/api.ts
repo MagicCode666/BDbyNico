@@ -40,7 +40,7 @@ export async function findExistingItems(isbns: string[]): Promise<Map<string, Ex
     const { data, error } = await supabase
       .from('collection_items')
       .select(
-        'id, isbn, status, read, price, dedication, dedication_by, first_edition, acquired_on, condition, notes',
+        'id, isbn, status, price, dedication, dedication_by, first_edition, acquired_on, condition, notes',
       )
       .in('isbn', batch)
     if (error) throw error
@@ -49,7 +49,6 @@ export async function findExistingItems(isbns: string[]): Promise<Map<string, Ex
         id: row.id,
         isbn: row.isbn,
         status: row.status === 'wanted' ? 'wanted' : 'owned',
-        read: row.read,
         price: row.price,
         dedication:
           row.dedication === 'signature' || row.dedication === 'drawing' ? row.dedication : null,
@@ -139,7 +138,6 @@ export async function addItems(
           user_id: userId,
           isbn: row.isbn,
           status: row.status,
-          read: row.read,
           price: row.price,
           dedication: row.dedication,
           dedication_by: row.dedicationBy,
@@ -174,7 +172,6 @@ export async function updateItems(
         .from('collection_items')
         .update({
           status: update.status,
-          read: update.read,
           price: update.price,
           dedication: update.dedication,
           dedication_by: update.dedicationBy,

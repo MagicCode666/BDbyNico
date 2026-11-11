@@ -60,8 +60,8 @@ const data = (): SeriesData => ({
   },
   editions: [1, 2, 3, 4].map(edition),
   items: [
-    { id: 'item-1', isbn: 'isbn-1', status: 'owned', read: true },
-    { id: 'item-2', isbn: 'isbn-2', status: 'wanted', read: false },
+    { id: 'item-1', isbn: 'isbn-1', status: 'owned' },
+    { id: 'item-2', isbn: 'isbn-2', status: 'wanted' },
   ],
   settings: { ignored: [], totalOverride: null },
 })

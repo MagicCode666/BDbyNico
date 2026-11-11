@@ -386,7 +386,6 @@ export type Database = {
           isbn: string
           kind: string
           pseudo: string
-          read: boolean
           series_id: string
           series_name: string
           series_status: string

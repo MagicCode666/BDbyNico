@@ -137,7 +137,6 @@ function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => voi
             {entry && (
               <span className="badge">
                 {entry.status === 'owned' ? 'Dans ma collection' : 'Dans mes envies'}
-                {entry.read ? ' · lu' : ''}
               </span>
             )}
             {publication && edition.series && (

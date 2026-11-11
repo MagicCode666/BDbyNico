@@ -115,7 +115,6 @@ describe('parseBubbleCsv', () => {
       publisher: 'Casterman',
       publishedOn: '2010-09-01',
       status: 'owned',
-      read: true,
       price: 13.9,
       addedAt: '2023-04-06T16:41:47.742Z',
       dedication: null,
@@ -177,8 +176,7 @@ describe('parseBubbleCsv', () => {
   it("importe en « envie » ce qui n'est pas dans la collection", () => {
     const plan = parseBubbleCsv(csv({ possede: false, lu: true }))
     expect(plan.rows[0].status).toBe('wanted')
-    expect(plan.rows[0].read).toBe(true)
-    expect(plan.stats).toMatchObject({ owned: 0, wanted: 1, read: 1 })
+    expect(plan.stats).toMatchObject({ owned: 0, wanted: 1 })
   })
 
   it('importe le drapeau « dédicacé » comme signature', () => {

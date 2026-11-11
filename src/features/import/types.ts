@@ -21,7 +21,6 @@ export interface ImportRow {
   /** AAAA-MM-JJ */
   publishedOn: string | null
   status: Status
-  read: boolean
   price: number | null
   /** Date d'ajout dans l'application d'origine (ISO), conservée comme date d'ajout. */
   addedAt: string | null
@@ -45,7 +44,6 @@ export interface ImportStats {
   total: number
   owned: number
   wanted: number
-  read: number
   series: number
   titlesToComplete: number
   dedicated: number

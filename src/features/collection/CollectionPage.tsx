@@ -13,7 +13,7 @@ import { AlbumThumb } from './AlbumCard'
 import SeriesGrid, { type GridCard } from './SeriesGrid'
 import { isOutsideGrid } from './kinds'
 import { listCollection } from './api'
-import { STATUS_LABELS, type ReadFilter, type Status } from './types'
+import { STATUS_LABELS, type Status } from './types'
 import { useAsync } from './useAsync'
 import { completionLabel, effectiveStatus, PUBLICATION_LABELS } from '../series/status'
 import {
@@ -48,7 +48,6 @@ function readSavedView(): View {
 
 interface SavedFilters {
   query: string
-  read: ReadFilter
   dedicatedOnly: boolean
 }
 
@@ -80,16 +79,15 @@ export default function CollectionPage() {
     }
   }
   const [query, setQuery] = useState(saved.query ?? '')
-  const [read, setRead] = useState<ReadFilter>(saved.read ?? 'all')
   const [dedicatedOnly, setDedicatedOnly] = useState(saved.dedicatedOnly ?? false)
   useScrollRestoration('collection', !loading)
   useEffect(() => {
     try {
-      sessionStorage.setItem(FILTERS_KEY, JSON.stringify({ query, read, dedicatedOnly }))
+      sessionStorage.setItem(FILTERS_KEY, JSON.stringify({ query, dedicatedOnly }))
     } catch {
       // stockage indisponible : les filtres ne seront simplement pas restaurés
     }
-  }, [query, read, dedicatedOnly])
+  }, [query, dedicatedOnly])
 
   const entries = useMemo(() => data ?? [], [data])
   // Couvertures manquantes (après un import, par exemple) : cherchées au fil de l'eau, puis
@@ -139,8 +137,8 @@ export default function CollectionPage() {
   }, [entries])
   const pendingCount = useMemo(() => entries.filter((e) => e.edition.pending).length, [entries])
   const groups = useMemo(
-    () => groupBySeries(filterEntries(entriesWithCovers, { status, query, read, dedicatedOnly })),
-    [entriesWithCovers, status, query, read, dedicatedOnly],
+    () => groupBySeries(filterEntries(entriesWithCovers, { status, query, dedicatedOnly })),
+    [entriesWithCovers, status, query, dedicatedOnly],
   )
 
   function summarize(group: SeriesGroup) {
@@ -180,7 +178,6 @@ export default function CollectionPage() {
               coverUrl: entry.edition.coverUrl,
               owned: entry.status === 'owned' ? 1 : 0,
               target: null,
-              readCount: entry.read ? 1 : 0,
               albumCount: 1,
               publication: null,
               complete: false,
@@ -197,7 +194,6 @@ export default function CollectionPage() {
               coverUrl: seriesCoverUrl(group.entries),
               owned: status === 'owned' ? shownOwned : group.entries.length,
               target: status === 'owned' && total ? shownTotal : null,
-              readCount: group.entries.filter((entry) => entry.read).length,
               albumCount: group.entries.length,
               publication,
               complete,
@@ -231,16 +227,6 @@ export default function CollectionPage() {
           onChange={(e) => setQuery(e.target.value)}
           className="min-w-0 flex-1 rounded border border-line-strong bg-surface px-3 py-1"
         />
-        <select
-          aria-label="Lecture"
-          value={read}
-          onChange={(e) => setRead(e.target.value as ReadFilter)}
-          className="rounded border border-line-strong bg-surface px-2 py-1"
-        >
-          <option value="all">Tous</option>
-          <option value="read">Lus</option>
-          <option value="unread">Non lus</option>
-        </select>
         <label className="flex items-center gap-1 text-sm">
           <input
             type="checkbox"

@@ -171,7 +171,6 @@ function Preview({
     ['Albums', stats.total],
     ['Possédés', stats.owned],
     ['Envies', stats.wanted],
-    ['Lus', stats.read],
     ['Séries', stats.series],
     ['Éditions originales', stats.firstEditions],
     ['Dédicacés', stats.dedicated],

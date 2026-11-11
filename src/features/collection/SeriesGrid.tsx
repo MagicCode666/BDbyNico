@@ -12,7 +12,6 @@ export interface GridCard {
   /** Tomes possédés et objectif ; l'objectif est absent quand le total est inconnu. */
   owned: number
   target: number | null
-  readCount: number
   albumCount: number
   publication: PublicationStatus | null
   complete: boolean
@@ -69,19 +68,13 @@ export default function SeriesGrid({ cards }: { cards: GridCard[] }) {
                   </span>
                 )}
                 <span className="font-display text-base font-bold leading-tight">{card.name}</span>
-                <div className="grid grid-cols-2 divide-x divide-white/30 rounded bg-black/40 py-1.5 text-center text-xs [@media(hover:none)]:hidden">
+                <div className="grid grid-cols-1 rounded bg-black/40 py-1.5 text-center text-xs [@media(hover:none)]:hidden">
                   <span>
                     <strong className="block text-sm">
                       {card.owned}
                       {card.target ? ` / ${card.target}` : ''}
                     </strong>
                     {card.albumCount > 1 || card.owned > 1 ? 'albums' : 'album'}
-                  </span>
-                  <span>
-                    <strong className="block text-sm">
-                      {card.readCount} / {card.albumCount}
-                    </strong>
-                    lus
                   </span>
                 </div>
               </div>

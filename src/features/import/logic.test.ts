@@ -30,7 +30,6 @@ const row = (isbn: string, overrides: Partial<ImportRow> = {}): ImportRow => ({
   publisher: null,
   publishedOn: null,
   status: 'owned',
-  read: false,
   price: null,
   addedAt: null,
   dedication: null,
@@ -46,7 +45,6 @@ const item = (isbn: string, overrides: Partial<ExistingItem> = {}): ExistingItem
   id: `id-${isbn}`,
   isbn,
   status: 'owned',
-  read: false,
   price: null,
   dedication: null,
   dedicationBy: null,
@@ -65,7 +63,6 @@ const planOf = (...rows: ImportRow[]): ImportPlan => ({
     total: rows.length,
     owned: 0,
     wanted: 0,
-    read: 0,
     series: 0,
     titlesToComplete: 0,
     dedicated: 0,
@@ -91,12 +88,11 @@ describe('mergeIntoExisting', () => {
         .status,
     ).toBe('owned')
   })
-  it('cumule « lu » et « édition originale » sans rien effacer', () => {
+  it('cumule « édition originale » sans rien effacer', () => {
     const { update } = mergeIntoExisting(
-      item('a', { read: true, firstEdition: false }),
-      row('a', { read: false, firstEdition: true }),
+      item('a', { firstEdition: false }),
+      row('a', { firstEdition: true }),
     )
-    expect(update.read).toBe(true)
     expect(update.firstEdition).toBe(true)
   })
   it('le prix du fichier remplace le prix connu seulement quand il en donne un', () => {
@@ -150,10 +146,11 @@ describe('mergeIntoExisting', () => {
     ).toMatchObject({ dedication: 'signature', dedicationBy: 'Hergé' })
   })
   it('signale quand rien ne change', () => {
-    expect(mergeIntoExisting(item('a', { read: true }), row('a', { read: true })).changed).toBe(
-      false,
-    )
-    expect(mergeIntoExisting(item('a'), row('a', { read: true })).changed).toBe(true)
+    expect(
+      mergeIntoExisting(item('a', { firstEdition: true }), row('a', { firstEdition: true }))
+        .changed,
+    ).toBe(false)
+    expect(mergeIntoExisting(item('a'), row('a', { firstEdition: true })).changed).toBe(true)
   })
 })
 
@@ -174,7 +171,7 @@ describe('runImport', () => {
   })
 
   it('complète les albums déjà présents (mode compléter) et ne met à jour que ce qui change', async () => {
-    const plan = planOf(row('old1', { read: true }), row('old2'))
+    const plan = planOf(row('old1', { firstEdition: true }), row('old2'))
     const existing = new Map([
       ['old1', item('old1')],
       ['old2', item('old2')],
