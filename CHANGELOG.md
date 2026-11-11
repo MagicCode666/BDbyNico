@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.16.0...bdbynico-v0.17.0) (2026-11-11)
+
+
+### Nouveautés
+
+* corrections du catalogue, boutons à icônes, vue grille, abandon du lu/non lu ([#46](https://github.com/MagicCode666/BDbyNico/issues/46)) ([3e55b93](https://github.com/MagicCode666/BDbyNico/commit/3e55b93bb86f1fdbffb96c3156c2dde65738de7b))
+
 ## [0.16.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.15.0...bdbynico-v0.16.0) (2026-11-11)
 
 
