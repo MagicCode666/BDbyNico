@@ -132,17 +132,17 @@ export type Database = {
           created_by: string | null
           details_checked_at: string | null
           format_cm: number | null
+          isbn: string
+          kind: string
           language: string | null
           pages: number | null
           public_price: number | null
-          summary: string | null
-          isbn: string
-          kind: string
           published_on: string | null
           publisher: string | null
           review_status: string
           series_id: string | null
           source: string | null
+          summary: string | null
           title: string
           volume: number | null
           volume_from: number | null
@@ -156,17 +156,17 @@ export type Database = {
           created_by?: string | null
           details_checked_at?: string | null
           format_cm?: number | null
+          isbn: string
+          kind?: string
           language?: string | null
           pages?: number | null
           public_price?: number | null
-          summary?: string | null
-          isbn: string
-          kind?: string
           published_on?: string | null
           publisher?: string | null
           review_status?: string
           series_id?: string | null
           source?: string | null
+          summary?: string | null
           title: string
           volume?: number | null
           volume_from?: number | null
@@ -180,17 +180,17 @@ export type Database = {
           created_by?: string | null
           details_checked_at?: string | null
           format_cm?: number | null
+          isbn?: string
+          kind?: string
           language?: string | null
           pages?: number | null
           public_price?: number | null
-          summary?: string | null
-          isbn?: string
-          kind?: string
           published_on?: string | null
           publisher?: string | null
           review_status?: string
           series_id?: string | null
           source?: string | null
+          summary?: string | null
           title?: string
           volume?: number | null
           volume_from?: number | null
@@ -342,13 +342,19 @@ export type Database = {
           cover_url: string | null
           created_at: string
           created_by: string | null
+          details_checked_at: string | null
+          format_cm: number | null
           isbn: string
           kind: string
+          language: string | null
+          pages: number | null
+          public_price: number | null
           published_on: string | null
           publisher: string | null
           review_status: string
           series_id: string | null
           source: string | null
+          summary: string | null
           title: string
           volume: number | null
           volume_from: number | null
@@ -361,6 +367,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      correct_edition: {
+        Args: { p_changes: Json; p_isbn: string }
+        Returns: number
+      }
       delete_my_account: { Args: never; Returns: undefined }
       fill_edition_details: {
         Args: {
@@ -372,22 +382,6 @@ export type Database = {
           p_summary?: string
         }
         Returns: undefined
-      }
-      set_series_genres: {
-        Args: { p_genres: string[]; p_series: string }
-        Returns: undefined
-      }
-      correct_edition: {
-        Args: { p_changes: Json; p_isbn: string }
-        Returns: number
-      }
-      set_edition_series: {
-        Args: { p_isbn: string; p_series: string }
-        Returns: undefined
-      }
-      merge_series: {
-        Args: { p_from: string; p_into: string }
-        Returns: number
       }
       get_shared_collection: {
         Args: { p_token: string }
@@ -474,6 +468,11 @@ export type Database = {
           role: string
         }[]
       }
+      merge_series: {
+        Args: { p_from: string; p_into: string }
+        Returns: number
+      }
+      norm_text: { Args: { p_text: string }; Returns: string }
       refresh_series_zero: { Args: { p_series: string }; Returns: undefined }
       regenerate_share_token: { Args: never; Returns: string }
       rename_series: {
@@ -489,7 +488,6 @@ export type Database = {
         Args: { p_accept: boolean; p_id: number }
         Returns: undefined
       }
-      norm_text: { Args: { p_text: string }; Returns: string }
       search_catalogue: {
         Args: { p_limit?: number; p_query: string }
         Returns: {
@@ -514,6 +512,14 @@ export type Database = {
       set_edition_kind: {
         Args: { p_from?: number; p_isbn: string; p_kind: string; p_to?: number }
         Returns: string
+      }
+      set_edition_series: {
+        Args: { p_isbn: string; p_series: string }
+        Returns: undefined
+      }
+      set_series_genres: {
+        Args: { p_genres: string[]; p_series: string }
+        Returns: undefined
       }
       set_series_status: {
         Args: { p_series: string; p_status: string }

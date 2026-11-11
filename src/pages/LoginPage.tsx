@@ -5,6 +5,7 @@ import { useAuth } from '../auth/useAuth'
 import AuthCard from '../components/AuthCard'
 import FormMessage from '../components/FormMessage'
 import SubmitButton from '../components/SubmitButton'
+import PasswordField from '../components/PasswordField'
 import TextField from '../components/TextField'
 
 export default function LoginPage() {
@@ -51,10 +52,9 @@ export default function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <TextField
+        <PasswordField
           label="Mot de passe"
           name="password"
-          type="password"
           autoComplete="current-password"
           required
           value={password}

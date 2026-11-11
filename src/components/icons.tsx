@@ -11,6 +11,7 @@ const PATHS = {
   grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
   list: 'M4 6h16M4 12h16M4 18h16',
   chevron: 'M9 6l6 6-6 6',
+  eye: 'M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12zM12 9a3 3 0 100 6 3 3 0 000-6z',
   import: 'M12 3v12M7 10l5 5 5-5M5 21h14',
   trash: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6',
   copy: 'M9 9h11v11H9zM5 15V5h10',
