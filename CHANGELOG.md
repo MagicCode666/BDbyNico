@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.17.0...bdbynico-v0.18.0) (2026-11-11)
+
+
+### Nouveautés
+
+* référencer un tome au catalogue, menu latéral réductible ([#49](https://github.com/MagicCode666/BDbyNico/issues/49)) ([ecf679a](https://github.com/MagicCode666/BDbyNico/commit/ecf679a958a711e5ddacb9314a80695f3f83e7b9))
+
 ## [0.17.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.16.0...bdbynico-v0.17.0) (2026-11-11)
 
 
