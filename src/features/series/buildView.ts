@@ -21,7 +21,6 @@ export interface UserItem {
   id: string
   isbn: string
   status: Status
-  read: boolean
 }
 
 /** Une case de la grille : un numéro de tome et son état pour l'utilisateur. */

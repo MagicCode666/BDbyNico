@@ -27,7 +27,6 @@ const row = (extra: Partial<SharedRow> = {}): SharedRow => ({
   authors: [],
   coverUrl: null,
   status: 'owned',
-  read: false,
   dedicated: false,
   ...extra,
 })
@@ -36,7 +35,7 @@ describe('collection partagée', () => {
   it('compte séries, albums et envies, et construit une carte par série', () => {
     const entries = toSharedEntries([
       row(),
-      row({ isbn: 'isbn-2', title: 'Tome 2', volume: 2, read: true }),
+      row({ isbn: 'isbn-2', title: 'Tome 2', volume: 2 }),
       row({ isbn: 'isbn-3', title: 'Tome 3', volume: 3, status: 'wanted' }),
     ])
     expect(sharedSummary(entries)).toEqual({ seriesCount: 1, ownedCount: 2, wantedCount: 1 })
@@ -46,7 +45,6 @@ describe('collection partagée', () => {
       to: '/partage/jeton/s1',
       owned: 2,
       target: 4,
-      readCount: 1,
       complete: false,
     })
   })

@@ -6,7 +6,6 @@ export interface ExistingItem {
   id: string
   isbn: string
   status: Status
-  read: boolean
   price: number | null
   dedication: Dedication | null
   dedicationBy: string | null
@@ -18,7 +17,6 @@ export interface ExistingItem {
 
 export interface ItemUpdate {
   status: Status
-  read: boolean
   price: number | null
   dedication: Dedication | null
   dedicationBy: string | null
@@ -31,7 +29,7 @@ export interface ItemUpdate {
 /**
  * Complète un album déjà présent avec les informations du fichier, sans rien effacer :
  * - « envie » devient « possédé » si le fichier dit possédé (jamais l'inverse) ;
- * - « lu » et « édition originale » se cumulent ;
+ * - « édition originale » se cumule ;
  * - le prix du fichier remplace le prix connu quand il en donne un ;
  * - la dédicace déjà renseignée est conservée (un fichier Bubble ne distingue pas signature et
  *   dessin), ainsi que son auteur ;
@@ -45,7 +43,6 @@ export function mergeIntoExisting(
   const dedication = existing.dedication ?? row.dedication
   const update: ItemUpdate = {
     status: existing.status === 'owned' || row.status === 'owned' ? 'owned' : 'wanted',
-    read: existing.read || row.read,
     price: row.price ?? existing.price,
     dedication,
     dedicationBy: dedication ? (existing.dedicationBy ?? row.dedicationBy) : null,

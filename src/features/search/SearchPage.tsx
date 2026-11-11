@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 
 import { useAuth } from '../../auth/useAuth'
 import FormMessage from '../../components/FormMessage'
+import IconButton from '../../components/IconButton'
 import { Icon } from '../../components/icons'
 import PageLayout from '../../components/PageLayout'
 import { CoverImage } from '../collection/AlbumCard'
@@ -11,9 +12,6 @@ import { addCatalogueEdition } from '../series/api'
 import { MIN_QUERY_LENGTH, searchCatalogue, type SearchHit } from './api'
 
 const DEBOUNCE_MS = 250
-
-const smallButton =
-  'rounded border border-line-strong px-2.5 py-1 text-xs font-medium hover:border-accent disabled:opacity-50'
 
 export default function SearchPage() {
   const { user } = useAuth()
@@ -168,22 +166,20 @@ export default function SearchPage() {
                       </span>
                     ) : (
                       <div className="flex flex-none gap-2">
-                        <button
-                          type="button"
+                        <IconButton
+                          icon="plus"
+                          size="sm"
+                          label={`Ajouter à ma collection : ${hit.label}`}
                           disabled={busyIsbn === hit.isbn}
                           onClick={() => add(hit, 'owned')}
-                          className={smallButton}
-                        >
-                          + Possédé
-                        </button>
-                        <button
-                          type="button"
+                        />
+                        <IconButton
+                          icon="heart"
+                          size="sm"
+                          label={`Mettre en envie : ${hit.label}`}
                           disabled={busyIsbn === hit.isbn}
                           onClick={() => add(hit, 'wanted')}
-                          className={smallButton}
-                        >
-                          + Envie
-                        </button>
+                        />
                       </div>
                     )}
                   </li>

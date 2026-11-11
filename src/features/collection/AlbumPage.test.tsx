@@ -79,7 +79,6 @@ const edition = (extra: Partial<Edition> = {}): Edition => ({
 const entry = (): Entry => ({
   id: 'item-1',
   status: 'owned',
-  read: true,
   price: null,
   condition: null,
   notes: null,
@@ -108,7 +107,7 @@ const seriesData = (): SeriesData => ({
     authors: [],
     kind: 'album' as const,
   })),
-  items: [{ id: 'item-1', isbn: 'isbn-1', status: 'owned', read: true }],
+  items: [{ id: 'item-1', isbn: 'isbn-1', status: 'owned' }],
   settings: { ignored: [], totalOverride: null },
 })
 

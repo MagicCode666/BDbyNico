@@ -18,7 +18,6 @@ vi.mock('../series/api', () => ({ listSeriesSettings: async () => new Map() }))
 const entry = (id: string, volume: number, status: 'owned' | 'wanted' = 'owned'): Entry => ({
   id,
   status,
-  read: false,
   price: null,
   condition: null,
   notes: null,

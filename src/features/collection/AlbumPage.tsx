@@ -3,7 +3,9 @@ import { Link, useParams } from 'react-router-dom'
 
 import { useAuth } from '../../auth/useAuth'
 import FormMessage from '../../components/FormMessage'
+import IconButton from '../../components/IconButton'
 import PageLayout from '../../components/PageLayout'
+import { useAccountSummary } from '../../components/shell/useAccountSummary'
 import { languageName } from '../../lib/bnfFields'
 import { formatIsbn } from '../../lib/isbn'
 import CoverReportDialog from '../governance/CoverReportDialog'
@@ -13,6 +15,7 @@ import { CoverImage } from './AlbumCard'
 import AlbumCollectionCard from './AlbumCollectionCard'
 import AlbumSeriesStrip from './AlbumSeriesStrip'
 import { fillEditionDetails, getCatalogueEdition, getEntry } from './api'
+import EditionCorrector from './EditionCorrector'
 import KindEditor from './KindEditor'
 import { KIND_LABELS, toAlbumKind } from './kinds'
 import { lookupBnf } from './lookup/bnf'
@@ -65,11 +68,9 @@ export default function AlbumPage() {
   )
 }
 
-const secondaryButton =
-  'rounded border border-line-strong bg-surface px-3 py-2 text-sm font-medium hover:bg-raised disabled:opacity-50'
-
 function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => void }) {
   const { edition, entry, series } = data
+  const moderator = (useAccountSummary()?.role ?? 'user') !== 'user'
   const { user } = useAuth()
   const [reportingCover, setReportingCover] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -139,7 +140,6 @@ function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => voi
             {entry && (
               <span className="badge">
                 {entry.status === 'owned' ? 'Dans ma collection' : 'Dans mes envies'}
-                {entry.read ? ' · lu' : ''}
               </span>
             )}
             {publication && edition.series && (
@@ -172,22 +172,21 @@ function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => voi
               role="group"
               aria-label="Ajouter à ma collection"
             >
-              <button
-                type="button"
+              <IconButton
+                icon="check"
+                size="lg"
+                variant="primary"
+                label="Je l'ai"
                 disabled={busy}
                 onClick={() => add('owned')}
-                className="rounded bg-accent px-4 py-2 text-sm font-semibold text-on-accent disabled:opacity-50"
-              >
-                Je l'ai
-              </button>
-              <button
-                type="button"
+              />
+              <IconButton
+                icon="heart"
+                size="lg"
+                label="Je le veux"
                 disabled={busy}
                 onClick={() => add('wanted')}
-                className={secondaryButton}
-              >
-                Je le veux
-              </button>
+              />
             </div>
           )}
           {error && <FormMessage kind="error">{error}</FormMessage>}
@@ -234,6 +233,14 @@ function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => voi
               />
             )}
           </section>
+
+          {moderator && (
+            <EditionCorrector
+              key={`${edition.title}-${edition.volume}-${edition.series?.id}-${edition.publisher}-${edition.publishedOn}-${edition.authors.join()}`}
+              edition={edition}
+              onChanged={onReload}
+            />
+          )}
 
           {series && <AlbumSeriesStrip data={series} currentIsbn={edition.isbn} />}
         </div>

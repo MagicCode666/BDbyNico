@@ -22,7 +22,6 @@ const entry = (
   return {
     id: `item-${counter}`,
     status: 'owned',
-    read: false,
     price: null,
     condition: null,
     notes: null,
@@ -50,7 +49,7 @@ describe('dashboardStats', () => {
   it('compte possédés, envies, lus et séries', () => {
     const stats = dashboardStats(
       [
-        entry('a', 1, { read: true }),
+        entry('a', 1),
         entry('a', 2),
         entry('b', 1),
         entry('b', 2, { status: 'wanted' }),
@@ -58,7 +57,7 @@ describe('dashboardStats', () => {
       ],
       undefined,
     )
-    expect(stats).toMatchObject({ owned: 4, wanted: 1, read: 1, seriesCount: 2 })
+    expect(stats).toMatchObject({ owned: 4, wanted: 1, seriesCount: 2 })
   })
 
   it('classe les séries à compléter, la plus proche de la fin en premier', () => {

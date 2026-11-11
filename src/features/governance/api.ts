@@ -7,10 +7,17 @@ export type ChangeKind =
   | 'create'
   | 'cover'
   | 'edition_kind'
+  | 'edition_title'
+  | 'edition_volume'
+  | 'edition_authors'
+  | 'edition_publisher'
+  | 'edition_date'
+  | 'edition_series'
   | 'series_name'
   | 'series_total'
   | 'series_status'
   | 'series_genres'
+  | 'series_merge'
 export type ChangeOrigin = 'user' | 'import' | 'job' | 'admin'
 
 export interface Access {
@@ -190,6 +197,14 @@ export function governanceErrorMessage(error: unknown, fallback: string): string
     'Limite quotidienne',
     'Seuls les possesseurs',
     'Plage de tomes invalide',
+    'Le titre doit',
+    'Le numéro de tome',
+    'Trop d',
+    'Série introuvable',
+    'Choisissez deux',
+    'Une fusion ne s',
+    'Éditeur trop long',
+    'La série d',
     'déjà traitée',
   ]
   return message && known.some((part) => message.includes(part)) ? message : fallback
@@ -275,4 +290,48 @@ export async function setEditionKind(
   })
   if (error) throw error
   return data === 'pending' || data === 'unchanged' ? data : 'applied'
+}
+
+export interface EditionCorrections {
+  title?: string
+  /** null : album sans numéro de tome. */
+  volume?: number | null
+  authors?: string[]
+  /** null ou vide : éditeur inconnu. */
+  publisher?: string | null
+  /** Date ISO (AAAA-MM-JJ) ; null ou vide : date inconnue. */
+  publishedOn?: string | null
+}
+
+/** Corrige les informations d'un album (modérateurs) : chaque champ changé est journalisé. */
+export async function correctEdition(isbn: string, changes: EditionCorrections): Promise<number> {
+  const payload: Record<string, unknown> = {}
+  if (changes.title !== undefined) payload.title = changes.title
+  if (changes.volume !== undefined) payload.volume = changes.volume
+  if (changes.authors !== undefined) payload.authors = changes.authors
+  if (changes.publisher !== undefined) payload.publisher = changes.publisher
+  if (changes.publishedOn !== undefined) payload.published_on = changes.publishedOn
+  const { data, error } = await supabase.rpc('correct_edition', {
+    p_isbn: isbn,
+    p_changes: payload as never,
+  })
+  if (error) throw error
+  return data
+}
+
+/** Rattache un album à une série, ou le détache (null) : son numéro de tome est alors effacé. */
+export async function setEditionSeries(isbn: string, seriesId: string | null): Promise<void> {
+  const { error } = await supabase.rpc('set_edition_series', {
+    p_isbn: isbn,
+    // La fonction accepte null (détacher) : les types générés ne le disent pas
+    p_series: seriesId as string,
+  })
+  if (error) throw error
+}
+
+/** Fusionne la série `from` dans la série `into` : renvoie le nombre d'albums déplacés. */
+export async function mergeSeries(from: string, into: string): Promise<number> {
+  const { data, error } = await supabase.rpc('merge_series', { p_from: from, p_into: into })
+  if (error) throw error
+  return data
 }

@@ -49,7 +49,7 @@ export function AlbumThumb({ entry }: { entry: Entry }) {
   return (
     <Link
       to={`/collection/${edition.isbn}`}
-      title={`${edition.title}${entry.read ? ' (lu)' : ''}${dedication ? `, ${dedication}` : ''}`}
+      title={`${edition.title}${dedication ? `, ${dedication}` : ''}`}
       className="flex w-16 shrink-0 flex-col gap-1 hover:opacity-80"
     >
       <div className="cover-art relative">
@@ -70,7 +70,6 @@ export function AlbumThumb({ entry }: { entry: Entry }) {
           : edition.volume !== null
             ? `T${edition.volume}`
             : '·'}
-        {entry.read && ' · lu'}
       </span>
     </Link>
   )

@@ -17,7 +17,7 @@ const edition = (extra: Partial<CatalogueEdition>): CatalogueEdition => ({
   ...extra,
 })
 
-const owned = { id: 'i', isbn: 'isbn-1', status: 'owned' as const, read: false }
+const owned = { id: 'i', isbn: 'isbn-1', status: 'owned' as const }
 
 function renderSection(
   integrals: SeriesView['integrals'],
@@ -86,7 +86,7 @@ describe('IntegralsSection', () => {
 
   it("propose d'ajouter une intégrale du catalogue que l'on n'a pas", () => {
     const { onAdd } = renderSection([{ edition: edition({}), item: null }])
-    fireEvent.click(screen.getByRole('button', { name: '+ Possédée' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Ajouter à ma collection/ }))
     expect(onAdd).toHaveBeenCalledWith('isbn-1', 'owned')
   })
 

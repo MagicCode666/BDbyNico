@@ -186,7 +186,6 @@ export function parseBubbleCsv(text: string): ImportPlan {
       publisher: cell(record, 'Editeur') || null,
       publishedOn: parseDate(cell(record, 'Date de publication')),
       status: flag(record, 'Dans ma collection') ? 'owned' : 'wanted',
-      read: flag(record, 'Lu'),
       price: parsePrice(cell(record, 'Prix')),
       addedAt: parseTimestamp(cell(record, "Date d'ajout")),
       dedication,
@@ -206,7 +205,6 @@ export function parseBubbleCsv(text: string): ImportPlan {
       total: rows.length,
       owned: rows.filter((r) => r.status === 'owned').length,
       wanted: rows.filter((r) => r.status === 'wanted').length,
-      read: rows.filter((r) => r.read).length,
       series: new Set(rows.filter((r) => r.seriesName).map((r) => normalizeText(r.seriesName!)))
         .size,
       titlesToComplete: rows.filter((r) => r.titleMissing).length,

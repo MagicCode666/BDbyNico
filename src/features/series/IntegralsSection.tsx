@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 
+import IconButton from '../../components/IconButton'
+
 import { CoverImage } from '../collection/AlbumCard'
 import { coveredVolumes, rangeLabel, volumeListLabel } from '../collection/kinds'
 import type { SeriesView } from './buildView'
@@ -80,22 +82,20 @@ export default function IntegralsSection({
                 <div className="flex flex-wrap items-center gap-2">
                   {!item && (
                     <>
-                      <button
-                        type="button"
+                      <IconButton
+                        icon="plus"
+                        size="sm"
+                        label={`Ajouter à ma collection : ${edition.title}`}
                         disabled={busy}
                         onClick={() => onAdd(edition.isbn, 'owned')}
-                        className={buttonClass}
-                      >
-                        + Possédée
-                      </button>
-                      <button
-                        type="button"
+                      />
+                      <IconButton
+                        icon="heart"
+                        size="sm"
+                        label={`Mettre en envie : ${edition.title}`}
                         disabled={busy}
                         onClick={() => onAdd(edition.isbn, 'wanted')}
-                        className={buttonClass}
-                      >
-                        + Envie
-                      </button>
+                      />
                     </>
                   )}
                   {item?.status === 'owned' && excludable.length > 0 && (

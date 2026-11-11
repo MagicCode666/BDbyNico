@@ -8,7 +8,6 @@ function entry(overrides: Partial<Entry> = {}, edition: Partial<Entry['edition']
   return {
     id: 'id',
     status: 'owned',
-    read: false,
     price: null,
     condition: null,
     notes: null,
@@ -80,7 +79,6 @@ describe('export puis réimport (sans perte)', () => {
       entry(
         {
           status: 'owned',
-          read: true,
           price: 13.9,
           condition: 'Bon état',
           notes: 'Une "belle" note;\navec saut de ligne',
@@ -113,7 +111,6 @@ describe('export puis réimport (sans perte)', () => {
       authors: ['Hergé', 'Autre'],
       publisher: 'Casterman',
       status: 'owned',
-      read: true,
       price: 13.9,
       condition: 'Bon état',
       notes: 'Une "belle" note;\navec saut de ligne',

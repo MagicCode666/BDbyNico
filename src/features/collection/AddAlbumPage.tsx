@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { useAuth } from '../../auth/useAuth'
 import FormMessage from '../../components/FormMessage'
+import IconButton from '../../components/IconButton'
 import PageLayout from '../../components/PageLayout'
 import SubmitButton from '../../components/SubmitButton'
 import TextField from '../../components/TextField'
@@ -205,22 +206,20 @@ export default function AddAlbumPage() {
               }}
             />
           </div>
-          <button
-            type="button"
-            onClick={onSearchClick}
+          <IconButton
+            icon="search"
+            size="lg"
+            label="Rechercher"
             disabled={lookup.kind === 'searching'}
-            className="rounded border border-accent px-3 py-2 font-medium text-accent-text disabled:opacity-50"
-          >
-            Rechercher
-          </button>
-          <button
-            type="button"
+            onClick={onSearchClick}
+          />
+          <IconButton
+            icon="scan"
+            size="lg"
+            label="Scanner un code-barres"
+            pressed={scanning}
             onClick={() => setScanning((on) => !on)}
-            aria-pressed={scanning}
-            className="rounded border border-accent px-3 py-2 font-medium text-accent-text"
-          >
-            Scanner
-          </button>
+          />
         </div>
         {scanning && <BarcodeScanner onDetect={onScanned} onClose={() => setScanning(false)} />}
         {lookup.kind === 'searching' && <p className="text-sm text-muted">Recherche…</p>}

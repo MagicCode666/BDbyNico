@@ -60,8 +60,8 @@ const data = (): SeriesData => ({
   },
   editions: [1, 2, 3, 4].map(edition),
   items: [
-    { id: 'item-1', isbn: 'isbn-1', status: 'owned', read: true },
-    { id: 'item-2', isbn: 'isbn-2', status: 'wanted', read: false },
+    { id: 'item-1', isbn: 'isbn-1', status: 'owned' },
+    { id: 'item-2', isbn: 'isbn-2', status: 'wanted' },
   ],
   settings: { ignored: [], totalOverride: null },
 })
@@ -164,7 +164,7 @@ describe('SeriesPage', () => {
   it('« Manquants en envie » ajoute seulement les tomes du catalogue absents', async () => {
     renderPage()
     await screen.findByRole('heading', { name: 'Black Op' })
-    fireEvent.click(screen.getByRole('button', { name: /Manquants en envie/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Mettre les manquants en envie/ }))
     expect(screen.getByText('Mettre 2 tome(s) en envie ?')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer' }))
     await waitFor(() => expect(addCatalogueEdition).toHaveBeenCalledTimes(2))
