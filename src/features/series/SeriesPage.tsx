@@ -22,6 +22,7 @@ import { heroEdition, seriesAuthors } from './hero'
 import { useAccountSummary } from '../../components/shell/useAccountSummary'
 import GenreChips from './GenreChips'
 import GenreEditor from './GenreEditor'
+import SeriesCorrector from './SeriesCorrector'
 import IntegralsSection from './IntegralsSection'
 import {
   completionLabel,
@@ -441,6 +442,15 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
       )}
 
       {moderator && <GenreEditor seriesId={series.id} genres={series.genres} onChanged={reload} />}
+      {moderator && (
+        <SeriesCorrector
+          key={series.name}
+          seriesId={series.id}
+          name={series.name}
+          albumCount={editions.length}
+          onChanged={reload}
+        />
+      )}
 
       <details className="card p-4">
         <summary className="cursor-pointer font-display text-lg font-bold uppercase tracking-wide">

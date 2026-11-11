@@ -36,6 +36,36 @@ export function describeChange(change: Change): string | null {
   if (change.kind === 'edition_kind') {
     return `Type : ${describeKindValue(change.oldValue)} → ${describeKindValue(change.newValue)}`
   }
+  if (change.kind === 'edition_title') {
+    return `Titre : « ${change.oldValue ?? '—'} » → « ${change.newValue ?? '—'} »`
+  }
+  if (change.kind === 'edition_volume') {
+    const show = (value: string | null) => (value ? `tome ${value}` : 'sans numéro')
+    return `Numéro : ${show(change.oldValue)} → ${show(change.newValue)}`
+  }
+  if (change.kind === 'edition_authors') {
+    const show = (value: string | null) => {
+      try {
+        return (JSON.parse(value ?? '[]') as string[]).join(', ') || 'aucun'
+      } catch {
+        return value ?? '—'
+      }
+    }
+    return `Auteurs : ${show(change.oldValue)} → ${show(change.newValue)}`
+  }
+  if (change.kind === 'edition_publisher') {
+    return `Éditeur : ${change.oldValue || 'inconnu'} → ${change.newValue || 'inconnu'}`
+  }
+  if (change.kind === 'edition_date') {
+    return `Date de parution : ${change.oldValue || 'inconnue'} → ${change.newValue || 'inconnue'}`
+  }
+  if (change.kind === 'edition_series') {
+    const detach = !change.newValue
+    return detach ? 'Album détaché de sa série' : 'Album rattaché à une autre série'
+  }
+  if (change.kind === 'series_merge') {
+    return `Fusion : « ${change.oldValue ?? '?'} » fusionnée dans cette série (${change.newValue ?? 0} album(s))`
+  }
   if (change.kind === 'series_genres') {
     const show = (value: string | null) =>
       value ? value.split(',').map(genreLabel).join(', ') : 'aucun'

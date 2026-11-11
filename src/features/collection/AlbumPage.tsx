@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/useAuth'
 import FormMessage from '../../components/FormMessage'
 import IconButton from '../../components/IconButton'
 import PageLayout from '../../components/PageLayout'
+import { useAccountSummary } from '../../components/shell/useAccountSummary'
 import { languageName } from '../../lib/bnfFields'
 import { formatIsbn } from '../../lib/isbn'
 import CoverReportDialog from '../governance/CoverReportDialog'
@@ -14,6 +15,7 @@ import { CoverImage } from './AlbumCard'
 import AlbumCollectionCard from './AlbumCollectionCard'
 import AlbumSeriesStrip from './AlbumSeriesStrip'
 import { fillEditionDetails, getCatalogueEdition, getEntry } from './api'
+import EditionCorrector from './EditionCorrector'
 import KindEditor from './KindEditor'
 import { KIND_LABELS, toAlbumKind } from './kinds'
 import { lookupBnf } from './lookup/bnf'
@@ -68,6 +70,7 @@ export default function AlbumPage() {
 
 function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => void }) {
   const { edition, entry, series } = data
+  const moderator = (useAccountSummary()?.role ?? 'user') !== 'user'
   const { user } = useAuth()
   const [reportingCover, setReportingCover] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -230,6 +233,14 @@ function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => voi
               />
             )}
           </section>
+
+          {moderator && (
+            <EditionCorrector
+              key={`${edition.title}-${edition.volume}-${edition.series?.id}-${edition.publisher}-${edition.publishedOn}-${edition.authors.join()}`}
+              edition={edition}
+              onChanged={onReload}
+            />
+          )}
 
           {series && <AlbumSeriesStrip data={series} currentIsbn={edition.isbn} />}
         </div>

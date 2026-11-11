@@ -377,6 +377,18 @@ export type Database = {
         Args: { p_genres: string[]; p_series: string }
         Returns: undefined
       }
+      correct_edition: {
+        Args: { p_changes: Json; p_isbn: string }
+        Returns: number
+      }
+      set_edition_series: {
+        Args: { p_isbn: string; p_series: string }
+        Returns: undefined
+      }
+      merge_series: {
+        Args: { p_from: string; p_into: string }
+        Returns: number
+      }
       get_shared_collection: {
         Args: { p_token: string }
         Returns: {

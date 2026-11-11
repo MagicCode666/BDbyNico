@@ -44,6 +44,13 @@ const KIND_LABELS = {
   series_total: 'Total de série',
   series_status: 'Statut de série',
   series_genres: 'Genres de série',
+  series_merge: 'Fusion de séries',
+  edition_title: "Titre d'album",
+  edition_volume: 'Numéro de tome',
+  edition_authors: 'Auteurs',
+  edition_publisher: 'Éditeur',
+  edition_date: 'Date de parution',
+  edition_series: "Série d'un album",
 } as const
 const CONTRIBUTION_LABELS: Record<Contribution, string> = {
   full: 'Contributeur',
