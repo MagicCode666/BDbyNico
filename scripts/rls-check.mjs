@@ -363,7 +363,8 @@ check(
 const keys = row ? Object.keys(row).sort().join(',') : ''
 check(
   'La vue publique ne contient que les champs prévus',
-  keys === 'authors,cover_url,isbn,pseudo,series_name,status,title,volume',
+  keys ===
+    'authors,cover_url,dedicated,isbn,kind,pseudo,series_id,series_name,series_status,series_total,starts_at_zero,status,title,volume,volume_from,volume_to',
   keys,
 )
 r = await anon.rpc('get_shared_collection', { p_token: 'jeton-inconnu' })
@@ -385,6 +386,34 @@ r = await anon.rpc('get_shared_collection', { p_token: tokenA })
 check("L'ancien lien ne fonctionne plus", !r.error && r.data?.length === 0, show(r))
 r = await anon.rpc('get_shared_collection', { p_token: newToken })
 check('Le nouveau lien fonctionne', r.data?.length === 1, show(r))
+r = await anon.rpc('get_shared_collection', { p_token: newToken })
+check(
+  'Les dédicaces ne sont pas publiques par défaut',
+  r.data?.[0]?.dedicated === false && !JSON.stringify(r.data).includes('Hergé'),
+  show(r),
+)
+r = await A.client.from('profiles').update({ share_dedications: true }).eq('id', A.id).select()
+check('A peut activer le partage de ses dédicaces', !r.error && r.data?.length === 1, show(r))
+r = await anon.rpc('get_shared_collection', { p_token: newToken })
+check(
+  'Dédicaces activées : signalées, mais sans le nom du dédicaceur',
+  r.data?.[0]?.dedicated === true && !JSON.stringify(r.data).includes('Hergé'),
+  show(r),
+)
+await A.client.from('profiles').update({ share_dedications: false }).eq('id', A.id)
+r = await A.client.from('profiles').update({ share_wishes: false }).eq('id', A.id).select()
+check('A peut masquer ses envies', !r.error && r.data?.length === 1, show(r))
+await A.client.from('profiles').update({ share_wishes: true }).eq('id', A.id)
+r = await B.client
+  .from('profiles')
+  .update({ share_wishes: false, share_dedications: true })
+  .eq('id', A.id)
+  .select()
+check(
+  'B ne peut pas modifier les réglages de partage de A',
+  !r.error && r.data?.length === 0,
+  show(r),
+)
 r = await anon.rpc('regenerate_share_token')
 check('Un anonyme ne peut pas régénérer de jeton', !!r.error, show(r))
 r = await anon.rpc('delete_my_account')
@@ -573,8 +602,80 @@ console.log(
   '  (les parcours « collection seule », validation et annulation sont testés par supabase/tests/gouvernance.sql)',
 )
 
+console.log('\n--- Fiche album, genres, corrections et recherche ---')
+const denied = (res) => res.error?.code === '42501'
+r = await anon.rpc('fill_edition_details', { p_isbn: isbn, p_summary: 'x' })
+check('Un anonyme ne peut pas appeler fill_edition_details', !!r.error, show(r))
+r = await A.client.rpc('fill_edition_details', {
+  p_isbn: isbn,
+  p_summary: 'Résumé de test',
+  p_pages: 48,
+  p_format_cm: 32,
+  p_public_price: 13.5,
+  p_language: 'fre',
+})
+check('A complète la fiche d’une édition', !r.error, show(r))
+await A.client.rpc('fill_edition_details', { p_isbn: isbn, p_summary: 'Vandalisme', p_pages: 999 })
+r = await B.client.from('editions').select('summary, pages').eq('isbn', isbn).single()
+check(
+  'Une fiche déjà remplie n’est jamais écrasée (et B la voit)',
+  r.data?.summary === 'Résumé de test' && r.data?.pages === 48,
+  show(r),
+)
+r = await A.client.rpc('fill_edition_details', { p_isbn: isbn, p_pages: -5, p_language: 'x' })
+check('Des valeurs hors limites sont ignorées sans erreur', !r.error, show(r))
+r = await A.client.from('editions').update({ summary: 'Direct' }).eq('isbn', isbn).select()
+check('Aucune écriture directe du résumé', !!r.error || r.data?.length === 0, show(r))
+
+r = await A.client.from('series').select('genres').eq('id', seriesId).single()
+const genresBefore = show(r.data?.genres)
+r = await A.client.rpc('set_series_genres', { p_series: seriesId, p_genres: ['aventure'] })
+check('Un utilisateur ordinaire ne peut pas fixer les genres (refus de droit)', denied(r), show(r))
+r = await anon.rpc('set_series_genres', { p_series: seriesId, p_genres: ['aventure'] })
+check('Un anonyme ne peut pas fixer les genres', !!r.error, show(r))
+r = await A.client
+  .from('series')
+  .update({ genres: ['polar'] })
+  .eq('id', seriesId)
+  .select()
+check('Aucune écriture directe des genres', !!r.error || r.data?.length === 0, show(r))
+r = await A.client.from('series').select('genres').eq('id', seriesId).single()
+check('Les genres de la série sont intacts', show(r.data?.genres) === genresBefore, show(r))
+
+const someUuid = '00000000-0000-0000-0000-000000000001'
+r = await A.client.rpc('correct_edition', { p_isbn: isbn, p_changes: { title: 'Vandalisme' } })
+check('Un utilisateur ordinaire ne peut pas corriger un album (refus de droit)', denied(r), show(r))
+r = await anon.rpc('correct_edition', { p_isbn: isbn, p_changes: { title: 'Vandalisme' } })
+check('Un anonyme ne peut pas corriger un album', !!r.error, show(r))
+r = await A.client.rpc('set_edition_series', { p_isbn: isbn, p_series: null })
+check('Un utilisateur ordinaire ne peut pas détacher un album (refus de droit)', denied(r), show(r))
+r = await anon.rpc('set_edition_series', { p_isbn: isbn, p_series: seriesId })
+check('Un anonyme ne peut pas rattacher un album à une série', !!r.error, show(r))
+r = await A.client.rpc('merge_series', { p_from: seriesId, p_into: someUuid })
+check(
+  'Un utilisateur ordinaire ne peut pas fusionner des séries (refus de droit)',
+  denied(r),
+  show(r),
+)
+r = await anon.rpc('merge_series', { p_from: seriesId, p_into: someUuid })
+check('Un anonyme ne peut pas fusionner des séries', !!r.error, show(r))
+r = await B.client.from('editions').select('title, series_id').eq('isbn', isbn).single()
+check(
+  'L’album et sa série sont intacts après ces tentatives',
+  r.data?.title === 'TEST RLS - à supprimer' && r.data?.series_id === seriesId,
+  show(r),
+)
+
+r = await anon.rpc('search_catalogue', { p_query: 'test' })
+check('Un anonyme ne peut pas utiliser la recherche globale', !!r.error, show(r))
+r = await A.client.rpc('search_catalogue', { p_query: 'test rls' })
+check('A utilise la recherche globale', !r.error && Array.isArray(r.data), show(r))
+
 console.log('\n--- Nettoyage ---')
-await A.client.from('profiles').update({ share_enabled: false }).eq('id', A.id)
+await A.client
+  .from('profiles')
+  .update({ share_enabled: false, share_wishes: true, share_dedications: false })
+  .eq('id', A.id)
 r = await A.client.from('collection_items').delete().eq('id', govItemId).select()
 check("A retire l'album de gouvernance de sa collection", !r.error && r.data?.length === 1, show(r))
 r = await A.client.from('collection_items').delete().eq('id', itemId).select()

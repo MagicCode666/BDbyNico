@@ -6,7 +6,7 @@ import { validatePassword } from '../auth/validation'
 import AuthCard from '../components/AuthCard'
 import FormMessage from '../components/FormMessage'
 import SubmitButton from '../components/SubmitButton'
-import TextField from '../components/TextField'
+import PasswordField from '../components/PasswordField'
 
 export default function ResetPasswordPage() {
   const { user, loading, updatePassword } = useAuth()
@@ -52,10 +52,9 @@ export default function ResetPasswordPage() {
   return (
     <AuthCard title="Nouveau mot de passe">
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-        <TextField
+        <PasswordField
           label="Nouveau mot de passe (8 caractères minimum)"
           name="password"
-          type="password"
           autoComplete="new-password"
           required
           value={password}
