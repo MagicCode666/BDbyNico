@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.19.0...bdbynico-v0.20.0) (2026-11-11)
+
+
+### Nouveautés
+
+* pages d'authentification en deux panneaux, garde-fou rls-check ([#53](https://github.com/MagicCode666/BDbyNico/issues/53)) ([af8f2e5](https://github.com/MagicCode666/BDbyNico/commit/af8f2e5942d3a47f75ba6a7a4a8fdb2c8f2b18c5))
+
 ## [0.19.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.18.0...bdbynico-v0.19.0) (2026-11-11)
 
 
