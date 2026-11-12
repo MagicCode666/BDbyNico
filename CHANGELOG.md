@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.2](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.22.1...bdbynico-v0.22.2) (2026-11-12)
+
+
+### Corrections
+
+* le total d'une série compte aussi les tomes en envie ([#61](https://github.com/MagicCode666/BDbyNico/issues/61)) ([ee3e1a3](https://github.com/MagicCode666/BDbyNico/commit/ee3e1a363da024b8998454ef407ed8456aa481e7))
+
 ## [0.22.1](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.22.0...bdbynico-v0.22.1) (2026-11-12)
 
 
