@@ -6,6 +6,7 @@ import ThemeProvider from '../../theme/ThemeProvider'
 import type { Entry } from '../collection/types'
 import Dashboard from './Dashboard'
 
+vi.mock('../friends/useIncomingRequests', () => ({ useIncomingRequests: () => 0 }))
 vi.mock('../../components/shell/useAccountSummary', () => ({
   useAccountSummary: () => ({ pseudo: 'Nico', role: 'user' }),
   ROLE_LABELS: { user: '', moderator: '', admin: '' },
