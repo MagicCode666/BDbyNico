@@ -3,10 +3,17 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import Breadcrumbs, { type Crumb } from '../Breadcrumbs'
 import { Icon } from '../icons'
+import IconButton from '../IconButton'
 import Logo from '../Logo'
 
 /** Barre du haut : fil d'Ariane (ordinateur), logo (mobile) et accès à la recherche. */
-export default function TopBar({ crumbs }: { crumbs: Crumb[] }) {
+export default function TopBar({
+  crumbs,
+  goBack,
+}: {
+  crumbs: Crumb[]
+  goBack: (() => void) | null
+}) {
   const navigate = useNavigate()
 
   // Ctrl+K (ou Cmd+K) ouvre la recherche depuis n'importe quelle page
@@ -23,7 +30,8 @@ export default function TopBar({ crumbs }: { crumbs: Crumb[] }) {
 
   return (
     <header className="surface-bar sticky top-0 z-10 flex items-center gap-4 border-b border-line px-4 py-3 sm:px-6">
-      <div className="lg:hidden">
+      {goBack && <IconButton icon="back" size="lg" label="Retour" onClick={goBack} />}
+      <div className={goBack ? 'hidden' : 'lg:hidden'}>
         <Logo variant="symbole" className="h-8" />
       </div>
       <div className="hidden min-w-0 flex-1 lg:block">

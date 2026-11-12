@@ -74,4 +74,8 @@ describe('migrations et scénarios SQL', () => {
   it('le scénario des corrections du catalogue réussit', async () => {
     expect(await runScenario(db, 'tests/corrections.sql')).toMatch(/^OK : \d+ vérifications$/)
   }, 120_000)
+
+  it('le scénario ISBN et fusion d’éditions réussit', async () => {
+    expect(await runScenario(db, 'tests/isbn_editions.sql')).toMatch(/^OK : \d+ vérifications$/)
+  }, 120_000)
 })
