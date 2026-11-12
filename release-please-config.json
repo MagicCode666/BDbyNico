@@ -4,6 +4,7 @@
     ".": {
       "release-type": "node",
       "initial-version": "0.1.0",
+      "last-release-sha": "57124a641b1089bed1ac96912006c73826c6b9e9",
       "package-name": "bdbynico",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": false,
