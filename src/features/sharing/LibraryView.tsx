@@ -22,10 +22,12 @@ function SeriesDetail({
   entries,
   name,
   basePath,
+  renderAction,
 }: {
   entries: Entry[]
   name: string
   basePath: string
+  renderAction?: (entry: Entry) => ReactNode
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -53,11 +55,12 @@ function SeriesDetail({
                   title={edition.title}
                   className="aspect-[2/3] w-full rounded"
                 />
+                {renderAction?.(entry)}
                 {entry.dedication && (
                   <span
                     role="img"
                     aria-label="dédicacé"
-                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-steel text-xs text-on-accent shadow"
+                    className={`absolute top-1 ${renderAction ? 'left-1' : 'right-1'} flex h-5 w-5 items-center justify-center rounded-full bg-steel text-xs text-on-accent shadow`}
                   >
                     ✎
                   </span>
@@ -87,6 +90,7 @@ export default function LibraryView({
   seriesId,
   intro,
   avatar,
+  renderAction,
 }: {
   pseudo: string
   entries: Entry[]
@@ -96,6 +100,8 @@ export default function LibraryView({
   intro?: ReactNode
   /** Avatar de la personne (amis seulement : le lien public n'en montre pas). */
   avatar?: string | null
+  /** Bouton posé sur chaque couverture du détail d'une série (ex. ajouter à ma collection). */
+  renderAction?: (entry: Entry) => ReactNode
 }) {
   const [status, setStatus] = useState<Status>('owned')
   const summary = useMemo(() => sharedSummary(entries), [entries])
@@ -130,6 +136,7 @@ export default function LibraryView({
             entries={seriesEntries}
             name={seriesEntries[0].edition.series?.name ?? 'Albums hors série'}
             basePath={basePath}
+            renderAction={renderAction}
           />
         ) : (
           <FormMessage kind="error">Cette série n'est pas dans la collection.</FormMessage>
