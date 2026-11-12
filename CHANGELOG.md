@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.22.2...bdbynico-v0.23.0) (2026-11-12)
+
+
+### Nouveautés
+
+* les fusions de séries deviennent annulables ([#63](https://github.com/MagicCode666/BDbyNico/issues/63)) ([7142da1](https://github.com/MagicCode666/BDbyNico/commit/7142da19d0d0ac19f5b0f7e02810fb856fa0970c))
+
 ## [0.22.2](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.22.1...bdbynico-v0.22.2) (2026-11-12)
 
 
