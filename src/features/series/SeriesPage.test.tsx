@@ -18,6 +18,11 @@ const getSeriesData = vi.fn<(id: string) => Promise<SeriesData>>()
 const addCatalogueEdition = vi.fn(async () => undefined)
 const setItemStatus = vi.fn(async () => undefined)
 const saveSeriesSettings = vi.fn(async () => undefined)
+const deleteEntry = vi.fn(async () => undefined)
+vi.mock('../collection/api', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  deleteEntry: (...args: unknown[]) => (deleteEntry as (...a: unknown[]) => unknown)(...args),
+}))
 vi.mock('./api', () => ({
   getSeriesData: (id: string) => getSeriesData(id),
   addCatalogueEdition: (...args: unknown[]) =>
@@ -122,21 +127,34 @@ describe('SeriesPage', () => {
     expect(tomeTitles()).toHaveLength(4)
   })
 
-  it('ajoute un tome manquant en un clic depuis son coin, puis recharge la série', async () => {
+  it('ajoute un tome manquant depuis son coin, après choix dans la fenêtre, puis recharge', async () => {
     renderPage()
     await screen.findByRole('heading', { name: 'Black Op' })
     fireEvent.click(
-      screen.getByRole('button', { name: 'Ajouter à ma collection : Black Op · Tome 3' }),
+      screen.getByRole('button', {
+        name: /Ajouter à ma collection ou aux envies : Black Op · Tome 3/,
+      }),
     )
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter à ma collection' }))
     await waitFor(() => expect(addCatalogueEdition).toHaveBeenCalledWith('u1', 'isbn-3', 'owned'))
     await waitFor(() => expect(getSeriesData).toHaveBeenCalledTimes(2))
   })
 
-  it('passe un tome en envie à « possédé » depuis son coin', async () => {
+  it('passe un tome en envie à « possédé » depuis son cœur', async () => {
     renderPage()
     await screen.findByRole('heading', { name: 'Black Op' })
-    fireEvent.click(screen.getByRole('button', { name: "Je l'ai : Black Op · Tome 2" }))
+    fireEvent.click(screen.getByRole('button', { name: 'Dans mes envies : Black Op · Tome 2' }))
+    fireEvent.click(screen.getByRole('button', { name: /Je l’ai/ }))
     await waitFor(() => expect(setItemStatus).toHaveBeenCalledWith('item-2', 'owned'))
+  })
+
+  it('retire un tome possédé depuis sa coche, après confirmation', async () => {
+    renderPage()
+    await screen.findByRole('heading', { name: 'Black Op' })
+    fireEvent.click(screen.getByRole('button', { name: 'Dans ma collection : Black Op · Tome 1' }))
+    expect(deleteEntry).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer de ma collection' }))
+    await waitFor(() => expect(deleteEntry).toHaveBeenCalledWith('item-1'))
   })
 
   it('« Tout ajouter » demande confirmation puis ajoute les manquants et valide les envies', async () => {
