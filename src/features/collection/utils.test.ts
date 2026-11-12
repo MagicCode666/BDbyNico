@@ -5,6 +5,7 @@ import {
   effectiveTotal,
   filterEntries,
   groupBySeries,
+  knownVolumesBySeriesId,
   normalizeText,
   progressLabel,
   seriesCoverUrl,
@@ -135,6 +136,18 @@ describe('withoutSupersededWishes', () => {
       otherWish,
       noSeries,
     ])
+  })
+})
+
+describe('knownVolumesBySeriesId', () => {
+  it('compte les tomes possédés et en envie, pas les albums sans série ni sans numéro', () => {
+    const owned = entry({ title: 'A', seriesName: 'Rose', volume: 1 })
+    const wished = entry({ title: 'B', seriesName: 'Rose', volume: 2, status: 'wanted' })
+    const unnumbered = entry({ title: 'C', seriesName: 'Rose' })
+    const noSeries = entry({ title: 'D', volume: 5 })
+    const known = knownVolumesBySeriesId([owned, wished, unnumbered, noSeries])
+    expect(known.get(owned.edition.series!.id)).toEqual([1, 2])
+    expect(effectiveTotal(null, [1, ...(known.get(owned.edition.series!.id) ?? [])])).toBe(2)
   })
 })
 
