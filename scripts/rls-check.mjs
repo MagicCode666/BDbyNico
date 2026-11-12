@@ -635,6 +635,31 @@ console.log(
   '  (les parcours « collection seule », validation et annulation sont testés par supabase/tests/gouvernance.sql)',
 )
 
+console.log('\n--- Avatar ---')
+const okAvatar =
+  'data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAwA0JaQAA3AA/vuUAAA='
+r = await A.client.from('profiles').update({ avatar: okAvatar }).eq('id', A.id).select('avatar')
+check('A peut régler son avatar', !r.error && r.data?.[0]?.avatar === okAvatar, show(r))
+for (const [label, value] of [
+  ['une adresse distante', 'https://exemple.test/a.png'],
+  ['du JavaScript', 'javascript:alert(1)'],
+  ['un SVG', 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4='],
+  ['une image trop lourde', 'data:image/webp;base64,' + 'A'.repeat(30000)],
+]) {
+  r = await A.client.from('profiles').update({ avatar: value }).eq('id', A.id)
+  check(`Un avatar refusé : ${label}`, r.error?.code === '23514', show(r))
+}
+r = await B.client.from('profiles').update({ avatar: okAvatar }).eq('id', A.id).select()
+check('B ne peut pas modifier l’avatar de A', !r.error && r.data?.length === 0, show(r))
+r = await anon.rpc('get_shared_collection', { p_token: newToken })
+check(
+  'Le lien public n’expose pas l’avatar',
+  !r.error && !JSON.stringify(r.data).includes('data:image'),
+  show(r),
+)
+r = await A.client.from('profiles').update({ avatar: null }).eq('id', A.id).select('avatar')
+check('A peut retirer son avatar', !r.error && r.data?.[0]?.avatar === null, show(r))
+
 console.log('\n--- Amis ---')
 const anonDenied = (res) => !!res.error
 for (const [name, args] of [

@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 
+import Avatar from '../../features/avatar/Avatar'
 import { Icon } from '../icons'
 import Logo from '../Logo'
 import CountBadge from './CountBadge'
@@ -63,12 +64,7 @@ export default function Sidebar({ friendRequests = 0 }: { friendRequests?: numbe
           aria-current={active === 'profil' ? 'page' : undefined}
           className={link}
         >
-          <span
-            aria-hidden="true"
-            className="grid h-9 w-9 flex-none place-items-center rounded bg-accent font-display text-lg font-extrabold text-on-accent"
-          >
-            {(summary?.pseudo ?? '?').slice(0, 1).toUpperCase()}
-          </span>
+          <Avatar src={summary?.avatar} name={summary?.pseudo ?? '?'} />
           {!collapsed && (
             <span className="min-w-0 leading-tight">
               <span className="block truncate font-semibold">{pseudo}</span>

@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import FormMessage from '../../components/FormMessage'
 import IconButton from '../../components/IconButton'
 import PageLayout from '../../components/PageLayout'
+import Avatar from '../avatar/Avatar'
 import { useAsync } from '../collection/useAsync'
 import { getFriendCollection } from '../sharing/api'
 import LibraryView from '../sharing/LibraryView'
@@ -39,6 +40,7 @@ export default function FriendLibraryPage() {
             role="status"
             className="sticky top-[4.25rem] z-[5] flex items-center gap-3 rounded border border-steel bg-surface px-4 py-2 text-sm shadow"
           >
+            <Avatar src={friend.avatar} name={friend.pseudo} size="sm" />
             <span className="flex-1">
               Vous consultez la bibliothèque de <strong>{friend.pseudo}</strong> · lecture seule
             </span>
@@ -67,6 +69,7 @@ export default function FriendLibraryPage() {
             basePath={`/amis/${friendId}`}
             seriesId={seriesId}
             intro="Bibliothèque de"
+            avatar={friend.avatar}
           />
         )}
       </div>
