@@ -10,6 +10,7 @@ import PageLayout from '../../components/PageLayout'
 import RegenerateLink from '../../components/RegenerateLink'
 import Switch from '../../components/Switch'
 import { appLink } from '../../lib/appLink'
+import Avatar from '../avatar/Avatar'
 import { governanceErrorMessage } from '../governance/api'
 import { useAsync } from '../collection/useAsync'
 import {
@@ -113,6 +114,7 @@ export default function FriendsPage() {
             <ul className="flex flex-col gap-2">
               {incoming.map((request) => (
                 <li key={request.userId} className="flex items-center gap-2">
+                  <Avatar src={request.avatar} name={request.pseudo} size="sm" />
                   <span className="flex-1 font-medium">{request.pseudo}</span>
                   <IconButton
                     icon="check"
@@ -200,6 +202,7 @@ export default function FriendsPage() {
                 className="flex flex-col gap-2 border-b border-line pb-3 last:border-0"
               >
                 <div className="flex items-center gap-2">
+                  <Avatar src={friend.avatar} name={friend.pseudo} size="sm" />
                   {friend.theyShare ? (
                     <Link
                       to={`/amis/${friend.id}`}
@@ -254,6 +257,7 @@ export default function FriendsPage() {
             <ul className="flex flex-col gap-2">
               {outgoing.map((request) => (
                 <li key={request.userId} className="flex items-center gap-2">
+                  <Avatar src={request.avatar} name={request.pseudo} size="sm" />
                   <span className="flex-1">
                     <span className="font-medium">{request.pseudo}</span>
                     <span className="ml-2 text-xs text-muted">en attente</span>

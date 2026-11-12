@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import FormMessage from '../../components/FormMessage'
+import Avatar from '../avatar/Avatar'
 import { CoverImage } from '../collection/AlbumCard'
 import { shortKindLabel } from '../collection/kinds'
 import SeriesGrid from '../collection/SeriesGrid'
@@ -85,6 +86,7 @@ export default function LibraryView({
   basePath,
   seriesId,
   intro,
+  avatar,
 }: {
   pseudo: string
   entries: Entry[]
@@ -92,6 +94,8 @@ export default function LibraryView({
   seriesId?: string
   /** Texte au-dessus du pseudo (« Collection de »). */
   intro?: ReactNode
+  /** Avatar de la personne (amis seulement : le lien public n'en montre pas). */
+  avatar?: string | null
 }) {
   const [status, setStatus] = useState<Status>('owned')
   const summary = useMemo(() => sharedSummary(entries), [entries])
@@ -106,9 +110,12 @@ export default function LibraryView({
   return (
     <>
       <section className="card flex flex-wrap items-center justify-between gap-4 p-5">
-        <div>
-          <p className="text-sm text-muted">{intro ?? 'Collection de'}</p>
-          <h1 className="title-metal text-4xl">{pseudo}</h1>
+        <div className="flex items-center gap-4">
+          {avatar !== undefined && <Avatar src={avatar} name={pseudo} size="lg" />}
+          <div>
+            <p className="text-sm text-muted">{intro ?? 'Collection de'}</p>
+            <h1 className="title-metal text-4xl">{pseudo}</h1>
+          </div>
         </div>
         <div className="flex divide-x divide-line-strong" role="group" aria-label="Chiffres clés">
           <Figure value={summary.seriesCount} label="séries" />

@@ -241,6 +241,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar: string | null
           contribution: string
           created_at: string
           id: string
@@ -254,6 +255,7 @@ export type Database = {
           share_wishes: boolean
         }
         Insert: {
+          avatar?: string | null
           contribution?: string
           created_at?: string
           id: string
@@ -267,6 +269,7 @@ export type Database = {
           share_wishes?: boolean
         }
         Update: {
+          avatar?: string | null
           contribution?: string
           created_at?: string
           id?: string
@@ -539,6 +542,7 @@ export type Database = {
       list_friend_requests: {
         Args: never
         Returns: {
+          avatar: string
           created_at: string
           direction: string
           pseudo: string
@@ -548,6 +552,7 @@ export type Database = {
       list_friends: {
         Args: never
         Returns: {
+          avatar: string
           friend_id: string
           i_share: boolean
           pseudo: string

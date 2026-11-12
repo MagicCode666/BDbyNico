@@ -7,6 +7,7 @@ export interface Friend {
   iShare: boolean
   /** Cette personne partage-t-elle sa bibliothèque avec moi ? */
   theyShare: boolean
+  avatar: string | null
 }
 
 export interface FriendRequest {
@@ -14,6 +15,7 @@ export interface FriendRequest {
   pseudo: string
   /** « in » : reçue ; « out » : envoyée (en attente, un refus ne se voit pas). */
   direction: 'in' | 'out'
+  avatar: string | null
 }
 
 export async function listFriends(): Promise<Friend[]> {
@@ -24,6 +26,7 @@ export async function listFriends(): Promise<Friend[]> {
     pseudo: row.pseudo,
     iShare: row.i_share,
     theyShare: row.they_share,
+    avatar: row.avatar,
   }))
 }
 
@@ -34,6 +37,7 @@ export async function listFriendRequests(): Promise<FriendRequest[]> {
     userId: row.user_id,
     pseudo: row.pseudo,
     direction: row.direction === 'in' ? 'in' : 'out',
+    avatar: row.avatar,
   }))
 }
 

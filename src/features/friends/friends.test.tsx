@@ -55,7 +55,7 @@ const auth: AuthContextValue = {
   updatePassword: noop,
 }
 
-const bruno: Friend = { id: 'f1', pseudo: 'Bruno', iShare: true, theyShare: true }
+const bruno: Friend = { id: 'f1', pseudo: 'Bruno', iShare: true, theyShare: true, avatar: null }
 const row = (extra: Partial<SharedRow> = {}): SharedRow => ({
   pseudo: 'Bruno',
   isbn: 'isbn-1',
@@ -107,8 +107,8 @@ describe('FriendsPage', () => {
     }
     listFriends.mockReset().mockResolvedValue([bruno])
     listFriendRequests.mockReset().mockResolvedValue([
-      { userId: 'u2', pseudo: 'Chloé', direction: 'in' },
-      { userId: 'u3', pseudo: 'Denis', direction: 'out' },
+      { userId: 'u2', pseudo: 'Chloé', direction: 'in', avatar: null },
+      { userId: 'u3', pseudo: 'Denis', direction: 'out', avatar: null },
     ])
   })
   afterEach(cleanup)
