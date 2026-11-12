@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.20.0...bdbynico-v0.21.0) (2026-11-12)
+
+
+### Nouveautés
+
+* correction d'ISBN, fusion d'éditions, autres éditions, bouton retour ([#55](https://github.com/MagicCode666/BDbyNico/issues/55)) ([7ce0efb](https://github.com/MagicCode666/BDbyNico/commit/7ce0efb7c1ffaead5afeb8f7cb3e16420a215eee))
+
 ## [0.20.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.19.0...bdbynico-v0.20.0) (2026-11-11)
 
 
