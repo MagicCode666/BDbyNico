@@ -9,6 +9,7 @@ export interface CatalogueEdition {
   coverUrl: string | null
   authors: string[]
   coverLocked?: boolean
+  publisher?: string | null
   /** Intégrales, coffrets et hors-séries n'ont pas de case dans la grille des tomes. */
   kind?: AlbumKind
   /** Intégrale : tomes repris (absents : toute la série). */

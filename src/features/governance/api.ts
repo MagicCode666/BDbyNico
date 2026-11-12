@@ -13,6 +13,8 @@ export type ChangeKind =
   | 'edition_publisher'
   | 'edition_date'
   | 'edition_series'
+  | 'edition_isbn'
+  | 'edition_merge'
   | 'series_name'
   | 'series_total'
   | 'series_status'
@@ -203,6 +205,10 @@ export function governanceErrorMessage(error: unknown, fallback: string): string
     'Série introuvable',
     'Choisissez deux',
     'Une fusion ne s',
+    'ISBN invalide',
+    'Cet ISBN existe déjà',
+    'Choisissez deux albums',
+    'Ce changement ne s',
     'Éditeur trop long',
     'La série d',
     'déjà traitée',
@@ -332,6 +338,20 @@ export async function setEditionSeries(isbn: string, seriesId: string | null): P
 /** Fusionne la série `from` dans la série `into` : renvoie le nombre d'albums déplacés. */
 export async function mergeSeries(from: string, into: string): Promise<number> {
   const { data, error } = await supabase.rpc('merge_series', { p_from: from, p_into: into })
+  if (error) throw error
+  return data
+}
+
+/** Remplace l'ISBN d'une édition (les collections suivent). Renvoie le nouvel ISBN. */
+export async function correctIsbn(oldIsbn: string, newIsbn: string): Promise<string> {
+  const { data, error } = await supabase.rpc('correct_isbn', { p_old: oldIsbn, p_new: newIsbn })
+  if (error) throw error
+  return data
+}
+
+/** Fusionne deux éditions d'un même album : `from` est absorbée par `into`. */
+export async function mergeEditions(from: string, into: string): Promise<number> {
+  const { data, error } = await supabase.rpc('merge_editions', { p_from: from, p_into: into })
   if (error) throw error
   return data
 }

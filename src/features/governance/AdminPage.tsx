@@ -51,6 +51,8 @@ const KIND_LABELS = {
   edition_publisher: 'Éditeur',
   edition_date: 'Date de parution',
   edition_series: "Série d'un album",
+  edition_isbn: 'ISBN corrigé',
+  edition_merge: "Fusion d'éditions",
 } as const
 const CONTRIBUTION_LABELS: Record<Contribution, string> = {
   full: 'Contributeur',
@@ -117,11 +119,15 @@ export default function AdminPage() {
   )
 }
 
+/** Changements qui se refont à la main plutôt que de s'annuler. */
+const IRREVERSIBLE = new Set<string>(['series_merge', 'edition_isbn', 'edition_merge'])
+
 const isSeriesChange = (change: Change) => change.kind.startsWith('series_')
 
 /** On n'annule un changement que si l'album ou la série existe encore. */
 const canRevert = (change: Change) =>
-  isSeriesChange(change) ? change.seriesName !== null : change.title !== null
+  !IRREVERSIBLE.has(change.kind) &&
+  (isSeriesChange(change) ? change.seriesName !== null : change.title !== null)
 
 function CoverPair({ change }: { change: Change }) {
   const label = change.title ?? change.isbn

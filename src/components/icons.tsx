@@ -20,6 +20,8 @@ const PATHS = {
   close: 'M6 6l12 12M18 6L6 18',
   edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
   scan: 'M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M7 12h10',
+  back: 'M15 5l-7 7 7 7',
+  merge: 'M5 4v3a5 5 0 005 5h4a5 5 0 015 5v3M19 4v3a5 5 0 01-5 5',
 } as const
 
 export type IconName = keyof typeof PATHS

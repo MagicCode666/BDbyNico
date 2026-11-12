@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import FormMessage from '../../components/FormMessage'
 import IconButton from '../../components/IconButton'
+import { formatIsbn, normalizeIsbn } from '../../lib/isbn'
 import {
   correctEdition,
+  correctIsbn,
   governanceErrorMessage,
+  mergeEditions,
   setEditionSeries,
   type EditionCorrections,
 } from '../governance/api'
@@ -16,22 +19,31 @@ const FIELD =
 
 /**
  * Correction des informations d'un album (modérateurs) : titre, numéro de tome, auteurs, éditeur,
- * date de parution et série. Chaque changement est partagé, journalisé et annulable.
+ * date de parution, série et ISBN. Chaque changement est partagé et journalisé ; tous sauf l'ISBN
+ * peuvent être annulés depuis l'administration.
+ * `onIsbnChanged` est appelé avec le nouvel ISBN (l'adresse de la page change) et indique s'il s'agit
+ * d'une fusion : l'appelant relance alors la recherche de la couverture et des informations.
  */
 export default function EditionCorrector({
   edition,
   onChanged,
+  onIsbnChanged,
 }: {
   edition: Edition
   onChanged: () => void
+  onIsbnChanged?: (newIsbn: string, merged: boolean) => void | Promise<void>
 }) {
   const [open, setOpen] = useState(false)
+  const [isbn, setIsbn] = useState(formatIsbn(edition.isbn))
+  const [existingIsbn, setExistingIsbn] = useState<string | null>(null)
   const [title, setTitle] = useState(edition.title)
   const [volume, setVolume] = useState(edition.volume?.toString() ?? '')
   const [authors, setAuthors] = useState(edition.authors.join('\n'))
   const [publisher, setPublisher] = useState(edition.publisher ?? '')
   const [publishedOn, setPublishedOn] = useState(edition.publishedOn ?? '')
   const [busy, setBusy] = useState(false)
+  // Quand l'ISBN change, la page change d'adresse : inutile de recharger l'ancienne
+  const leaving = useRef(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<string | null>(null)
   const [choosingSeries, setChoosingSeries] = useState(false)
@@ -43,7 +55,7 @@ export default function EditionCorrector({
     try {
       await action()
       setDone(success)
-      onChanged()
+      if (!leaving.current) onChanged()
     } catch (caught) {
       setError(governanceErrorMessage(caught, failure))
     }
@@ -66,14 +78,36 @@ export default function EditionCorrector({
     if (authorList.join('\n') !== edition.authors.join('\n')) changes.authors = authorList
     if (publisher.trim() !== (edition.publisher ?? '')) changes.publisher = publisher.trim() || null
     if (publishedOn !== (edition.publishedOn ?? '')) changes.publishedOn = publishedOn || null
-    if (Object.keys(changes).length === 0) {
+    const newIsbn = normalizeIsbn(isbn)
+    if (!newIsbn) {
+      setError('ISBN invalide : 13 chiffres (ou 10) avec une clé de contrôle correcte.')
+      return
+    }
+    const isbnChanged = newIsbn !== edition.isbn
+    if (Object.keys(changes).length === 0 && !isbnChanged) {
       setDone('Aucun changement.')
       return
     }
+    setExistingIsbn(null)
     void run(
-      () => correctEdition(edition.isbn, changes),
+      async () => {
+        if (Object.keys(changes).length > 0) await correctEdition(edition.isbn, changes)
+        if (isbnChanged) {
+          try {
+            await correctIsbn(edition.isbn, newIsbn)
+          } catch (caught) {
+            // L'ISBN existe déjà : c'est probablement un doublon, on propose la fusion
+            if ((caught as { code?: string })?.code === '23505') setExistingIsbn(newIsbn)
+            throw caught
+          }
+          leaving.current = true
+          await onIsbnChanged?.(newIsbn, false)
+        }
+      },
       'Impossible d’enregistrer les corrections.',
-      'Corrections enregistrées.',
+      isbnChanged
+        ? 'Corrections enregistrées. La couverture et la fiche sont recherchées de nouveau.'
+        : 'Corrections enregistrées.',
     )
   }
 
@@ -103,6 +137,19 @@ export default function EditionCorrector({
         et peut être annulé depuis l’administration.
       </p>
 
+      <label className="flex max-w-64 flex-col gap-1 text-sm font-medium">
+        ISBN
+        <input
+          value={isbn}
+          inputMode="numeric"
+          onChange={(e) => setIsbn(e.target.value)}
+          className={FIELD}
+        />
+        <span className="text-xs font-normal text-muted">
+          Corrigé, il met à jour toutes les collections ; la couverture et la fiche sont cherchées
+          de nouveau.
+        </span>
+      </label>
       <label className="flex flex-col gap-1 text-sm font-medium">
         Titre
         <input
@@ -208,6 +255,37 @@ export default function EditionCorrector({
         )}
       </div>
 
+      {existingIsbn && (
+        <div className="flex flex-col gap-2 rounded border border-line p-3 text-sm">
+          <p>
+            L’ISBN {formatIsbn(existingIsbn)} existe déjà dans le catalogue : c’est probablement le
+            même album saisi deux fois. Les deux fiches peuvent être fusionnées : les collections
+            passent sur l’album existant et celui-ci est supprimé.
+          </p>
+          <div className="flex items-center gap-2">
+            <IconButton
+              icon="merge"
+              variant="danger"
+              label="Fusionner dans l’album existant"
+              disabled={busy}
+              onClick={() => {
+                const target = existingIsbn
+                setExistingIsbn(null)
+                void run(
+                  async () => {
+                    await mergeEditions(edition.isbn, target)
+                    leaving.current = true
+                    await onIsbnChanged?.(target, true)
+                  },
+                  'Impossible de fusionner les albums.',
+                  'Albums fusionnés.',
+                )
+              }}
+            />
+            <span className="text-muted">Fusionner dans l’album existant</span>
+          </div>
+        </div>
+      )}
       {error && <FormMessage kind="error">{error}</FormMessage>}
       {done && !error && <FormMessage kind="success">{done}</FormMessage>}
     </section>
