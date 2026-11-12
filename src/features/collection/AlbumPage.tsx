@@ -253,7 +253,14 @@ function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => voi
             />
           )}
 
-          {series && <AlbumSeriesStrip data={series} currentIsbn={edition.isbn} />}
+          {series && (
+            <AlbumSeriesStrip
+              data={series}
+              currentIsbn={edition.isbn}
+              userId={user?.id}
+              onChanged={onReload}
+            />
+          )}
           {series && <OtherEditions data={series} currentIsbn={edition.isbn} />}
         </div>
 
