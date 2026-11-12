@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.25.0...bdbynico-v0.26.0) (2026-11-12)
+
+
+### Nouveautés
+
+* ajouter à mes envies ou à ma collection depuis la bibliothèque d'un ami ([#70](https://github.com/MagicCode666/BDbyNico/issues/70)) ([1052942](https://github.com/MagicCode666/BDbyNico/commit/1052942f6bc2359c338bd6ae5ecdc8534e674b85))
+
 ## [0.25.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.24.0...bdbynico-v0.25.0) (2026-11-12)
 
 
