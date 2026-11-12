@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.26.2...bdbynico-v0.27.0) (2026-11-12)
+
+
+### Nouveautés
+
+* suppression de compte et pages légales ([#76](https://github.com/MagicCode666/BDbyNico/issues/76)) ([b98f8e9](https://github.com/MagicCode666/BDbyNico/commit/b98f8e976ec6638dfe6e28ea70d0a9bfff45272a))
+
 ## [0.26.2](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.26.1...bdbynico-v0.26.2) (2026-11-12)
 
 
