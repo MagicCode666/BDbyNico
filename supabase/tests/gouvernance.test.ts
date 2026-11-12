@@ -90,4 +90,10 @@ describe('migrations et scénarios SQL', () => {
   it('le scénario de l’avatar réussit', async () => {
     expect(await runScenario(db, 'tests/avatar.sql')).toMatch(/^OK : \d+ vérifications$/)
   }, 120_000)
+
+  it('le scénario de la suppression de compte réussit', async () => {
+    expect(await runScenario(db, 'tests/suppression_compte.sql')).toMatch(
+      /^OK : \d+ vérifications$/,
+    )
+  }, 120_000)
 })

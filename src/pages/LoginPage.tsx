@@ -12,7 +12,9 @@ export default function LoginPage() {
   const { user, signIn } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: string } | null)?.from ?? '/'
+  const state = location.state as { from?: string; accountDeleted?: boolean } | null
+  const from = state?.from ?? '/'
+  const accountDeleted = state?.accountDeleted === true
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -42,6 +44,11 @@ export default function LoginPage() {
         </>
       }
     >
+      {accountDeleted && (
+        <FormMessage kind="success">
+          Votre compte et vos données ont été supprimés. À bientôt !
+        </FormMessage>
+      )}
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <TextField
           label="Email"
