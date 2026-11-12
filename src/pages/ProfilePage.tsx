@@ -6,8 +6,10 @@ import { pseudoAvailable } from '../auth/pseudo'
 import { normalizePseudo, validatePseudo } from '../auth/validation'
 import FormMessage from '../components/FormMessage'
 import PageLayout from '../components/PageLayout'
+import { notifyAccountChanged } from '../components/shell/useAccountSummary'
 import PseudoField from '../components/PseudoField'
 import SubmitButton from '../components/SubmitButton'
+import AvatarEditor from '../features/avatar/AvatarEditor'
 import ClearCollectionDialog from '../features/collection/ClearCollectionDialog'
 import { exportCollection } from '../features/export/exportCollection'
 import { countPending } from '../features/governance/api'
@@ -23,6 +25,7 @@ export default function ProfilePage() {
   const userId = user?.id
   const [pseudo, setPseudo] = useState('')
   const [savedPseudo, setSavedPseudo] = useState('')
+  const [avatar, setAvatar] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -39,7 +42,7 @@ export default function ProfilePage() {
     let cancelled = false
     supabase
       .from('profiles')
-      .select('pseudo')
+      .select('pseudo, avatar')
       .eq('id', userId)
       .single()
       .then(({ data, error: loadError }) => {
@@ -48,6 +51,7 @@ export default function ProfilePage() {
         else {
           setPseudo(data.pseudo)
           setSavedPseudo(data.pseudo)
+          setAvatar(data.avatar)
         }
         setLoaded(true)
       })
@@ -89,6 +93,7 @@ export default function ProfilePage() {
       setPseudo(value)
       setSavedPseudo(value)
       setSaved(true)
+      notifyAccountChanged()
     }
   }
 
@@ -128,6 +133,17 @@ export default function ProfilePage() {
         <section className="card flex flex-col gap-4 p-5">
           <h2 className="text-xl">Mon compte</h2>
           <p className="text-sm text-muted">{user?.email}</p>
+          {userId && loaded && (
+            <AvatarEditor
+              userId={userId}
+              name={savedPseudo}
+              avatar={avatar}
+              onChange={(next) => {
+                setAvatar(next)
+                notifyAccountChanged()
+              }}
+            />
+          )}
           <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
             <PseudoField
               value={pseudo}

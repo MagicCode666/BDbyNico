@@ -23,6 +23,16 @@ describe('TabBar', () => {
     expect(screen.queryByRole('link', { name: /Recherche/ })).toBeNull()
   })
 
+  it('met mes livres à gauche (collection, envies) et le social à droite (amis, compte)', () => {
+    renderAt('/collection')
+    const names = screen
+      .getAllByRole('link')
+      .map(
+        (link) => link.getAttribute('aria-label') ?? link.textContent?.replace(/\d+/g, '').trim(),
+      )
+    expect(names).toEqual(['Collection', 'Envies', 'Ajouter un album', 'Amis', 'Compte'])
+  })
+
   it('allume Amis sur la bibliothèque d’un ami, pas Collection', () => {
     renderAt('/amis/abc')
     expect(screen.getByRole('link', { name: /Amis/ }).getAttribute('aria-current')).toBe('page')

@@ -13,13 +13,16 @@ interface Tab {
 
 const TABS: Tab[] = [
   { id: 'collection', label: 'Collection', to: '/collection', icon: 'library' },
-  { id: 'amis', label: 'Amis', to: '/amis', icon: 'users' },
-  { id: 'ajouter', label: 'Ajouter', to: '/collection/ajouter', icon: 'plus' },
   { id: 'envies', label: 'Envies', to: '/collection?statut=envies', icon: 'heart' },
+  { id: 'ajouter', label: 'Ajouter', to: '/collection/ajouter', icon: 'plus' },
+  { id: 'amis', label: 'Amis', to: '/amis', icon: 'users' },
   { id: 'profil', label: 'Compte', to: '/profil', icon: 'user' },
 ]
 
-/** Onglets du bas (mobile) : à portée du pouce, le bouton « Ajouter » au centre. */
+/**
+ * Onglets du bas (mobile) : à portée du pouce, le bouton « Ajouter » au centre. À gauche, ce qui
+ * touche mes livres (collection, envies) ; à droite, le social (amis, compte).
+ */
 export default function TabBar({ friendRequests = 0 }: { friendRequests?: number }) {
   const { pathname, search } = useLocation()
   const active = activeNavId(pathname, search)
