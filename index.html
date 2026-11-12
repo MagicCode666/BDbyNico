@@ -7,12 +7,17 @@
     <meta name="theme-color" content="#120e0c" />
     <script>
       // Pose le thème avant le premier rendu (évite un flash du mauvais thème). Même règle que
-      // src/theme/theme.ts : choix manuel mémorisé, sinon réglage de l'appareil.
+      // src/theme/theme.ts : choix mémorisé (« auto » = réglage de l'appareil), sinon sombre.
       ;(function () {
         try {
           var saved = localStorage.getItem('bdbynico:theme')
           var dark = window.matchMedia('(prefers-color-scheme: dark)').matches
-          var theme = saved === 'clair' || saved === 'rouille' ? saved : dark ? 'rouille' : 'clair'
+          var theme =
+            saved === 'clair' || saved === 'rouille'
+              ? saved
+              : saved === 'auto' && !dark
+                ? 'clair'
+                : 'rouille'
           document.documentElement.dataset.theme = theme
           document
             .querySelector('meta[name="theme-color"]')
