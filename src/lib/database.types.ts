@@ -21,6 +21,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           series_id: string | null
+          snapshot: Json | null
           status: string
           user_id: string | null
         }
@@ -36,6 +37,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           series_id?: string | null
+          snapshot?: Json | null
           status?: string
           user_id?: string | null
         }
@@ -51,6 +53,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           series_id?: string | null
+          snapshot?: Json | null
           status?: string
           user_id?: string | null
         }
@@ -206,6 +209,36 @@ export type Database = {
           },
         ]
       }
+      friendships: {
+        Row: {
+          addressee: string
+          addressee_shares: boolean
+          created_at: string
+          requester: string
+          requester_shares: boolean
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          addressee: string
+          addressee_shares?: boolean
+          created_at?: string
+          requester: string
+          requester_shares?: boolean
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          addressee?: string
+          addressee_shares?: boolean
+          created_at?: string
+          requester?: string
+          requester_shares?: boolean
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           contribution: string
@@ -224,7 +257,9 @@ export type Database = {
           contribution?: string
           created_at?: string
           id: string
+          invite_token?: string
           pseudo: string
+          pseudo_key: string
           role?: string
           share_dedications?: boolean
           share_enabled?: boolean
@@ -235,7 +270,9 @@ export type Database = {
           contribution?: string
           created_at?: string
           id?: string
+          invite_token?: string
           pseudo?: string
+          pseudo_key?: string
           role?: string
           share_dedications?: boolean
           share_enabled?: boolean
@@ -326,6 +363,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_friend_invite: { Args: { p_token: string }; Returns: string }
       add_edition: {
         Args: {
           p_authors?: string[]
@@ -369,11 +407,37 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cancel_friend_request: {
+        Args: { p_addressee: string }
+        Returns: undefined
+      }
+      collection_rows: {
+        Args: { p_owner: string }
+        Returns: {
+          authors: string[]
+          cover_url: string
+          dedicated: boolean
+          isbn: string
+          kind: string
+          pseudo: string
+          series_id: string
+          series_name: string
+          series_status: string
+          series_total: number
+          starts_at_zero: boolean
+          status: string
+          title: string
+          volume: number
+          volume_from: number
+          volume_to: number
+        }[]
+      }
       correct_edition: {
         Args: { p_changes: Json; p_isbn: string }
         Returns: number
       }
       correct_isbn: { Args: { p_new: string; p_old: string }; Returns: string }
+      count_incoming_friend_requests: { Args: never; Returns: number }
       delete_my_account: { Args: never; Returns: undefined }
       fill_edition_details: {
         Args: {
@@ -386,9 +450,10 @@ export type Database = {
         }
         Returns: undefined
       }
-      accept_friend_invite: { Args: { p_token: string }; Returns: string }
-      cancel_friend_request: { Args: { p_addressee: string }; Returns: undefined }
-      count_incoming_friend_requests: { Args: never; Returns: number }
+      friend_can_view: {
+        Args: { p_owner: string; p_viewer: string }
+        Returns: boolean
+      }
       get_friend_collection: {
         Args: { p_friend: string }
         Returns: {
@@ -409,36 +474,6 @@ export type Database = {
           volume_from: number
           volume_to: number
         }[]
-      }
-      list_friend_requests: {
-        Args: never
-        Returns: {
-          created_at: string
-          direction: string
-          pseudo: string
-          user_id: string
-        }[]
-      }
-      list_friends: {
-        Args: never
-        Returns: {
-          friend_id: string
-          i_share: boolean
-          pseudo: string
-          since: string
-          they_share: boolean
-        }[]
-      }
-      regenerate_invite_token: { Args: never; Returns: string }
-      remove_friend: { Args: { p_friend: string }; Returns: undefined }
-      respond_friend_request: {
-        Args: { p_accept: boolean; p_requester: string }
-        Returns: undefined
-      }
-      send_friend_request: { Args: { p_pseudo: string }; Returns: undefined }
-      set_friend_sharing: {
-        Args: { p_friend: string; p_share: boolean }
-        Returns: undefined
       }
       get_shared_collection: {
         Args: { p_token: string }
@@ -469,6 +504,7 @@ export type Database = {
       }
       is_moderator: { Args: never; Returns: boolean }
       is_valid_isbn13: { Args: { p_isbn: string }; Returns: boolean }
+      is_valid_pseudo: { Args: { p_pseudo: string }; Returns: boolean }
       isbn13_to_isbn10: { Args: { p_isbn: string }; Returns: string }
       list_catalogue_changes: {
         Args: {
@@ -500,6 +536,25 @@ export type Database = {
           volume: number
         }[]
       }
+      list_friend_requests: {
+        Args: never
+        Returns: {
+          created_at: string
+          direction: string
+          pseudo: string
+          user_id: string
+        }[]
+      }
+      list_friends: {
+        Args: never
+        Returns: {
+          friend_id: string
+          i_share: boolean
+          pseudo: string
+          since: string
+          they_share: boolean
+        }[]
+      }
       list_series_admin: {
         Args: { p_limit?: number; p_query?: string }
         Returns: {
@@ -525,15 +580,20 @@ export type Database = {
           role: string
         }[]
       }
-      merge_editions: { Args: { p_from: string; p_into: string }; Returns: number }
+      merge_editions: {
+        Args: { p_from: string; p_into: string }
+        Returns: number
+      }
       merge_series: {
         Args: { p_from: string; p_into: string }
         Returns: number
       }
       norm_text: { Args: { p_text: string }; Returns: string }
-      refresh_series_zero: { Args: { p_series: string }; Returns: undefined }
       pseudo_available: { Args: { p_pseudo: string }; Returns: boolean }
+      refresh_series_zero: { Args: { p_series: string }; Returns: undefined }
+      regenerate_invite_token: { Args: never; Returns: string }
       regenerate_share_token: { Args: never; Returns: string }
+      remove_friend: { Args: { p_friend: string }; Returns: undefined }
       rename_series: {
         Args: { p_name: string; p_series: string }
         Returns: undefined
@@ -541,6 +601,10 @@ export type Database = {
       report_cover: {
         Args: { p_cover_url: string; p_isbn: string }
         Returns: string
+      }
+      respond_friend_request: {
+        Args: { p_accept: boolean; p_requester: string }
+        Returns: undefined
       }
       revert_change: { Args: { p_id: number }; Returns: undefined }
       review_change: {
@@ -560,6 +624,7 @@ export type Database = {
           series_id: string
         }[]
       }
+      send_friend_request: { Args: { p_pseudo: string }; Returns: undefined }
       set_contribution_level: {
         Args: { p_level: string; p_user: string }
         Returns: undefined
@@ -574,6 +639,10 @@ export type Database = {
       }
       set_edition_series: {
         Args: { p_isbn: string; p_series: string }
+        Returns: undefined
+      }
+      set_friend_sharing: {
+        Args: { p_friend: string; p_share: boolean }
         Returns: undefined
       }
       set_series_genres: {
