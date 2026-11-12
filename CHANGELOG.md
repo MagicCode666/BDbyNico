@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.28.0...bdbynico-v1.0.0) (2026-11-12)
+
+
+### Corrections
+
+* corrections de la revue de code et journal d'erreurs de rls-check ([#80](https://github.com/MagicCode666/BDbyNico/issues/80)) ([1daf9d8](https://github.com/MagicCode666/BDbyNico/commit/1daf9d844b301903f7e6701eeb9024cadc778845))
+
 ## [0.28.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.27.0...bdbynico-v0.28.0) (2026-11-12)
 
 
