@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.21.0...bdbynico-v0.22.0) (2026-11-12)
+
+
+### Nouveautés
+
+* coche, cœur ou plus sur chaque tome du bandeau de la série ([#57](https://github.com/MagicCode666/BDbyNico/issues/57)) ([ce276b7](https://github.com/MagicCode666/BDbyNico/commit/ce276b7bf6282f55f7fe1f63ff024510de759a9d))
+
 ## [0.21.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.20.0...bdbynico-v0.21.0) (2026-11-12)
 
 
