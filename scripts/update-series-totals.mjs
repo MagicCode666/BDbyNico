@@ -40,6 +40,8 @@ const dryRun = args.includes('--dry-run')
 const skipCovers = args.includes('--skip-covers')
 // Albums dont on complète la fiche par passage (le reste aux passages suivants)
 const DETAILS_BATCH = 400
+// Nombre d'ISBN interrogés d'un coup à la BnF pour les fiches
+const DETAILS_CHUNK = 20
 // Couvertures Open Library vérifiées par passage (le reste aux passages suivants)
 const COVER_BATCH = 1500
 const limit = Number(option('--limit') ?? 100)
@@ -236,10 +238,10 @@ async function fillDetails(db) {
   let filled = 0
   let missing = 0
   let failedBatches = 0
-  for (let i = 0; i < rows.length; i += 20) {
+  for (let i = 0; i < rows.length; i += DETAILS_CHUNK) {
     // Pause entre deux lots : la BnF coupe la connexion quand on la sollicite trop vite
     if (i > 0) await new Promise((resolve) => setTimeout(resolve, 1000))
-    const batch = rows.slice(i, i + 20).map((row) => row.isbn)
+    const batch = rows.slice(i, i + DETAILS_CHUNK).map((row) => row.isbn)
     let found
     try {
       found = await fetchDetails(batch)
@@ -275,7 +277,7 @@ async function fillDetails(db) {
   )
   // Tous les lots en échec : la BnF (ou le relais) est injoignable. Le job doit passer au rouge
   // pour que GitHub envoie un mail, au lieu de réessayer en silence chaque nuit.
-  if (failedBatches > 0 && failedBatches === Math.ceil(rows.length / 20)) {
+  if (failedBatches > 0 && failedBatches === Math.ceil(rows.length / DETAILS_CHUNK)) {
     throw new Error(
       'la BnF est injoignable (tous les lots ont échoué : relais Cloudflare ou BnF ?)',
     )

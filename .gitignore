@@ -31,3 +31,5 @@ Thumbs.db
 
 worker/.dev.vars
 worker/.wrangler/
+
+rls-check-errors.log

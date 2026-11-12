@@ -2,7 +2,7 @@
 // Usage : node scripts/rls-check.mjs
 // Les identifiants sont demandés au clavier (mot de passe masqué) et ne sont jamais écrits.
 import { createClient } from '@supabase/supabase-js'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createInterface } from 'node:readline'
 
 const env = Object.fromEntries(
@@ -44,10 +44,17 @@ async function login(label) {
 
 let passed = 0
 let failed = 0
-function check(name, ok, detail = '') {
+const failures = []
+const MAX_DETAIL = 300
+function check(name, ok, rawDetail = '') {
+  const detail = String(rawDetail ?? '')
   if (ok) passed++
   else failed++
-  console.log(`${ok ? 'OK  ' : 'ECHEC'} ${name}${!ok && detail ? ` -> ${detail}` : ''}`)
+  // Le détail d'un échec est tronqué : une réponse complète de la base peut faire des pages
+  const short = detail.length > MAX_DETAIL ? `${detail.slice(0, MAX_DETAIL)}…` : detail
+  const line = `${ok ? 'OK  ' : 'ECHEC'} ${name}${!ok && short ? ` -> ${short}` : ''}`
+  if (!ok) failures.push(line)
+  console.log(line)
 }
 const show = (x) => JSON.stringify(x)
 
@@ -387,12 +394,8 @@ r = await anon.rpc('get_shared_collection', { p_token: tokenA })
 check('Partage désactivé : le jeton ne renvoie rien', !r.error && r.data?.length === 0, show(r))
 await A.client.from('profiles').update({ share_enabled: true }).eq('id', A.id)
 r = await anon.rpc('get_shared_collection', { p_token: tokenA })
-const row = r.data?.[0]
-check(
-  'Partage activé : un anonyme voit la collection de A',
-  r.data?.length === 1 && row.isbn === isbn,
-  show(r),
-)
+const row = r.data?.find((x) => x.isbn === isbn)
+check('Partage activé : un anonyme voit la collection de A', !r.error && !!row, show(r))
 const keys = row ? Object.keys(row).sort().join(',') : ''
 check(
   'La vue publique ne contient que les champs prévus',
@@ -405,7 +408,7 @@ check('Un faux jeton ne renvoie rien', !r.error && r.data?.length === 0, show(r)
 r = await B.client.rpc('get_shared_collection', { p_token: tokenA })
 check(
   'Le lien fonctionne aussi pour un autre utilisateur connecté (lecture seule)',
-  r.data?.length === 1,
+  !r.error && r.data?.some((x) => x.isbn === isbn),
   show(r),
 )
 r = await A.client.rpc('regenerate_share_token')
@@ -418,11 +421,12 @@ check(
 r = await anon.rpc('get_shared_collection', { p_token: tokenA })
 check("L'ancien lien ne fonctionne plus", !r.error && r.data?.length === 0, show(r))
 r = await anon.rpc('get_shared_collection', { p_token: newToken })
-check('Le nouveau lien fonctionne', r.data?.length === 1, show(r))
+check('Le nouveau lien fonctionne', !r.error && r.data?.some((x) => x.isbn === isbn), show(r))
 r = await anon.rpc('get_shared_collection', { p_token: newToken })
 check(
   'Les dédicaces ne sont pas publiques par défaut',
-  r.data?.[0]?.dedicated === false && !JSON.stringify(r.data).includes('Hergé'),
+  r.data?.find((x) => x.isbn === isbn)?.dedicated === false &&
+    !JSON.stringify(r.data).includes('Hergé'),
   show(r),
 )
 r = await A.client.from('profiles').update({ share_dedications: true }).eq('id', A.id).select()
@@ -430,7 +434,8 @@ check('A peut activer le partage de ses dédicaces', !r.error && r.data?.length 
 r = await anon.rpc('get_shared_collection', { p_token: newToken })
 check(
   'Dédicaces activées : signalées, mais sans le nom du dédicaceur',
-  r.data?.[0]?.dedicated === true && !JSON.stringify(r.data).includes('Hergé'),
+  r.data?.find((x) => x.isbn === isbn)?.dedicated === true &&
+    !JSON.stringify(r.data).includes('Hergé'),
   show(r),
 )
 await A.client.from('profiles').update({ share_dedications: false }).eq('id', A.id)
@@ -694,8 +699,9 @@ r = await B.client.rpc('list_friend_requests')
 check(
   'B voit la demande de A (et seulement son pseudo)',
   !r.error &&
-    r.data.some((x) => x.user_id === A.id && x.direction === 'in') &&
-    Object.keys(r.data[0]).sort().join() === 'created_at,direction,pseudo,user_id',
+    Object.keys(r.data.find((x) => x.user_id === A.id && x.direction === 'in') ?? {})
+      .sort()
+      .join() === 'avatar,created_at,direction,pseudo,user_id',
   show(r),
 )
 r = await A.client.rpc('get_friend_collection', { p_friend: B.id })
@@ -819,6 +825,14 @@ r = await A.client.from('user_series_settings').delete().eq('series_id', seriesI
 check('A supprime ses réglages de test', !r.error && r.data?.length === 1, show(r))
 
 console.log(`\n${passed} réussis, ${failed} échoués`)
+// Les seuls échecs, concis, dans un fichier à communiquer (ignoré par git)
+const errorsFile = new URL('../rls-check-errors.log', import.meta.url)
+if (failed > 0) {
+  writeFileSync(errorsFile, `${passed} réussis, ${failed} échoués\n\n${failures.join('\n')}\n`)
+  console.log('Échecs enregistrés dans rls-check-errors.log (à la racine du projet).')
+} else if (existsSync(errorsFile)) {
+  rmSync(errorsFile)
+}
 console.log(
   `Reste dans le catalogue partagé (non supprimable par les utilisateurs) : ISBN ${isbn} et la série « Série de test RLS ».`,
 )

@@ -6,5 +6,8 @@ export function relayFetch(url, options = {}) {
   const secret = process.env.BNF_RELAY_SECRET
   if (!relay || !secret || new URL(url).hostname !== 'catalogue.bnf.fr') return fetch(url, options)
   const target = `${relay}?${new URLSearchParams({ url })}`
-  return fetch(target, { ...options, headers: { ...options.headers, 'x-relay-secret': secret } })
+  // new Headers accepte un objet, une liste de paires ou un Headers existant
+  const headers = new Headers(options.headers)
+  headers.set('x-relay-secret', secret)
+  return fetch(target, { ...options, headers })
 }
