@@ -1,10 +1,13 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { useAuth } from '../../auth/useAuth'
 import FormMessage from '../../components/FormMessage'
 import IconButton from '../../components/IconButton'
 import PageLayout from '../../components/PageLayout'
 import Avatar from '../avatar/Avatar'
+import { listMyItemStates } from '../collection/api'
+import CollectionStateButton from '../collection/CollectionStateButton'
 import { useAsync } from '../collection/useAsync'
 import { getFriendCollection } from '../sharing/api'
 import LibraryView from '../sharing/LibraryView'
@@ -23,6 +26,10 @@ export default function FriendLibraryPage() {
   const load = useCallback(() => loadLibrary(friendId), [friendId])
   const { data, loading, error } = useAsync(load)
   const friend = data?.friend ?? null
+  // Mon état pour chaque album : les boutons d'ajout parlent de MA collection, jamais de celle de l'ami
+  const { user } = useAuth()
+  const { data: mine, reload: reloadMine } = useAsync(listMyItemStates)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   return (
     <PageLayout
@@ -47,6 +54,7 @@ export default function FriendLibraryPage() {
             <IconButton to="/collection" icon="library" label="Revenir à ma collection" />
           </div>
         )}
+        {actionError && <FormMessage kind="error">{actionError}</FormMessage>}
         {loading && !data && <p className="text-muted">Chargement…</p>}
         {error && <FormMessage kind="error">Impossible de charger cette bibliothèque.</FormMessage>}
         {data && !friend && (
@@ -70,6 +78,21 @@ export default function FriendLibraryPage() {
             seriesId={seriesId}
             intro="Bibliothèque de"
             avatar={friend.avatar}
+            renderAction={
+              user && mine
+                ? (entry) => (
+                    <CollectionStateButton
+                      userId={user.id}
+                      isbn={entry.edition.isbn}
+                      title={entry.edition.title}
+                      item={mine.get(entry.edition.isbn) ?? null}
+                      size="sm"
+                      onChanged={reloadMine}
+                      onError={setActionError}
+                    />
+                  )
+                : undefined
+            }
           />
         )}
       </div>

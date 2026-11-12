@@ -41,6 +41,18 @@ vi.mock('./api', () => ({
   regenerateInviteToken: async () => 'nouveau-jeton',
 }))
 vi.mock('../sharing/api', () => ({ getFriendCollection: (id: string) => getFriendCollection(id) }))
+const listMyItemStates = vi.fn()
+const deleteEntry = vi.fn()
+const addCatalogueEdition = vi.fn()
+const setItemStatus = vi.fn()
+vi.mock('../collection/api', () => ({
+  listMyItemStates: () => listMyItemStates(),
+  deleteEntry: (...a: unknown[]) => deleteEntry(...a),
+}))
+vi.mock('../series/api', () => ({
+  addCatalogueEdition: (...a: unknown[]) => addCatalogueEdition(...a),
+  setItemStatus: (...a: unknown[]) => setItemStatus(...a),
+}))
 
 const noop = async () => ({ error: null })
 const auth: AuthContextValue = {
@@ -169,7 +181,15 @@ describe('FriendsPage', () => {
 describe('FriendLibraryPage', () => {
   beforeEach(() => {
     listFriends.mockReset().mockResolvedValue([bruno])
-    getFriendCollection.mockReset().mockResolvedValue([row(), row({ isbn: 'isbn-2', volume: 2 })])
+    getFriendCollection
+      .mockReset()
+      .mockResolvedValue([row(), row({ isbn: 'isbn-2', title: 'Tome 2', volume: 2 })])
+    listMyItemStates
+      .mockReset()
+      .mockResolvedValue(new Map([['isbn-1', { id: 'my-1', status: 'owned' }]]))
+    for (const fn of [deleteEntry, addCatalogueEdition, setItemStatus]) {
+      fn.mockReset().mockResolvedValue(undefined)
+    }
   })
   afterEach(cleanup)
 
@@ -183,6 +203,19 @@ describe('FriendLibraryPage', () => {
     )
     // lecture seule : aucun bouton d'état d'album
     expect(screen.queryByRole('button', { name: /Ajouter à ma collection/ })).toBeNull()
+  })
+
+  it('sur le détail d’une série, montre MON état de chaque tome et permet de l’ajouter à mes envies', async () => {
+    renderAt('/amis/f1/s1')
+    expect(await screen.findByRole('button', { name: 'Dans ma collection : Tome 1' })).toBeTruthy()
+    fireEvent.click(
+      screen.getByRole('button', { name: /Ajouter à ma collection ou aux envies : Tome 2/ }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Mettre en envie' }))
+    await waitFor(() => expect(addCatalogueEdition).toHaveBeenCalledWith('me', 'isbn-2', 'wanted'))
+    // la liste de MES albums est rechargée, pas celle de l'ami
+    await waitFor(() => expect(listMyItemStates).toHaveBeenCalledTimes(2))
+    expect(getFriendCollection).toHaveBeenCalledTimes(1)
   })
 
   it('refuse quelqu’un qui n’est pas un ami', async () => {

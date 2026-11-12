@@ -118,6 +118,18 @@ function toEntry(raw: RawItem): Entry | null {
   }
 }
 
+/** Mes lignes de collection par ISBN (possédé ou en envie), pour savoir où j'en suis. */
+export async function listMyItemStates(): Promise<Map<string, { id: string; status: Status }>> {
+  const { data, error } = await supabase.from('collection_items').select('id, isbn, status')
+  if (error) throw error
+  return new Map(
+    data.map((row) => [
+      row.isbn,
+      { id: row.id, status: row.status === 'wanted' ? ('wanted' as const) : ('owned' as const) },
+    ]),
+  )
+}
+
 export async function listCollection(): Promise<Entry[]> {
   const { data, error } = await supabase.from('collection_items').select(SELECT)
   if (error) throw error
