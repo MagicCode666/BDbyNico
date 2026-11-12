@@ -16,11 +16,12 @@ describe('resolveTheme', () => {
     expect(resolveTheme('rouille', false)).toBe('rouille')
   })
 
-  it('lit une préférence inconnue comme « auto »', () => {
+  it('lit une préférence inconnue comme le thème par défaut (sombre)', () => {
     expect(toPreference('clair')).toBe('clair')
     expect(toPreference('rouille')).toBe('rouille')
-    expect(toPreference('violet')).toBe('auto')
-    expect(toPreference(null)).toBe('auto')
+    expect(toPreference('auto')).toBe('auto')
+    expect(toPreference('violet')).toBe('rouille')
+    expect(toPreference(null)).toBe('rouille')
   })
 })
 
@@ -65,9 +66,10 @@ describe('ThemeProvider', () => {
     )
   const barColor = () => document.querySelector('meta[name="theme-color"]')?.getAttribute('content')
 
-  it("démarre en automatique et applique le thème de l'appareil au document", () => {
+  it("démarre en sombre, même si l'appareil est en clair", () => {
+    dark = false
     renderProvider()
-    expect(screen.getByTestId('etat').textContent).toBe('auto/rouille')
+    expect(screen.getByTestId('etat').textContent).toBe('rouille/rouille')
     expect(document.documentElement.dataset.theme).toBe('rouille')
     expect(barColor()).toBe('#120e0c')
   })
@@ -81,16 +83,17 @@ describe('ThemeProvider', () => {
     expect(barColor()).toBe('#f4f4f2')
   })
 
-  it("revient à l'automatique en effaçant la mémoire", () => {
+  it('passe en automatique et le mémorise', () => {
     localStorage.setItem(THEME_KEY, 'clair')
     renderProvider()
     expect(screen.getByTestId('etat').textContent).toBe('clair/clair')
     act(() => screen.getByText('auto').click())
-    expect(localStorage.getItem(THEME_KEY)).toBeNull()
+    expect(localStorage.getItem(THEME_KEY)).toBe('auto')
     expect(screen.getByTestId('etat').textContent).toBe('auto/rouille')
   })
 
   it("suit un changement de réglage de l'appareil en automatique", () => {
+    localStorage.setItem(THEME_KEY, 'auto')
     renderProvider()
     dark = false
     act(() => listener?.())
