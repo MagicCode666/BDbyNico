@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.1](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.26.0...bdbynico-v0.26.1) (2026-11-12)
+
+
+### Corrections
+
+* relais Cloudflare pour interroger la BnF depuis le job de nuit ([#72](https://github.com/MagicCode666/BDbyNico/issues/72)) ([c99a55a](https://github.com/MagicCode666/BDbyNico/commit/c99a55a8adb12d902a5ca79b9ee2ae1c30fa9569))
+
 ## [0.26.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.25.0...bdbynico-v0.26.0) (2026-11-12)
 
 
