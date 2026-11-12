@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 import Logo from './Logo'
-import VersionBadge from './VersionBadge'
+import PageFooter from './PageFooter'
 
 const ARGUMENTS = [
   'Suivez vos séries tome après tome',
@@ -68,7 +68,7 @@ export default function AuthCard({ title, children, footer }: AuthCardProps) {
             {children}
           </div>
           {footer && <p className="text-center text-sm text-muted">{footer}</p>}
-          <VersionBadge className="text-center" />
+          <PageFooter />
         </div>
       </main>
     </div>

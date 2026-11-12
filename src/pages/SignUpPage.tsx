@@ -101,6 +101,13 @@ export default function SignUpPage() {
         <PasswordStrength value={password} />
         {error && <FormMessage kind="error">{error}</FormMessage>}
         <SubmitButton busy={busy}>Créer mon compte</SubmitButton>
+        <p className="text-center text-xs text-muted">
+          En créant un compte, vous acceptez notre{' '}
+          <Link to="/confidentialite" className="text-accent-text underline">
+            politique de confidentialité
+          </Link>
+          .
+        </p>
       </form>
     </AuthCard>
   )
