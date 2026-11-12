@@ -1,5 +1,6 @@
 // Calcul du total de tomes d'une série et de la liste de ses albums à partir du catalogue de la BnF.
 // Utilisé par le job quotidien (scripts/update-series-totals.mjs).
+import { relayFetch } from './relay-fetch.mjs'
 import {
   parseFormatCm,
   parseLanguage,
@@ -332,7 +333,7 @@ async function fetchPage(query, start, fetchFn, retryDelayMs) {
  */
 export async function fetchNotices(
   seriesName,
-  { fetchFn = fetch, retryDelayMs = 1000, pageConcurrency = 3, authors = [] } = {},
+  { fetchFn = relayFetch, retryDelayMs = 1000, pageConcurrency = 3, authors = [] } = {},
 ) {
   const quote = (text) => text.replace(/"/g, ' ')
   // Restreindre aux auteurs connus évite de noyer les séries au nom courant (« XIII », « Le Chat »)
@@ -362,7 +363,7 @@ export async function fetchNotices(
  * fréquent. C'est la façon la plus sûre de retrouver le nom officiel d'une série dont le nom
  * d'origine diffère (« Tintin » → « Les aventures de Tintin »).
  */
-export async function seriesNamesForIsbns(isbns, { fetchFn = fetch, max = 2 } = {}) {
+export async function seriesNamesForIsbns(isbns, { fetchFn = relayFetch, max = 2 } = {}) {
   const wanted = new Set(isbns)
   const terms = [...wanted]
     .slice(0, 20)
@@ -395,7 +396,7 @@ export async function seriesNamesForIsbns(isbns, { fetchFn = fetch, max = 2 } = 
  * Champs descriptifs (résumé, pages, format, prix, langue) des albums demandés, par ISBN-13.
  * Un ISBN absent de la réponse n'apparaît pas dans le résultat. Une seule requête pour tout le lot.
  */
-export async function fetchDetails(isbns, { fetchFn = fetch, retry } = {}) {
+export async function fetchDetails(isbns, { fetchFn = relayFetch, retry } = {}) {
   const wanted = new Set(isbns)
   const terms = isbns.flatMap((isbn) => [isbn, isbn13To10(isbn)]).filter(Boolean)
   if (terms.length === 0) return new Map()

@@ -34,6 +34,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BNF_RELAY_URL: ${{ vars.BNF_RELAY_URL }}
+          BNF_RELAY_SECRET: ${{ secrets.BNF_RELAY_SECRET }}
         run: |
           if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
             echo "::warning::Secret SUPABASE_SERVICE_ROLE_KEY absent : aucune mise à jour effectuée."

@@ -28,3 +28,6 @@ Thumbs.db
 
 # Outils locaux
 .claude/
+
+worker/.dev.vars
+worker/.wrangler/
