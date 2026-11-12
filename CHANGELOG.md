@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.1](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.22.0...bdbynico-v0.22.1) (2026-11-12)
+
+
+### Refactorisation
+
+* un seul bouton d'état d'album (coche, cœur, plus) ([#59](https://github.com/MagicCode666/BDbyNico/issues/59)) ([2240f93](https://github.com/MagicCode666/BDbyNico/commit/2240f93459f6fead22415927e5e650d5e006331d))
+
 ## [0.22.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.21.0...bdbynico-v0.22.0) (2026-11-12)
 
 
