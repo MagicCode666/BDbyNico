@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.24.0...bdbynico-v0.25.0) (2026-11-12)
+
+
+### Nouveautés
+
+* avatar personnalisé et onglets mobiles réordonnés ([#68](https://github.com/MagicCode666/BDbyNico/issues/68)) ([241ac5a](https://github.com/MagicCode666/BDbyNico/commit/241ac5a2838b8308d282ba94cd340b58c1ef10b4))
+
 ## [0.24.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.23.0...bdbynico-v0.24.0) (2026-11-12)
 
 
