@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.23.0...bdbynico-v0.24.0) (2026-11-12)
+
+
+### Nouveautés
+
+* pseudo unique, amis et bibliothèque d'un ami ([#65](https://github.com/MagicCode666/BDbyNico/issues/65)) ([4b5b4f5](https://github.com/MagicCode666/BDbyNico/commit/4b5b4f583eb43bb9cf172cab113b33b5757e1f8b))
+
 ## [0.23.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.22.2...bdbynico-v0.23.0) (2026-11-12)
 
 
