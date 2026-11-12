@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.2](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.26.1...bdbynico-v0.26.2) (2026-11-12)
+
+
+### Corrections
+
+* le job de nuit échoue quand la BnF est injoignable ([#74](https://github.com/MagicCode666/BDbyNico/issues/74)) ([0b52288](https://github.com/MagicCode666/BDbyNico/commit/0b52288feb1461d5194281223466658f674e4c31))
+
 ## [0.26.1](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.26.0...bdbynico-v0.26.1) (2026-11-12)
 
 
