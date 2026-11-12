@@ -117,8 +117,8 @@ export default function SeriesCorrector({
         ) : (
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-sm">
-              Fusionner « {name} » dans <strong>« {target.name} »</strong> ? Cette opération ne
-              s’annule pas.
+              Fusionner « {name} » dans <strong>« {target.name} »</strong> ? Vous pourrez l’annuler
+              depuis l’administration.
             </span>
             <IconButton
               icon="check"

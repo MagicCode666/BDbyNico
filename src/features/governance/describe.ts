@@ -69,6 +69,9 @@ export function describeChange(change: Change): string | null {
   if (change.kind === 'edition_merge') {
     return `Édition ${change.oldValue ?? '?'} fusionnée dans celle-ci`
   }
+  if (change.kind === 'series_merge' && change.revertsId !== null) {
+    return `Fusion annulée : « ${change.oldValue ?? '?'} » rétablie (${change.newValue ?? 0} album(s) remis)`
+  }
   if (change.kind === 'series_merge') {
     return `Fusion : « ${change.oldValue ?? '?'} » fusionnée dans cette série (${change.newValue ?? 0} album(s))`
   }

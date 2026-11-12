@@ -29,6 +29,15 @@ const change = (
 })
 
 describe('describeChange', () => {
+  it('décrit une fusion de séries et son annulation', () => {
+    expect(describeChange(change('series_merge', 'Boule et Bill - 40ème', '1'))).toBe(
+      'Fusion : « Boule et Bill - 40ème » fusionnée dans cette série (1 album(s))',
+    )
+    expect(
+      describeChange({ ...change('series_merge', 'Boule et Bill - 40ème', '1'), revertsId: 7 }),
+    ).toBe('Fusion annulée : « Boule et Bill - 40ème » rétablie (1 album(s) remis)')
+  })
+
   it('décrit un renommage', () => {
     expect(
       describeChange(change('series_name', 'La Maison Des Fragances', 'Les parfums du pouvoir')),

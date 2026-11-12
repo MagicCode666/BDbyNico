@@ -120,13 +120,15 @@ export default function AdminPage() {
 }
 
 /** Changements qui se refont à la main plutôt que de s'annuler. */
-const IRREVERSIBLE = new Set<string>(['series_merge', 'edition_isbn', 'edition_merge'])
+const IRREVERSIBLE = new Set<string>(['edition_isbn', 'edition_merge'])
 
 const isSeriesChange = (change: Change) => change.kind.startsWith('series_')
 
 /** On n'annule un changement que si l'album ou la série existe encore. */
 const canRevert = (change: Change) =>
   !IRREVERSIBLE.has(change.kind) &&
+  // La ligne qui rapporte l'annulation d'une fusion ne s'annule pas elle-même
+  !(change.kind === 'series_merge' && change.revertsId !== null) &&
   (isSeriesChange(change) ? change.seriesName !== null : change.title !== null)
 
 function CoverPair({ change }: { change: Change }) {
