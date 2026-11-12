@@ -8,9 +8,11 @@ import AlbumSeriesStrip from './AlbumSeriesStrip'
 vi.mock('../../lib/supabase', () => ({ supabase: {} }))
 const deleteEntry = vi.fn()
 const addCatalogueEdition = vi.fn()
+const setItemStatus = vi.fn()
 vi.mock('./api', () => ({ deleteEntry: (...a: unknown[]) => deleteEntry(...a) }))
 vi.mock('../series/api', () => ({
   addCatalogueEdition: (...a: unknown[]) => addCatalogueEdition(...a),
+  setItemStatus: (...a: unknown[]) => setItemStatus(...a),
 }))
 
 const edition = (isbn: string, volume: number) => ({
@@ -51,13 +53,15 @@ describe('AlbumSeriesStrip', () => {
   afterEach(cleanup)
 
   it('montre une coche, un cœur ou un plus selon l’état de chaque tome', () => {
-    expect(screen.getByRole('button', { name: /Tome 1 : dans ma collection/ })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Tome 2 : dans mes envies/ })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Tome 3 : ajouter/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Dans ma collection : Tome 1/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Dans mes envies : Tome 2/ })).toBeTruthy()
+    expect(
+      screen.getByRole('button', { name: /Ajouter à ma collection ou aux envies : Tome 3/ }),
+    ).toBeTruthy()
   })
 
   it('demande confirmation avant de retirer un tome possédé', async () => {
-    fireEvent.click(screen.getByRole('button', { name: /Tome 1 : dans ma collection/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Dans ma collection : Tome 1/ }))
     expect(deleteEntry).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Retirer de ma collection' }))
     await waitFor(() => expect(deleteEntry).toHaveBeenCalledWith('i1'))
@@ -65,7 +69,7 @@ describe('AlbumSeriesStrip', () => {
   })
 
   it('demande confirmation avant de retirer une envie, et peut annuler', async () => {
-    fireEvent.click(screen.getByRole('button', { name: /Tome 2 : dans mes envies/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Dans mes envies : Tome 2/ }))
     expect(screen.getByRole('heading', { name: 'Retirer des envies ?' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Annuler' }))
     expect(screen.queryByRole('dialog')).toBeNull()
@@ -73,7 +77,9 @@ describe('AlbumSeriesStrip', () => {
   })
 
   it('propose d’ajouter à la collection ou aux envies', async () => {
-    fireEvent.click(screen.getByRole('button', { name: /Tome 3 : ajouter/ }))
+    fireEvent.click(
+      screen.getByRole('button', { name: /Ajouter à ma collection ou aux envies : Tome 3/ }),
+    )
     fireEvent.click(screen.getByRole('button', { name: 'Mettre en envie' }))
     await waitFor(() =>
       expect(addCatalogueEdition).toHaveBeenCalledWith('u1', '9782800100005', 'wanted'),

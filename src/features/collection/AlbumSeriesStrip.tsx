@@ -1,22 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import Dialog from '../../components/Dialog'
 import FormMessage from '../../components/FormMessage'
-import IconButton from '../../components/IconButton'
 import type { SeriesData } from '../series/api'
-import { addCatalogueEdition } from '../series/api'
-import type { CatalogueEdition, UserItem } from '../series/buildView'
-import { deleteEntry } from './api'
 import { CoverImage } from './AlbumCard'
+import CollectionStateButton from './CollectionStateButton'
 import { isOutsideGrid, shortKindLabel, toAlbumKind } from './kinds'
-
-type Choice = { edition: CatalogueEdition; item: UserItem | null }
 
 /**
  * Les albums de la série, en bandeau : celui qu'on regarde est mis en avant. Chaque couverture porte
- * un bouton d'état : coche (dans ma collection), cœur (dans mes envies) ou plus (ni l'un ni l'autre).
- * La forme de l'icône dit l'état, pas la couleur ; chaque action passe par une confirmation.
+ * le bouton d'état commun (coche, cœur ou plus).
  */
 export default function AlbumSeriesStrip({
   data,
@@ -29,8 +22,6 @@ export default function AlbumSeriesStrip({
   userId?: string
   onChanged?: () => void
 }) {
-  const [choice, setChoice] = useState<Choice | null>(null)
-  const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const itemByIsbn = new Map(data.items.map((item) => [item.isbn, item]))
   // Tomes dans l'ordre, puis intégrales et hors-séries
@@ -40,20 +31,6 @@ export default function AlbumSeriesStrip({
     return outA - outB || (a.volume ?? 9999) - (b.volume ?? 9999)
   })
   if (editions.length < 2) return null
-
-  async function run(action: () => Promise<void>) {
-    setBusy(true)
-    setError(null)
-    try {
-      await action()
-      setChoice(null)
-      onChanged?.()
-    } catch {
-      setError('Impossible de modifier votre collection.')
-      setChoice(null)
-    }
-    setBusy(false)
-  }
 
   return (
     <section className="flex flex-col gap-3" aria-labelledby="dans-la-serie">
@@ -98,19 +75,14 @@ export default function AlbumSeriesStrip({
                 </span>
               </Link>
               {userId && (
-                <IconButton
-                  icon={!item ? 'plus' : item.status === 'owned' ? 'check' : 'heart'}
-                  variant={item ? 'primary' : 'outline'}
+                <CollectionStateButton
+                  userId={userId}
+                  isbn={edition.isbn}
+                  title={`${label} · ${edition.title}`}
+                  item={item}
                   size="sm"
-                  label={
-                    !item
-                      ? `${label} : ajouter à ma collection ou à mes envies`
-                      : item.status === 'owned'
-                        ? `${label} : dans ma collection, retirer`
-                        : `${label} : dans mes envies, retirer`
-                  }
-                  className={`absolute right-1 top-1 shadow ${item ? '' : 'bg-surface'}`}
-                  onClick={() => setChoice({ edition, item })}
+                  onChanged={() => onChanged?.()}
+                  onError={setError}
                 />
               )}
             </li>
@@ -118,66 +90,6 @@ export default function AlbumSeriesStrip({
         })}
       </ul>
       {error && <FormMessage kind="error">{error}</FormMessage>}
-
-      {choice && userId && (
-        <ChoiceDialog
-          choice={choice}
-          busy={busy}
-          onCancel={() => setChoice(null)}
-          onRemove={() => run(() => deleteEntry(choice.item!.id))}
-          onAdd={(status) => run(() => addCatalogueEdition(userId, choice.edition.isbn, status))}
-        />
-      )}
     </section>
-  )
-}
-
-function ChoiceDialog({
-  choice,
-  busy,
-  onCancel,
-  onRemove,
-  onAdd,
-}: {
-  choice: Choice
-  busy: boolean
-  onCancel: () => void
-  onRemove: () => void
-  onAdd: (status: 'owned' | 'wanted') => void
-}) {
-  const { edition, item } = choice
-  const name = edition.volume !== null ? `Tome ${edition.volume}` : edition.title
-  if (item) {
-    const owned = item.status === 'owned'
-    return (
-      <Dialog
-        title={owned ? 'Retirer de ma collection ?' : 'Retirer des envies ?'}
-        busy={busy}
-        onCancel={onCancel}
-        actions={[
-          {
-            label: owned ? 'Retirer de ma collection' : 'Retirer des envies',
-            icon: 'trash',
-            danger: true,
-            onClick: onRemove,
-          },
-        ]}
-      >
-        {name} · {edition.title}
-      </Dialog>
-    )
-  }
-  return (
-    <Dialog
-      title="Ajouter cet album"
-      busy={busy}
-      onCancel={onCancel}
-      actions={[
-        { label: 'Ajouter à ma collection', icon: 'check', onClick: () => onAdd('owned') },
-        { label: 'Mettre en envie', icon: 'heart', onClick: () => onAdd('wanted') },
-      ]}
-    >
-      {name} · {edition.title}
-    </Dialog>
   )
 }

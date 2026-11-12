@@ -4,11 +4,11 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import FormMessage from '../../components/FormMessage'
 import IconButton from '../../components/IconButton'
-import { Icon } from '../../components/icons'
 import PageLayout from '../../components/PageLayout'
 import ViewToggle from '../../components/ViewToggle'
 import { useScrollRestoration } from '../../lib/useScrollRestoration'
 import { CoverImage } from '../collection/AlbumCard'
+import CollectionStateButton from '../collection/CollectionStateButton'
 import { useAsync } from '../collection/useAsync'
 import {
   addCatalogueEdition,
@@ -162,8 +162,6 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
     )
   const addEdition = (isbn: string, status: 'owned' | 'wanted') =>
     run(() => addCatalogueEdition(userId!, isbn, status), "Impossible d'ajouter cet album.")
-  const markOwned = (itemId: string) =>
-    run(() => setItemStatus(itemId, 'owned'), 'Impossible de modifier cet album.')
 
   /** « Tout ajouter » : les tomes du catalogue manquants (et les envies passent à « possédé »). */
   function bulk(action: BulkAction) {
@@ -372,8 +370,9 @@ function SeriesDetails({ data, reload }: { data: SeriesData; reload: () => void 
               seriesName={series.name}
               layout={layout}
               busy={busy}
-              onAdd={addEdition}
-              onMarkOwned={markOwned}
+              userId={userId!}
+              onChanged={reload}
+              onError={setError}
               onIgnore={ignore}
             />
           ))}
@@ -520,18 +519,27 @@ interface SlotCardProps {
   seriesName: string
   layout: Layout
   busy: boolean
-  onAdd: (isbn: string, status: 'owned' | 'wanted') => void
-  onMarkOwned: (itemId: string) => void
+  userId: string
+  onChanged: () => void
+  onError: (message: string) => void
   onIgnore: (volume: number) => void
 }
 
 /** Un tome de la grille : couverture, état dans le coin, ajout en un clic quand il manque. */
-function SlotCard({ slot, seriesName, layout, busy, onAdd, onMarkOwned, onIgnore }: SlotCardProps) {
+function SlotCard({
+  slot,
+  seriesName,
+  layout,
+  busy,
+  userId,
+  onChanged,
+  onError,
+  onIgnore,
+}: SlotCardProps) {
   const list = layout === 'list'
   const label = `${seriesName} · Tome ${slot.volume}`
   const cardClass = `card group relative flex gap-2.5 p-2.5 transition hover:-translate-y-1 hover:border-accent hover:shadow-glow ${list ? 'items-center' : 'flex-col'}`
   const coverWrap = list ? 'w-12 flex-none' : 'w-full'
-  const cornerBase = `${list ? 'static flex-none' : 'absolute right-1.5 top-1.5'} grid h-8 w-8 place-items-center rounded border z-10`
 
   if (slot.kind === 'owned' || slot.kind === 'wanted') {
     const { edition, item } = slot
@@ -556,26 +564,15 @@ function SlotCard({ slot, seriesName, layout, busy, onAdd, onMarkOwned, onIgnore
             </span>
           </span>
         </Link>
-        {owned ? (
-          <span
-            role="img"
-            aria-label="Dans ma collection"
-            className={`${cornerBase} border-ok bg-ok text-on-accent shadow-[0_0_14px_color-mix(in_srgb,var(--ok)_65%,transparent)]`}
-          >
-            <Icon name="check" className="h-[18px] w-[18px]" />
-          </span>
-        ) : (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onMarkOwned(item.id)}
-            title="Dans mes envies : je l'ai"
-            aria-label={`Je l'ai : ${label}`}
-            className={`${cornerBase} border-accent bg-surface text-accent-text hover:bg-raised`}
-          >
-            <Icon name="heart" className="h-[18px] w-[18px]" />
-          </button>
-        )}
+        <CollectionStateButton
+          userId={userId}
+          isbn={edition.isbn}
+          title={label}
+          item={item}
+          placement={list ? 'inline' : 'corner'}
+          onChanged={onChanged}
+          onError={onError}
+        />
       </article>
     )
   }
@@ -602,24 +599,17 @@ function SlotCard({ slot, seriesName, layout, busy, onAdd, onMarkOwned, onIgnore
             <span className="block truncate text-xs text-muted">Manquant</span>
           </span>
         </Link>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => onAdd(edition.isbn, 'owned')}
-          title="Ajouter à ma collection"
-          aria-label={`Ajouter à ma collection : ${label}`}
-          className={`${cornerBase} border-line-strong bg-surface/90 text-fg backdrop-blur hover:border-accent ${list ? '' : '[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100'}`}
-        >
-          <Icon name="plus" className="h-[18px] w-[18px]" />
-        </button>
+        <CollectionStateButton
+          userId={userId}
+          isbn={edition.isbn}
+          title={label}
+          item={null}
+          placement={list ? 'inline' : 'corner'}
+          revealOnHover={!list}
+          onChanged={onChanged}
+          onError={onError}
+        />
         <div className={`flex gap-1.5 ${list ? 'flex-none' : ''}`}>
-          <IconButton
-            icon="heart"
-            size="sm"
-            label={`Mettre en envie : ${label}`}
-            disabled={busy}
-            onClick={() => onAdd(edition.isbn, 'wanted')}
-          />
           <IconButton
             icon="hide"
             size="sm"
