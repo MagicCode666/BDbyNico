@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ThemeProvider from '../../theme/ThemeProvider'
 import AddAlbumPage from './AddAlbumPage'
 
+vi.mock('../friends/useIncomingRequests', () => ({ useIncomingRequests: () => 0 }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: { id: 'u1' } }) }))
 vi.mock('../../components/shell/useAccountSummary', () => ({
   useAccountSummary: () => ({ pseudo: 'Nico', role: 'user' }),

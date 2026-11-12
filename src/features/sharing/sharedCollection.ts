@@ -7,6 +7,7 @@ import {
   seriesCoverUrl,
   withoutSupersededWishes,
 } from '../collection/utils'
+import { appLink } from '../../lib/appLink'
 import { seriesProgress } from '../series/progress'
 import { toPublicationStatus } from '../series/status'
 import type { SharedRow } from './api'
@@ -65,8 +66,11 @@ export function sharedSummary(entries: Entry[]): SharedSummary {
   }
 }
 
-/** Cartes de la grille publique : une par série (ou « Albums hors série »), pour un onglet. */
-export function sharedCards(entries: Entry[], status: Status, token: string): GridCard[] {
+/**
+ * Cartes de la grille d'une bibliothèque partagée : une par série (ou « Albums hors série »),
+ * pour un onglet. `basePath` : adresse de la bibliothèque (publique ou d'un ami).
+ */
+export function sharedCards(entries: Entry[], status: Status, basePath: string): GridCard[] {
   const visible = entries.filter((entry) => entry.status === status)
   return groupBySeries(visible).map((group) => {
     const owned = status === 'owned'
@@ -85,7 +89,7 @@ export function sharedCards(entries: Entry[], status: Status, token: string): Gr
     const showProgress = owned && group.name !== null && !!total && progress.target > 0
     return {
       key: group.key,
-      to: `/partage/${token}/${group.key}`,
+      to: `${basePath}/${group.key}`,
       name: group.name ?? 'Albums hors série',
       coverUrl: seriesCoverUrl(group.entries),
       owned: owned && total ? progress.owned : group.entries.length,
@@ -99,6 +103,6 @@ export function sharedCards(entries: Entry[], status: Status, token: string): Gr
 }
 
 /** Adresse publique de la collection (le routeur est en mode hash). */
-export function shareUrl(token: string, base = window.location.href): string {
-  return `${base.split('#')[0]}#/partage/${token}`
+export function shareUrl(token: string, base?: string): string {
+  return appLink(`/partage/${token}`, base)
 }

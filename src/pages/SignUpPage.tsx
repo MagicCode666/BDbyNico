@@ -2,8 +2,9 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
 import { useAuth } from '../auth/useAuth'
+import { pseudoAvailable } from '../auth/pseudo'
 import {
-  PSEUDO_MAX_LENGTH,
+  normalizePseudo,
   validateEmail,
   validatePassword,
   validatePseudo,
@@ -13,6 +14,7 @@ import FormMessage from '../components/FormMessage'
 import SubmitButton from '../components/SubmitButton'
 import PasswordField from '../components/PasswordField'
 import PasswordStrength from '../components/PasswordStrength'
+import PseudoField from '../components/PseudoField'
 import TextField from '../components/TextField'
 
 export default function SignUpPage() {
@@ -35,7 +37,14 @@ export default function SignUpPage() {
     }
     setBusy(true)
     setError(null)
-    const result = await signUp(email, password, pseudo)
+    // Pseudo déjà pris : on le dit tout de suite (la base en choisirait sinon un autre à notre place)
+    const free = await pseudoAvailable(normalizePseudo(pseudo)).catch(() => true)
+    if (!free) {
+      setBusy(false)
+      setError('Ce pseudo est déjà pris : choisissez-en un autre.')
+      return
+    }
+    const result = await signUp(email, password, normalizePseudo(pseudo))
     setBusy(false)
     if (result.error) setError(result.error)
     else setSentTo(email.trim())
@@ -71,15 +80,7 @@ export default function SignUpPage() {
       }
     >
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-        <TextField
-          label="Pseudo"
-          name="pseudo"
-          autoComplete="nickname"
-          maxLength={PSEUDO_MAX_LENGTH}
-          required
-          value={pseudo}
-          onChange={(e) => setPseudo(e.target.value)}
-        />
+        <PseudoField value={pseudo} onChange={setPseudo} autoComplete="nickname" />
         <TextField
           label="Email"
           name="email"
