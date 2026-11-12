@@ -82,4 +82,8 @@ describe('migrations et scénarios SQL', () => {
   it('le scénario du pseudo unique réussit', async () => {
     expect(await runScenario(db, 'tests/pseudo.sql')).toMatch(/^OK : \d+ vérifications$/)
   }, 120_000)
+
+  it('le scénario des amis réussit', async () => {
+    expect(await runScenario(db, 'tests/amis.sql')).toMatch(/^OK : \d+ vérifications$/)
+  }, 120_000)
 })

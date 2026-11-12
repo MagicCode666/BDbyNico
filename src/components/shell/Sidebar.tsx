@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 import { Icon } from '../icons'
 import Logo from '../Logo'
+import CountBadge from './CountBadge'
 import { activeNavId, NAV_ITEMS, type NavItem } from './nav'
 import { ROLE_LABELS, useAccountSummary } from './useAccountSummary'
 import { useSidebarCollapsed } from './useSidebarCollapsed'
@@ -17,7 +18,7 @@ const ADMIN_ITEM: NavItem = {
  * Navigation latérale (ordinateur) : l'entrée de la page courante est mise en avant.
  * Elle peut se réduire aux seules icônes, avec une infobulle sur chacune.
  */
-export default function Sidebar() {
+export default function Sidebar({ friendRequests = 0 }: { friendRequests?: number }) {
   const { pathname, search } = useLocation()
   const active = activeNavId(pathname, search)
   const summary = useAccountSummary()
@@ -42,10 +43,15 @@ export default function Sidebar() {
             title={collapsed ? item.label : undefined}
             aria-label={collapsed ? item.label : undefined}
             aria-current={active === item.id ? 'page' : undefined}
-            className={`${link} font-medium text-muted hover:text-fg`}
+            className={`${link} relative font-medium text-muted hover:text-fg`}
           >
             <Icon name={item.icon} />
             {!collapsed && item.label}
+            {item.id === 'amis' && (
+              <span className={collapsed ? 'absolute right-1 top-1' : 'ml-auto'}>
+                <CountBadge count={friendRequests} label="demande(s) d’ami en attente" />
+              </span>
+            )}
           </Link>
         ))}
       </nav>

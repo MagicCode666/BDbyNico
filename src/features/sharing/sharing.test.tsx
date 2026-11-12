@@ -39,7 +39,7 @@ describe('collection partagée', () => {
       row({ isbn: 'isbn-3', title: 'Tome 3', volume: 3, status: 'wanted' }),
     ])
     expect(sharedSummary(entries)).toEqual({ seriesCount: 1, ownedCount: 2, wantedCount: 1 })
-    const [card] = sharedCards(entries, 'owned', 'jeton')
+    const [card] = sharedCards(entries, 'owned', '/partage/jeton')
     expect(card).toMatchObject({
       name: 'Black Op',
       to: '/partage/jeton/s1',

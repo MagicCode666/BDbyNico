@@ -1,7 +1,7 @@
 import type { IconName } from '../icons'
 
 export type NavId =
-  'accueil' | 'collection' | 'envies' | 'ajouter' | 'explorer' | 'profil' | 'admin'
+  'accueil' | 'collection' | 'envies' | 'amis' | 'ajouter' | 'explorer' | 'profil' | 'admin'
 
 export interface NavItem {
   id: NavId
@@ -14,6 +14,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'accueil', label: 'Accueil', to: '/', icon: 'home' },
   { id: 'collection', label: 'Ma collection', to: '/collection', icon: 'library' },
   { id: 'envies', label: 'Mes envies', to: '/collection?statut=envies', icon: 'heart' },
+  { id: 'amis', label: 'Amis', to: '/amis', icon: 'users' },
   { id: 'explorer', label: 'Explorer', to: '/explorer', icon: 'compass' },
   { id: 'ajouter', label: 'Ajouter un album', to: '/collection/ajouter', icon: 'plus' },
 ]
@@ -28,6 +29,7 @@ export function activeNavId(pathname: string, search: string): NavId | null {
   // Une série ou la fiche d'un album se rangent sous « Ma collection »
   if (pathname.startsWith('/series/') || pathname.startsWith('/collection/')) return 'collection'
   if (pathname === '/explorer') return 'explorer'
+  if (pathname === '/amis' || pathname.startsWith('/amis/')) return 'amis'
   if (pathname === '/profil') return 'profil'
   if (pathname === '/admin') return 'admin'
   return null

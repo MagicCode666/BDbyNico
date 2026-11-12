@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
 
 import { Icon, type IconName } from '../icons'
+import CountBadge from './CountBadge'
 import { activeNavId, type NavId } from './nav'
 
 interface Tab {
-  id: NavId | 'recherche'
+  id: NavId
   label: string
   to: string
   icon: IconName
@@ -12,16 +13,16 @@ interface Tab {
 
 const TABS: Tab[] = [
   { id: 'collection', label: 'Collection', to: '/collection', icon: 'library' },
-  { id: 'recherche', label: 'Recherche', to: '/recherche', icon: 'search' },
+  { id: 'amis', label: 'Amis', to: '/amis', icon: 'users' },
   { id: 'ajouter', label: 'Ajouter', to: '/collection/ajouter', icon: 'plus' },
   { id: 'envies', label: 'Envies', to: '/collection?statut=envies', icon: 'heart' },
   { id: 'profil', label: 'Compte', to: '/profil', icon: 'user' },
 ]
 
 /** Onglets du bas (mobile) : à portée du pouce, le bouton « Ajouter » au centre. */
-export default function TabBar() {
+export default function TabBar({ friendRequests = 0 }: { friendRequests?: number }) {
   const { pathname, search } = useLocation()
-  const active = pathname === '/recherche' ? 'recherche' : activeNavId(pathname, search)
+  const active = activeNavId(pathname, search)
 
   return (
     <nav
@@ -47,7 +48,14 @@ export default function TabBar() {
             aria-current={active === tab.id ? 'page' : undefined}
             className="tab-link flex flex-1 flex-col items-center gap-0.5 px-1 pb-2.5 pt-2 text-[0.7rem] font-semibold text-muted"
           >
-            <Icon name={tab.icon} className="h-6 w-6" />
+            <span className="relative">
+              <Icon name={tab.icon} className="h-6 w-6" />
+              {tab.id === 'amis' && (
+                <span className="absolute -right-2.5 -top-1.5">
+                  <CountBadge count={friendRequests} label="demande(s) d’ami en attente" />
+                </span>
+              )}
+            </span>
             {tab.label}
           </Link>
         ),

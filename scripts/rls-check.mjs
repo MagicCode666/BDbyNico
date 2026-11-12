@@ -635,6 +635,71 @@ console.log(
   '  (les parcours « collection seule », validation et annulation sont testés par supabase/tests/gouvernance.sql)',
 )
 
+console.log('\n--- Amis ---')
+const anonDenied = (res) => !!res.error
+for (const [name, args] of [
+  ['send_friend_request', { p_pseudo: pseudoB }],
+  ['list_friends', {}],
+  ['list_friend_requests', {}],
+  ['get_friend_collection', { p_friend: B.id }],
+  ['accept_friend_invite', { p_token: 'x' }],
+  ['remove_friend', { p_friend: B.id }],
+  ['regenerate_invite_token', {}],
+]) {
+  r = await anon.rpc(name, args)
+  check(`Un anonyme ne peut pas appeler ${name}`, anonDenied(r), show(r))
+}
+r = await A.client.from('friendships').select('*')
+check('La table friendships n’est pas lisible directement', !!r.error, show(r))
+r = await A.client.from('friendships').insert({ requester: A.id, addressee: B.id })
+check('Aucune amitié ne s’écrit directement', !!r.error, show(r))
+r = await A.client.rpc('get_friend_collection', { p_friend: B.id })
+check('Sans amitié, la bibliothèque de B est vide pour A', !r.error && r.data.length === 0, show(r))
+r = await A.client.rpc('send_friend_request', { p_pseudo: 'Pseudo introuvable zz9' })
+check('Une demande à un pseudo inconnu ne révèle rien (aucune erreur)', !r.error, show(r))
+r = await A.client.rpc('list_friend_requests')
+check(
+  'Aucune demande fantôme après un pseudo inconnu',
+  !r.error && !r.data.some((x) => x.pseudo.includes('introuvable')),
+  show(r),
+)
+r = await A.client.rpc('send_friend_request', { p_pseudo: pseudoB })
+check('A demande B en ami', !r.error, show(r))
+r = await B.client.rpc('list_friend_requests')
+check(
+  'B voit la demande de A (et seulement son pseudo)',
+  !r.error &&
+    r.data.some((x) => x.user_id === A.id && x.direction === 'in') &&
+    Object.keys(r.data[0]).sort().join() === 'created_at,direction,pseudo,user_id',
+  show(r),
+)
+r = await A.client.rpc('get_friend_collection', { p_friend: B.id })
+check('Demande non acceptée : toujours rien à voir', !r.error && r.data.length === 0, show(r))
+r = await B.client.rpc('respond_friend_request', { p_requester: A.id, p_accept: true })
+check('B accepte', !r.error, show(r))
+r = await A.client.rpc('list_friends')
+check(
+  'A voit B parmi ses amis',
+  !r.error && r.data.some((x) => x.friend_id === B.id && x.they_share === true),
+  show(r),
+)
+r = await A.client.rpc('get_friend_collection', { p_friend: B.id })
+check('Amis : A peut lire la bibliothèque de B', !r.error, show(r))
+r = await B.client.rpc('set_friend_sharing', { p_friend: A.id, p_share: false })
+check('B coupe le partage pour A', !r.error, show(r))
+r = await A.client.rpc('get_friend_collection', { p_friend: B.id })
+check('Partage coupé : A ne voit plus rien', !r.error && r.data.length === 0, show(r))
+r = await A.client.rpc('remove_friend', { p_friend: B.id })
+check('A retire B de ses amis', !r.error, show(r))
+r = await B.client.rpc('list_friends')
+check(
+  'L’amitié disparaît des deux côtés',
+  !r.error && !r.data.some((x) => x.friend_id === A.id),
+  show(r),
+)
+r = await A.client.rpc('accept_friend_invite', { p_token: 'jeton-inexistant' })
+check('Un lien d’invitation inconnu est refusé', r.error?.code === '22023', show(r))
+
 console.log('\n--- Fiche album, genres, corrections et recherche ---')
 const denied = (res) => res.error?.code === '42501'
 r = await anon.rpc('fill_edition_details', { p_isbn: isbn, p_summary: 'x' })

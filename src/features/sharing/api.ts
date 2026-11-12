@@ -1,3 +1,4 @@
+import type { Database } from '../../lib/database.types'
 import { supabase } from '../../lib/supabase'
 
 /** Une ligne de la vue publique d'une collection partagée. */
@@ -20,9 +21,9 @@ export interface SharedRow {
   dedicated: boolean
 }
 
-export async function getSharedCollection(token: string): Promise<SharedRow[]> {
-  const { data, error } = await supabase.rpc('get_shared_collection', { p_token: token })
-  if (error) throw error
+type RawSharedRow = Database['public']['Functions']['get_shared_collection']['Returns'][number]
+
+function toSharedRows(data: RawSharedRow[] | null): SharedRow[] {
   return (data ?? []).map((row) => ({
     pseudo: row.pseudo,
     isbn: row.isbn,
@@ -41,6 +42,20 @@ export async function getSharedCollection(token: string): Promise<SharedRow[]> {
     status: row.status,
     dedicated: !!row.dedicated,
   }))
+}
+
+/** Bibliothèque publique (lien de partage, sans compte). */
+export async function getSharedCollection(token: string): Promise<SharedRow[]> {
+  const { data, error } = await supabase.rpc('get_shared_collection', { p_token: token })
+  if (error) throw error
+  return toSharedRows(data)
+}
+
+/** Bibliothèque d'un ami (vide si l'amitié n'est pas confirmée ou si le partage est coupé). */
+export async function getFriendCollection(friendId: string): Promise<SharedRow[]> {
+  const { data, error } = await supabase.rpc('get_friend_collection', { p_friend: friendId })
+  if (error) throw error
+  return toSharedRows(data)
 }
 
 export interface ShareSettings {

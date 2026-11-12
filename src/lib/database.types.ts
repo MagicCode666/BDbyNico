@@ -211,6 +211,7 @@ export type Database = {
           contribution: string
           created_at: string
           id: string
+          invite_token: string
           pseudo: string
           pseudo_key: string
           role: string
@@ -383,6 +384,60 @@ export type Database = {
           p_public_price?: number
           p_summary?: string
         }
+        Returns: undefined
+      }
+      accept_friend_invite: { Args: { p_token: string }; Returns: string }
+      cancel_friend_request: { Args: { p_addressee: string }; Returns: undefined }
+      count_incoming_friend_requests: { Args: never; Returns: number }
+      get_friend_collection: {
+        Args: { p_friend: string }
+        Returns: {
+          authors: string[]
+          cover_url: string
+          dedicated: boolean
+          isbn: string
+          kind: string
+          pseudo: string
+          series_id: string
+          series_name: string
+          series_status: string
+          series_total: number
+          starts_at_zero: boolean
+          status: string
+          title: string
+          volume: number
+          volume_from: number
+          volume_to: number
+        }[]
+      }
+      list_friend_requests: {
+        Args: never
+        Returns: {
+          created_at: string
+          direction: string
+          pseudo: string
+          user_id: string
+        }[]
+      }
+      list_friends: {
+        Args: never
+        Returns: {
+          friend_id: string
+          i_share: boolean
+          pseudo: string
+          since: string
+          they_share: boolean
+        }[]
+      }
+      regenerate_invite_token: { Args: never; Returns: string }
+      remove_friend: { Args: { p_friend: string }; Returns: undefined }
+      respond_friend_request: {
+        Args: { p_accept: boolean; p_requester: string }
+        Returns: undefined
+      }
+      send_friend_request: { Args: { p_pseudo: string }; Returns: undefined }
+      set_friend_sharing: {
+        Args: { p_friend: string; p_share: boolean }
         Returns: undefined
       }
       get_shared_collection: {
