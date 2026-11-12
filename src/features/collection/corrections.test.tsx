@@ -171,7 +171,7 @@ describe('SeriesCorrector', () => {
     fireEvent.change(screen.getByLabelText('Série à conserver'), { target: { value: 'boule' } })
     fireEvent.click(await screen.findByRole('button', { name: /Boule et Bill/ }))
     expect(mergeSeries).not.toHaveBeenCalled()
-    expect(screen.getByText(/ne s’annule pas/)).toBeTruthy()
+    expect(screen.getByText(/l’annuler/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Oui, fusionner' }))
     await waitFor(() => expect(mergeSeries).toHaveBeenCalledWith('s1', 's2'))
   })

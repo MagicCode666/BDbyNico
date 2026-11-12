@@ -209,6 +209,7 @@ export function governanceErrorMessage(error: unknown, fallback: string): string
     'Cet ISBN existe déjà',
     'Choisissez deux albums',
     'Ce changement ne s',
+    'Cette fusion ne peut',
     'Éditeur trop long',
     'La série d',
     'déjà traitée',

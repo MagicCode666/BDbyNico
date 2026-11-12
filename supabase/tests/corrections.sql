@@ -34,6 +34,7 @@ declare
   c int;
   ch bigint;
   m int;
+  sr public.series;
 begin
   insert into auth.users (id, email, aud, role) values
     (u_mod, 'mod2@test.invalid', 'authenticated', 'authenticated'),
@@ -119,6 +120,12 @@ begin
   if (select series_id from public.editions where isbn = i2) is distinct from s1 then
     raise exception 'ECHEC : série non rétablie'; end if; n := n + 1;
 
+  update public.series set total_volumes = 12, publication_status = 'ongoing',
+    status_source = 'manual', genres = array['aventure']
+  where id = s1;
+  insert into public.user_series_settings (user_id, series_id, ignored_volumes, total_override)
+  values (u_usr, s1, array[4, 5], 20);
+
   -- 6. Fusion : les albums passent dans la série cible, la source disparaît, la fusion est journalisée
   perform pg_temp._t_as(u_mod);
   select public.merge_series(s1, s2) into m;
@@ -131,13 +138,34 @@ begin
     where kind = 'series_merge' and series_id = s2 and old_value = 'Série source';
   if ch is null then raise exception 'ECHEC : fusion non journalisée'; end if; n := n + 1;
 
-  -- 7. Une fusion ne s'annule pas
+  -- 7. Une fusion s'annule : la série revient (même identifiant, total, statut, genres), avec ses
+  -- albums et les réglages personnels ; un album déplacé depuis reste où il est
+  update public.editions set series_id = null, volume = null where isbn = i2;
+  perform pg_temp._t_as(u_mod);
+  perform public.revert_change(ch);
+  reset role;
+  select * into sr from public.series where id = s1;
+  if not found or sr.name <> 'Série source' or sr.total_volumes <> 12
+     or sr.publication_status <> 'ongoing' or sr.status_source <> 'manual'
+     or sr.genres <> array['aventure'] then
+    raise exception 'ECHEC : série mal restaurée (%)', row_to_json(sr); end if; n := n + 1;
+  if (select series_id from public.editions where isbn = i1) is distinct from s1
+     or (select series_id from public.editions where isbn = i2) is not null then
+    raise exception 'ECHEC : albums mal remis'; end if; n := n + 1;
+  if (select total_override from public.user_series_settings
+      where user_id = u_usr and series_id = s1) is distinct from 20 then
+    raise exception 'ECHEC : réglage personnel perdu'; end if; n := n + 1;
+  if (select status from public.catalogue_changes where id = ch) <> 'reverted' then
+    raise exception 'ECHEC : fusion non marquée annulée'; end if; n := n + 1;
+
+  -- 7 bis. Une fusion ne s'annule pas deux fois, ni quand la série d'origine existe déjà
   begin
     perform pg_temp._t_as(u_mod);
     perform public.revert_change(ch);
     reset role;
-    raise exception 'ECHEC : fusion annulée';
-  exception when object_not_in_prerequisite_state then reset role; n := n + 1; end;
+    raise exception 'ECHEC : fusion annulée deux fois';
+  exception when object_not_in_prerequisite_state or invalid_parameter_value then
+    reset role; n := n + 1; end;
 
   -- 8. Fusionner une série avec elle-même est refusé
   begin
