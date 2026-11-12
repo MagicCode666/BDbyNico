@@ -273,6 +273,13 @@ async function fillDetails(db) {
     `Fiches : ${filled} complétée(s), ${missing} absente(s) de la BnF, ` +
       `${failedBatches} lot(s) en échec, sur ${rows.length} traitée(s).`,
   )
+  // Tous les lots en échec : la BnF (ou le relais) est injoignable. Le job doit passer au rouge
+  // pour que GitHub envoie un mail, au lieu de réessayer en silence chaque nuit.
+  if (failedBatches > 0 && failedBatches === Math.ceil(rows.length / 20)) {
+    throw new Error(
+      'la BnF est injoignable (tous les lots ont échoué : relais Cloudflare ou BnF ?)',
+    )
+  }
 }
 
 async function run() {
@@ -363,6 +370,7 @@ async function run() {
     await fillDetails(db)
   } catch (e) {
     console.error(`Fiches : échec (${e.message ?? e})`)
+    process.exitCode = 1
   }
   if (seriesList.length > 0 && done === 0) process.exit(1)
 }
