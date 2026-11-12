@@ -20,6 +20,7 @@ import {
   effectiveTotal,
   filterEntries,
   groupBySeries,
+  knownVolumesBySeriesId,
   progressLabel,
   seriesCoverUrl,
   type SeriesGroup,
@@ -135,6 +136,8 @@ export default function CollectionPage() {
     }
     return map
   }, [entries])
+  // Tomes connus de chaque série (possédés ou en envie) : le total ne peut pas être inférieur
+  const knownVolumesBySeries = useMemo(() => knownVolumesBySeriesId(entries), [entries])
   const pendingCount = useMemo(() => entries.filter((e) => e.edition.pending).length, [entries])
   const groups = useMemo(
     () => groupBySeries(filterEntries(entriesWithCovers, { status, query, dedicatedOnly })),
@@ -148,8 +151,11 @@ export default function CollectionPage() {
       volumes: [],
       ownsIntegral: false,
     }
-    // Jamais plus de tomes possédés que de tomes existants
-    const total = effectiveTotal(settings?.totalOverride ?? group.totalVolumes, owned.volumes)
+    // Jamais moins que les tomes connus (possédés ou en envie), jamais plus de possédés que d'existants
+    const total = effectiveTotal(settings?.totalOverride ?? group.totalVolumes, [
+      ...owned.volumes,
+      ...(knownVolumesBySeries.get(group.key) ?? []),
+    ])
     // Même calcul que la page de la série : tomes exclus retirés de l'objectif
     const progress = seriesProgress({
       total,

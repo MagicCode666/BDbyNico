@@ -103,6 +103,17 @@ export function effectiveTotal(total: number | null, ownedVolumes: number[]): nu
   return highest > 0 ? highest : null
 }
 
+/** Numéros de tomes connus de chaque série (possédés ou en envie), par identifiant de série. */
+export function knownVolumesBySeriesId(entries: Entry[]): Map<string, number[]> {
+  const map = new Map<string, number[]>()
+  for (const e of entries) {
+    if (e.edition.volume === null || isOutsideGrid(e.edition.kind)) continue
+    const key = e.edition.series?.id ?? '_'
+    map.set(key, [...(map.get(key) ?? []), e.edition.volume])
+  }
+  return map
+}
+
 /**
  * Retire les envies devenues sans objet : un tome déjà possédé (même série, même numéro,
  * quelle que soit l'édition) n'a plus besoin d'être en envie. Les lignes ne sont pas supprimées.
