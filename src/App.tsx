@@ -18,6 +18,8 @@ import SharedPage from './features/sharing/SharedPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import LegalNoticePage from './pages/LegalNoticePage'
+import PrivacyPage from './pages/PrivacyPage'
 import ProfilePage from './pages/ProfilePage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import SignUpPage from './pages/SignUpPage'
@@ -34,6 +36,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/mentions-legales" element={<LegalNoticePage />} />
+      <Route path="/confidentialite" element={<PrivacyPage />} />
       <Route path="/connexion" element={<LoginPage />} />
       <Route path="/inscription" element={<SignUpPage />} />
       <Route path="/partage/:token" element={<SharedPage />} />

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 import { useAuth } from '../auth/useAuth'
 import Logo from '../components/Logo'
-import VersionBadge from '../components/VersionBadge'
+import PageFooter from '../components/PageFooter'
 import Dashboard from '../features/home/Dashboard'
 
 export default function HomePage() {
@@ -32,7 +32,7 @@ export default function HomePage() {
           </Link>
         </div>
       )}
-      <VersionBadge className="mt-8" />
+      <PageFooter className="mt-8" />
     </main>
   )
 }

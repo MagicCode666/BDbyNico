@@ -9,6 +9,7 @@ import PageLayout from '../components/PageLayout'
 import { notifyAccountChanged } from '../components/shell/useAccountSummary'
 import PseudoField from '../components/PseudoField'
 import SubmitButton from '../components/SubmitButton'
+import DeleteAccountDialog from '../features/account/DeleteAccountDialog'
 import AvatarEditor from '../features/avatar/AvatarEditor'
 import ClearCollectionDialog from '../features/collection/ClearCollectionDialog'
 import { exportCollection } from '../features/export/exportCollection'
@@ -33,6 +34,7 @@ export default function ProfilePage() {
   const [exporting, setExporting] = useState(false)
   const [exportMessage, setExportMessage] = useState<string | null>(null)
   const [clearing, setClearing] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const { access } = useAccess()
   const { preference, setPreference } = useTheme()
   const [pendingCount, setPendingCount] = useState(0)
@@ -121,6 +123,12 @@ export default function ProfilePage() {
       cancelled = true
     }
   }, [isModerator])
+
+  async function onAccountDeleted() {
+    // La session n'existe plus côté serveur : on ignore une éventuelle erreur de déconnexion
+    await signOut().catch(() => undefined)
+    navigate('/connexion', { replace: true, state: { accountDeleted: true } })
+  }
 
   async function onSignOut() {
     await signOut()
@@ -237,8 +245,22 @@ export default function ProfilePage() {
           >
             Vider ma collection…
           </button>
+          <p className="mt-2 text-sm text-muted">
+            Supprimer définitivement votre compte et toutes vos données privées.
+          </p>
+          <button
+            type="button"
+            onClick={() => setDeleting(true)}
+            className="rounded border border-danger px-4 py-2 font-medium text-danger-text hover:bg-danger-soft"
+          >
+            Supprimer mon compte…
+          </button>
         </section>
       </div>
+
+      {deleting && (
+        <DeleteAccountDialog onCancel={() => setDeleting(false)} onDone={onAccountDeleted} />
+      )}
 
       {clearing && userId && (
         <ClearCollectionDialog
