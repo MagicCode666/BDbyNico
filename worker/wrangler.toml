@@ -2,3 +2,6 @@ name = "bdbynico-bnf-relay"
 main = "src/index.js"
 compatibility_date = "2026-11-01"
 preview_urls = false
+
+[placement]
+region = "aws:eu-west-3"
