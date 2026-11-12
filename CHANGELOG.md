@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.27.0...bdbynico-v0.28.0) (2026-11-12)
+
+
+### Nouveautés
+
+* changement de mot de passe et thème Dark par défaut ([#78](https://github.com/MagicCode666/BDbyNico/issues/78)) ([00a61ce](https://github.com/MagicCode666/BDbyNico/commit/00a61ce299e9918de23801f239b4daead1cf5363))
+
 ## [0.27.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.26.2...bdbynico-v0.27.0) (2026-11-12)
 
 
