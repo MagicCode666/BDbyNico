@@ -93,6 +93,28 @@ r = await A.client.from('profiles').update({ pseudo: 'Pseudo A modifié' }).eq('
 check('A peut modifier son pseudo', r.data?.[0]?.pseudo === 'Pseudo A modifié', show(r))
 r = await B.client.from('profiles').update({ pseudo: 'Piraté' }).eq('id', A.id).select()
 check('B ne peut pas modifier le profil de A', !r.error && r.data?.length === 0, show(r))
+r = await B.client.from('profiles').select('pseudo').eq('id', B.id).single()
+const pseudoB = r.data?.pseudo
+r = await A.client
+  .from('profiles')
+  .update({ pseudo: pseudoB?.toUpperCase() })
+  .eq('id', A.id)
+  .select()
+check(
+  'Le pseudo est unique (casse ignorée) : A ne peut pas prendre celui de B',
+  r.error?.code === '23505',
+  show(r),
+)
+r = await A.client.from('profiles').update({ pseudo: 'ab' }).eq('id', A.id).select()
+check('Un pseudo trop court est refusé', r.error?.code === '22023', show(r))
+r = await anon.rpc('pseudo_available', { p_pseudo: pseudoB })
+check('pseudo_available : un pseudo pris n’est pas disponible', r.data === false, show(r))
+r = await anon.rpc('pseudo_available', { p_pseudo: 'Pseudo introuvable zz9' })
+check(
+  'pseudo_available : un pseudo libre est disponible (même pour un anonyme)',
+  r.data === true,
+  show(r),
+)
 
 console.log('\n--- Catalogue ---')
 r = await A.client.from('editions').insert({ isbn, title: 'x' })

@@ -2,11 +2,12 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../auth/useAuth'
-import { PSEUDO_MAX_LENGTH, validatePseudo } from '../auth/validation'
+import { pseudoAvailable } from '../auth/pseudo'
+import { normalizePseudo, validatePseudo } from '../auth/validation'
 import FormMessage from '../components/FormMessage'
 import PageLayout from '../components/PageLayout'
+import PseudoField from '../components/PseudoField'
 import SubmitButton from '../components/SubmitButton'
-import TextField from '../components/TextField'
 import ClearCollectionDialog from '../features/collection/ClearCollectionDialog'
 import { exportCollection } from '../features/export/exportCollection'
 import { countPending } from '../features/governance/api'
@@ -21,6 +22,7 @@ export default function ProfilePage() {
   const navigate = useNavigate()
   const userId = user?.id
   const [pseudo, setPseudo] = useState('')
+  const [savedPseudo, setSavedPseudo] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -43,7 +45,10 @@ export default function ProfilePage() {
       .then(({ data, error: loadError }) => {
         if (cancelled) return
         if (loadError) setError('Impossible de charger le profil.')
-        else setPseudo(data.pseudo)
+        else {
+          setPseudo(data.pseudo)
+          setSavedPseudo(data.pseudo)
+        }
         setLoaded(true)
       })
     return () => {
@@ -59,16 +64,32 @@ export default function ProfilePage() {
       setError(invalid)
       return
     }
+    const value = normalizePseudo(pseudo)
     setBusy(true)
     setError(null)
     setSaved(false)
+    const free = value === savedPseudo || (await pseudoAvailable(value).catch(() => true))
+    if (!free) {
+      setBusy(false)
+      setError('Ce pseudo est déjà pris : choisissez-en un autre.')
+      return
+    }
     const { error: updateError } = await supabase
       .from('profiles')
-      .update({ pseudo: pseudo.trim() })
+      .update({ pseudo: value })
       .eq('id', userId)
     setBusy(false)
-    if (updateError) setError("Impossible d'enregistrer le pseudo.")
-    else setSaved(true)
+    if (updateError) {
+      setError(
+        updateError.code === '23505'
+          ? 'Ce pseudo est déjà pris : choisissez-en un autre.'
+          : "Impossible d'enregistrer le pseudo.",
+      )
+    } else {
+      setPseudo(value)
+      setSavedPseudo(value)
+      setSaved(true)
+    }
   }
 
   async function onExport() {
@@ -108,13 +129,11 @@ export default function ProfilePage() {
           <h2 className="text-xl">Mon compte</h2>
           <p className="text-sm text-muted">{user?.email}</p>
           <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-            <TextField
-              label="Pseudo"
-              name="pseudo"
-              maxLength={PSEUDO_MAX_LENGTH}
-              disabled={!loaded}
+            <PseudoField
               value={pseudo}
-              onChange={(e) => setPseudo(e.target.value)}
+              onChange={setPseudo}
+              current={savedPseudo}
+              disabled={!loaded}
             />
             {error && <FormMessage kind="error">{error}</FormMessage>}
             {saved && <FormMessage kind="success">Pseudo enregistré.</FormMessage>}

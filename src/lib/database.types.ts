@@ -212,6 +212,7 @@ export type Database = {
           created_at: string
           id: string
           pseudo: string
+          pseudo_key: string
           role: string
           share_dedications: boolean
           share_enabled: boolean
@@ -476,6 +477,7 @@ export type Database = {
       }
       norm_text: { Args: { p_text: string }; Returns: string }
       refresh_series_zero: { Args: { p_series: string }; Returns: undefined }
+      pseudo_available: { Args: { p_pseudo: string }; Returns: boolean }
       regenerate_share_token: { Args: never; Returns: string }
       rename_series: {
         Args: { p_name: string; p_series: string }
