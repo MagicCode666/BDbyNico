@@ -63,6 +63,12 @@ export function describeChange(change: Change): string | null {
     const detach = !change.newValue
     return detach ? 'Album détaché de sa série' : 'Album rattaché à une autre série'
   }
+  if (change.kind === 'edition_isbn') {
+    return `ISBN corrigé : ${change.oldValue ?? '?'} → ${change.newValue ?? '?'}`
+  }
+  if (change.kind === 'edition_merge') {
+    return `Édition ${change.oldValue ?? '?'} fusionnée dans celle-ci`
+  }
   if (change.kind === 'series_merge') {
     return `Fusion : « ${change.oldValue ?? '?'} » fusionnée dans cette série (${change.newValue ?? 0} album(s))`
   }

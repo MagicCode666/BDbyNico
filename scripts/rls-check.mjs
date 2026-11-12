@@ -670,6 +670,18 @@ check(
 )
 r = await anon.rpc('merge_series', { p_from: seriesId, p_into: someUuid })
 check('Un anonyme ne peut pas fusionner des séries', !!r.error, show(r))
+r = await A.client.rpc('correct_isbn', { p_old: isbn, p_new: '9782205073492' })
+check('Un utilisateur ordinaire ne peut pas corriger un ISBN (refus de droit)', denied(r), show(r))
+r = await anon.rpc('correct_isbn', { p_old: isbn, p_new: '9782205073492' })
+check('Un anonyme ne peut pas corriger un ISBN', !!r.error, show(r))
+r = await A.client.rpc('merge_editions', { p_from: isbn, p_into: '9782205073492' })
+check(
+  'Un utilisateur ordinaire ne peut pas fusionner des éditions (refus de droit)',
+  denied(r),
+  show(r),
+)
+r = await anon.rpc('merge_editions', { p_from: isbn, p_into: '9782205073492' })
+check('Un anonyme ne peut pas fusionner des éditions', !!r.error, show(r))
 r = await B.client.from('editions').select('title, series_id').eq('isbn', isbn).single()
 check(
   'L’album et sa série sont intacts après ces tentatives',

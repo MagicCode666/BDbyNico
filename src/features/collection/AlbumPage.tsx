@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { useAuth } from '../../auth/useAuth'
 import FormMessage from '../../components/FormMessage'
@@ -9,7 +9,8 @@ import { useAccountSummary } from '../../components/shell/useAccountSummary'
 import { languageName } from '../../lib/bnfFields'
 import { formatIsbn } from '../../lib/isbn'
 import CoverReportDialog from '../governance/CoverReportDialog'
-import { getSeriesData, addCatalogueEdition, type SeriesData } from '../series/api'
+import { getSeriesData, addCatalogueEdition, setEditionCover, type SeriesData } from '../series/api'
+import { findCover } from '../series/covers'
 import { PUBLICATION_LABELS } from '../series/status'
 import { CoverImage } from './AlbumCard'
 import AlbumCollectionCard from './AlbumCollectionCard'
@@ -17,6 +18,7 @@ import AlbumSeriesStrip from './AlbumSeriesStrip'
 import { fillEditionDetails, getCatalogueEdition, getEntry } from './api'
 import EditionCorrector from './EditionCorrector'
 import KindEditor from './KindEditor'
+import OtherEditions from './OtherEditions'
 import { KIND_LABELS, toAlbumKind } from './kinds'
 import { lookupBnf } from './lookup/bnf'
 import type { Edition, Entry } from './types'
@@ -72,6 +74,7 @@ function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => voi
   const { edition, entry, series } = data
   const moderator = (useAccountSummary()?.role ?? 'user') !== 'user'
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [reportingCover, setReportingCover] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -239,10 +242,19 @@ function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => voi
               key={`${edition.title}-${edition.volume}-${edition.series?.id}-${edition.publisher}-${edition.publishedOn}-${edition.authors.join()}`}
               edition={edition}
               onChanged={onReload}
+              onIsbnChanged={async (newIsbn, merged) => {
+                // La couverture de l'ancien ISBN ne vaut plus : on cherche celle du bon
+                if (!merged) {
+                  const url = await findCover(newIsbn).catch(() => undefined)
+                  if (url) await setEditionCover(newIsbn, url).catch(() => undefined)
+                }
+                navigate(`/collection/${newIsbn}`, { replace: true })
+              }}
             />
           )}
 
           {series && <AlbumSeriesStrip data={series} currentIsbn={edition.isbn} />}
+          {series && <OtherEditions data={series} currentIsbn={edition.isbn} />}
         </div>
 
         {entry && <AlbumCollectionCard key={entry.id} entry={entry} />}

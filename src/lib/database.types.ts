@@ -371,6 +371,7 @@ export type Database = {
         Args: { p_changes: Json; p_isbn: string }
         Returns: number
       }
+      correct_isbn: { Args: { p_new: string; p_old: string }; Returns: string }
       delete_my_account: { Args: never; Returns: undefined }
       fill_edition_details: {
         Args: {
@@ -468,6 +469,7 @@ export type Database = {
           role: string
         }[]
       }
+      merge_editions: { Args: { p_from: string; p_into: string }; Returns: number }
       merge_series: {
         Args: { p_from: string; p_into: string }
         Returns: number
