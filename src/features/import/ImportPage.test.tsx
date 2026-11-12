@@ -7,6 +7,7 @@ import ThemeProvider from '../../theme/ThemeProvider'
 import ImportPage from './ImportPage'
 
 // La barre latérale interroge la base pour le pseudo : inutile ici
+vi.mock('../friends/useIncomingRequests', () => ({ useIncomingRequests: () => 0 }))
 vi.mock('../../components/shell/useAccountSummary', () => ({
   useAccountSummary: () => undefined,
   ROLE_LABELS: { user: '', moderator: '', admin: '' },

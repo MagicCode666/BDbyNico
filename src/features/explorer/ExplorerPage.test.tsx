@@ -6,6 +6,7 @@ import ThemeProvider from '../../theme/ThemeProvider'
 import ExplorerPage from './ExplorerPage'
 import type { ExplorerSeries } from './api'
 
+vi.mock('../friends/useIncomingRequests', () => ({ useIncomingRequests: () => 0 }))
 vi.mock('../../components/shell/useAccountSummary', () => ({
   useAccountSummary: () => undefined,
   ROLE_LABELS: { user: '', moderator: '', admin: '' },

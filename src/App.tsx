@@ -6,6 +6,9 @@ import { useAuth } from './auth/useAuth'
 import AddAlbumPage from './features/collection/AddAlbumPage'
 import AlbumPage from './features/collection/AlbumPage'
 import CollectionPage from './features/collection/CollectionPage'
+import FriendLibraryPage from './features/friends/FriendLibraryPage'
+import FriendsPage from './features/friends/FriendsPage'
+import InvitePage from './features/friends/InvitePage'
 import AdminPage from './features/governance/AdminPage'
 import ImportPage from './features/import/ImportPage'
 import ExplorerPage from './features/explorer/ExplorerPage'
@@ -46,6 +49,10 @@ export default function App() {
         <Route path="/collection/importer" element={<ImportPage />} />
         <Route path="/collection/:isbn" element={<AlbumPage />} />
         <Route path="/series/:seriesId" element={<SeriesPage />} />
+        <Route path="/amis" element={<FriendsPage />} />
+        <Route path="/amis/invitation/:token" element={<InvitePage />} />
+        <Route path="/amis/:friendId" element={<FriendLibraryPage />} />
+        <Route path="/amis/:friendId/:seriesId" element={<FriendLibraryPage />} />
         <Route path="/admin" element={<AdminPage />} />
       </Route>
     </Routes>
