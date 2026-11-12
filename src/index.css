@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /*
- * Identité visuelle BDbyNico : « Rouille et chrome » (sombre) et « Papier et encre » (clair).
+ * Identité visuelle BDbyNico : Dark (sombre) et Light (clair).
  * Tout passe par des jetons (variables CSS) : un thème est un jeu de valeurs, la mise en page ne
  * change pas. Le thème actif est l'attribut data-theme de <html> (voir src/theme).
  *

@@ -9,6 +9,7 @@ import PageLayout from '../components/PageLayout'
 import { notifyAccountChanged } from '../components/shell/useAccountSummary'
 import PseudoField from '../components/PseudoField'
 import SubmitButton from '../components/SubmitButton'
+import ChangePasswordSection from '../features/account/ChangePasswordSection'
 import DeleteAccountDialog from '../features/account/DeleteAccountDialog'
 import AvatarEditor from '../features/avatar/AvatarEditor'
 import ClearCollectionDialog from '../features/collection/ClearCollectionDialog'
@@ -171,6 +172,8 @@ export default function ProfilePage() {
             Se déconnecter
           </button>
         </section>
+
+        <ChangePasswordSection />
 
         <section className="card flex flex-col gap-3 p-5">
           <h2 className="text-xl">Apparence</h2>
