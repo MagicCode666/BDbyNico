@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import FormMessage from '../../components/FormMessage'
 import { exportCollection } from '../export/exportCollection'
@@ -16,6 +16,10 @@ export default function DeleteAccountDialog({
   onCancel: () => void
 }) {
   const [typed, setTyped] = useState('')
+  const wordInput = useRef<HTMLInputElement>(null)
+
+  // Le focus entre dans la fenêtre : le clavier et Échap agissent sur elle, pas sur la page derrière
+  useEffect(() => wordInput.current?.focus(), [])
   const [busy, setBusy] = useState(false)
   const [exported, setExported] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -91,6 +95,7 @@ export default function DeleteAccountDialog({
         </label>
         <input
           id="delete-account-word"
+          ref={wordInput}
           value={typed}
           onChange={(e) => setTyped(e.target.value)}
           autoComplete="off"
