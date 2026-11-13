@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v1.1.0...bdbynico-v1.1.1) (2026-11-13)
+
+
+### Corrections
+
+* curseur en main sur les boutons ([#86](https://github.com/MagicCode666/BDbyNico/issues/86)) ([c8e8885](https://github.com/MagicCode666/BDbyNico/commit/c8e888599340fec5111b85894b413d92dac6af57))
+
 ## [1.1.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v1.0.0...bdbynico-v1.1.0) (2026-11-13)
 
 
