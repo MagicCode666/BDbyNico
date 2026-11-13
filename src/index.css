@@ -143,6 +143,21 @@
 }
 
 @layer base {
+  /* Tailwind 4 remet le curseur des boutons à la flèche : tout ce qui se clique montre une main */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary,
+  select:not(:disabled),
+  input:is([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='submit']):not(
+      :disabled
+    ),
+  label:has(input:is([type='checkbox'], [type='radio'], [type='file']):not(:disabled)) {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
   html {
     background: var(--bg);
   }
