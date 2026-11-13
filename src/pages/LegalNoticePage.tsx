@@ -6,7 +6,7 @@ export const CONTACT_EMAIL = 'bdbynico.app@gmail.com'
 
 export default function LegalNoticePage() {
   return (
-    <LegalLayout title="Mentions légales" updated="12 novembre 2026">
+    <LegalLayout title="Mentions légales" updated="13 novembre 2026">
       <h2>Éditeur du service</h2>
       <p>
         BDbyNico est un service gratuit, sans publicité, édité à titre non professionnel par une
@@ -38,6 +38,15 @@ export default function LegalNoticePage() {
         de libraires en ligne, et de contributions des utilisateurs. Les couvertures restent la
         propriété de leurs éditeurs et ne sont pas stockées par le service : elles sont affichées
         depuis leur source. Pour demander le retrait d’un contenu, écrivez à l’adresse de contact.
+      </p>
+      <p>
+        Nous retirons rapidement tout contenu signalé comme portant atteinte à vos droits. Indiquez
+        l’adresse de l’album ou de la couverture concernée et ce qui justifie votre demande.
+      </p>
+      <p>
+        Les utilisateurs s’engagent à ne contribuer (ajout d’albums, proposition de couvertures)
+        qu’avec des contenus dont ils peuvent disposer. Le service peut retirer ceux qui portent
+        atteinte aux droits de tiers.
       </p>
 
       <h2>Responsabilité</h2>
