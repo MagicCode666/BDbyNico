@@ -135,6 +135,7 @@ export type Database = {
           created_by: string | null
           details_checked_at: string | null
           format_cm: number | null
+          is_primary: boolean
           isbn: string
           kind: string
           language: string | null
@@ -159,6 +160,7 @@ export type Database = {
           created_by?: string | null
           details_checked_at?: string | null
           format_cm?: number | null
+          is_primary?: boolean
           isbn: string
           kind?: string
           language?: string | null
@@ -183,6 +185,7 @@ export type Database = {
           created_by?: string | null
           details_checked_at?: string | null
           format_cm?: number | null
+          is_primary?: boolean
           isbn?: string
           kind?: string
           language?: string | null
@@ -649,6 +652,10 @@ export type Database = {
       set_friend_sharing: {
         Args: { p_friend: string; p_share: boolean }
         Returns: undefined
+      }
+      set_primary_edition: {
+        Args: { p_isbn: string; p_primary?: boolean }
+        Returns: string
       }
       set_series_genres: {
         Args: { p_genres: string[]; p_series: string }

@@ -15,6 +15,8 @@ export interface CatalogueEdition {
   /** Intégrale : tomes repris (absents : toute la série). */
   volumeFrom?: number | null
   volumeTo?: number | null
+  /** Édition principale de son tome, désignée par un modérateur. */
+  isPrimary?: boolean
 }
 
 /** Une ligne de la collection de l'utilisateur. */
@@ -82,6 +84,28 @@ export function missingVolumes(
   return result
 }
 
+/**
+ * L'édition qui représente chaque tome quand plusieurs existent : la principale désignée par un
+ * modérateur, sinon la première rencontrée (de préférence avec une couverture). Un tome qui n'a
+ * qu'une édition est donc représenté par elle.
+ */
+export function representativeEditions(
+  editions: CatalogueEdition[],
+): Map<number, CatalogueEdition> {
+  const result = new Map<number, CatalogueEdition>()
+  for (const edition of editions) {
+    if (edition.volume === null || isOutsideGrid(edition.kind)) continue
+    const current = result.get(edition.volume)
+    if (
+      !current ||
+      (!current.isPrimary && (edition.isPrimary || (!current.coverUrl && edition.coverUrl)))
+    ) {
+      result.set(edition.volume, edition)
+    }
+  }
+  return result
+}
+
 /** Rassemble catalogue, collection et réglages personnels en une grille de tomes. */
 export function buildSeriesView(input: SeriesViewInput): SeriesView {
   const editionByIsbn = new Map(input.editions.map((e) => [e.isbn, e]))
@@ -123,12 +147,7 @@ export function buildSeriesView(input: SeriesViewInput): SeriesView {
   }
 
   // Pour un tome manquant : une édition du catalogue, de préférence avec couverture
-  const candidates = new Map<number, CatalogueEdition>()
-  for (const edition of gridEditions) {
-    if (edition.volume === null) continue
-    const current = candidates.get(edition.volume)
-    if (!current || (!current.coverUrl && edition.coverUrl)) candidates.set(edition.volume, edition)
-  }
+  const candidates = representativeEditions(gridEditions)
 
   const knownMax = Math.max(0, ...byVolume.keys(), ...candidates.keys())
   const chosenTotal = input.override ?? input.total

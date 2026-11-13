@@ -15,6 +15,7 @@ export type ChangeKind =
   | 'edition_series'
   | 'edition_isbn'
   | 'edition_merge'
+  | 'edition_primary'
   | 'series_name'
   | 'series_total'
   | 'series_status'
@@ -348,6 +349,15 @@ export async function correctIsbn(oldIsbn: string, newIsbn: string): Promise<str
   const { data, error } = await supabase.rpc('correct_isbn', { p_old: oldIsbn, p_new: newIsbn })
   if (error) throw error
   return data
+}
+
+/**
+ * Désigne l'édition principale de son tome (celle qui le représente dans la série) ; `false` retire
+ * le choix et rend la main à la règle automatique. Réservé aux modérateurs.
+ */
+export async function setPrimaryEdition(isbn: string, primary: boolean): Promise<void> {
+  const { error } = await supabase.rpc('set_primary_edition', { p_isbn: isbn, p_primary: primary })
+  if (error) throw error
 }
 
 /** Fusionne deux éditions d'un même album : `from` est absorbée par `into`. */

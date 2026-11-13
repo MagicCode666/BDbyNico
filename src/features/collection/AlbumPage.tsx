@@ -261,7 +261,14 @@ function AlbumDetails({ data, onReload }: { data: AlbumData; onReload: () => voi
               onChanged={onReload}
             />
           )}
-          {series && <OtherEditions data={series} currentIsbn={edition.isbn} />}
+          {series && (
+            <OtherEditions
+              data={series}
+              currentIsbn={edition.isbn}
+              moderator={moderator}
+              onChanged={onReload}
+            />
+          )}
         </div>
 
         {entry && <AlbumCollectionCard key={entry.id} entry={entry} />}

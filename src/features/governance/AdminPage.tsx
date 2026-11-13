@@ -53,6 +53,7 @@ const KIND_LABELS = {
   edition_series: "Série d'un album",
   edition_isbn: 'ISBN corrigé',
   edition_merge: "Fusion d'éditions",
+  edition_primary: 'Édition principale',
 } as const
 const CONTRIBUTION_LABELS: Record<Contribution, string> = {
   full: 'Contributeur',
