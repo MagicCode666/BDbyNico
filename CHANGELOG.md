@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v1.0.0...bdbynico-v1.1.0) (2026-11-13)
+
+
+### Nouveautés
+
+* édition principale d'un tome ([#84](https://github.com/MagicCode666/BDbyNico/issues/84)) ([dd51e50](https://github.com/MagicCode666/BDbyNico/commit/dd51e50c01adb4aa69636a789c51f62789653fbb))
+
 ## [1.0.0](https://github.com/MagicCode666/BDbyNico/compare/bdbynico-v0.28.0...bdbynico-v1.0.0) (2026-11-12)
 
 
