@@ -41,7 +41,7 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
   const { data: editionRows, error: editionsError } = await supabase
     .from('editions')
     .select(
-      'isbn, title, volume, cover_url, cover_locked, authors, kind, volume_from, volume_to, publisher',
+      'isbn, title, volume, cover_url, cover_locked, authors, kind, volume_from, volume_to, publisher, is_primary',
     )
     .eq('series_id', seriesId)
     .order('volume', { ascending: true, nullsFirst: false })
@@ -58,6 +58,7 @@ export async function getSeriesData(seriesId: string): Promise<SeriesData | null
     kind: toAlbumKind(row.kind),
     volumeFrom: row.volume_from,
     volumeTo: row.volume_to,
+    isPrimary: row.is_primary,
   }))
 
   let items: UserItem[] = []

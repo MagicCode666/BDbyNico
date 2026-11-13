@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildSeriesView, missingVolumes, type CatalogueEdition, type UserItem } from './buildView'
+import {
+  buildSeriesView,
+  missingVolumes,
+  representativeEditions,
+  type CatalogueEdition,
+  type UserItem,
+} from './buildView'
 import { completionLabel } from './status'
 
 const edition = (
@@ -336,5 +342,38 @@ describe('intégrales et hors-séries', () => {
     expect(view.total).toBe(3)
     expect(view.slots).toHaveLength(3)
     expect(view.integrals).toHaveLength(1)
+  })
+})
+
+describe('édition principale', () => {
+  const old = edition(24, { title: 'ancienne', coverUrl: 'https://x/a.jpg' })
+  const wanted = edition(24, { title: 'bwouf', isPrimary: true })
+
+  it('représente le tome par l’édition principale, même sans couverture et même rencontrée après', () => {
+    expect(representativeEditions([old, wanted]).get(24)).toBe(wanted)
+    expect(representativeEditions([wanted, old]).get(24)).toBe(wanted)
+  })
+
+  it('sans choix, garde la première édition (de préférence avec couverture)', () => {
+    const bare = edition(24, { title: 'nue' })
+    expect(representativeEditions([bare, old]).get(24)).toBe(old)
+    expect(representativeEditions([bare]).get(24)).toBe(bare)
+  })
+
+  it('ignore les intégrales et les albums sans numéro', () => {
+    const integral = edition(24, { kind: 'integral', isPrimary: true })
+    expect(representativeEditions([integral, edition(null)]).size).toBe(0)
+  })
+
+  it('la grille montre l’édition principale pour un tome manquant', () => {
+    const view = buildSeriesView({
+      total: 24,
+      override: null,
+      editions: [old, wanted],
+      items: [],
+      ignored: [],
+    })
+    const slot = view.slots.find((s) => s.volume === 24)
+    expect(slot?.kind === 'missing' && slot.edition).toBe(wanted)
   })
 })

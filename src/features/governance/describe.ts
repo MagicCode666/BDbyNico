@@ -66,6 +66,11 @@ export function describeChange(change: Change): string | null {
   if (change.kind === 'edition_isbn') {
     return `ISBN corrigé : ${change.oldValue ?? '?'} → ${change.newValue ?? '?'}`
   }
+  if (change.kind === 'edition_primary') {
+    return change.newValue
+      ? 'Désignée comme édition principale de son tome'
+      : 'Choix de l’édition principale retiré (retour au choix automatique)'
+  }
   if (change.kind === 'edition_merge') {
     return `Édition ${change.oldValue ?? '?'} fusionnée dans celle-ci`
   }

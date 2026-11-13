@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import FormMessage from '../../components/FormMessage'
 import type { SeriesData } from '../series/api'
+import { representativeEditions } from '../series/buildView'
 import { CoverImage } from './AlbumCard'
 import CollectionStateButton from './CollectionStateButton'
 import { isOutsideGrid, shortKindLabel, toAlbumKind } from './kinds'
@@ -25,11 +26,23 @@ export default function AlbumSeriesStrip({
   const [error, setError] = useState<string | null>(null)
   const itemByIsbn = new Map(data.items.map((item) => [item.isbn, item]))
   // Tomes dans l'ordre, puis intégrales et hors-séries
-  const editions = [...data.editions].sort((a, b) => {
-    const outA = isOutsideGrid(a.kind) ? 1 : 0
-    const outB = isOutsideGrid(b.kind) ? 1 : 0
-    return outA - outB || (a.volume ?? 9999) - (b.volume ?? 9999)
-  })
+  // Un seul album par tome : l'édition principale (les autres sont sur la fiche, « Autres
+  // éditions »), sauf celle qu'on regarde, qui garde la place de son tome
+  const shown = new Map(representativeEditions(data.editions))
+  const watched = data.editions.find((edition) => edition.isbn === currentIsbn)
+  if (watched?.volume != null && shown.has(watched.volume) && !isOutsideGrid(watched.kind)) {
+    shown.set(watched.volume, watched)
+  }
+  const tomes = new Set(shown.values())
+  const editions = data.editions
+    .filter(
+      (edition) => isOutsideGrid(edition.kind) || edition.volume === null || tomes.has(edition),
+    )
+    .sort((a, b) => {
+      const outA = isOutsideGrid(a.kind) ? 1 : 0
+      const outB = isOutsideGrid(b.kind) ? 1 : 0
+      return outA - outB || (a.volume ?? 9999) - (b.volume ?? 9999)
+    })
   if (editions.length < 2) return null
 
   return (
